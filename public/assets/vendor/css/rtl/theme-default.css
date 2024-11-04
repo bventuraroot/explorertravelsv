@@ -276,13 +276,13 @@ button.list-group-item-primary.active {
 
 .btn-primary {
   color: #fff;
-  background-color: #7367f0;
-  border-color: #7367f0;
+  background-color: #FC9A00;
+  border-color: #FC9A00;
 }
 .btn-primary:hover {
   color: #fff !important;
-  background-color: #685dd8 !important;
-  border-color: #685dd8 !important;
+  background-color: #005EC2 !important;
+  border-color: #005EC2 !important;
 }
 .btn-check:focus + .btn-primary, .btn-primary:focus, .btn-primary.focus {
   color: #fff;

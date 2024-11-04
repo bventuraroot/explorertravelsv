@@ -4,7 +4,7 @@
 
 @extends('layouts/layoutMaster')
 
-@section('title', 'Login')
+@section('title', 'Inicio')
 
 @section('vendor-style')
     <!-- Vendor -->
@@ -27,24 +27,23 @@
 @endsection
 
 @section('content')
-    <div class="container-xxl">
+    <div class="container-xxl" >
         <div class="authentication-wrapper authentication-basic container-p-y">
-            <div class="authentication-inner py-4">
+            <div class="py-4 authentication-inner">
                 <!-- Login -->
                 <div class="card">
                     <div class="card-body">
                         <!-- Logo -->
-                        <div class="app-brand justify-content-center mb-4 mt-2">
-                            <a href="{{ url('/') }}" class="app-brand-link gap-2">
+                        <div class="mt-2 mb-4 app-brand justify-content-center">
+                            <a href="{{ url('/') }}" class="gap-2 app-brand-link">
                                 <span class="app-brand-logo">@include('_partials.macros', [
-                                    'height' => 20,
+                                    'height' => 100,
                                     'withbg' => 'fill: #fff;',
                                 ])</span>
                             </a>
                         </div>
                         <!-- /Logo -->
-                        <h4 class="app-brand justify-content-center mb-1 pt-1">{{ config('variables.templateName') }}
-                        </h4>
+                        <h4 class="pt-1 mb-1 app-brand justify-content-center">Login</h4>
                         <p class="mb-4"></p>
 
                         <form method="POST" action="{{ route('login') }}">
@@ -72,15 +71,15 @@
                             <div class="block mt-4">
                                 <label for="remember_me" class="inline-flex items-center">
                                     <input id="remember_me" type="checkbox"
-                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                        class="text-indigo-600 border-gray-300 rounded shadow-sm focus:ring-indigo-500"
                                         name="remember">
                                     <span class="ml-2 text-sm text-gray-600">{{ __('Recuerdame') }}</span>
                                 </label>
                             </div>
 
                             <div class="flex items-center justify-end mt-4">
-                                @if (Route::has('password.request'))
-                                    <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                @if (Route::has(!'password.request'))
+                                    <a class="text-sm text-gray-600 underline rounded-md hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                         href="{{ route('password.request') }}">
                                         {{ __('¿Olvidaste tu contraseña?') }}
                                     </a>
