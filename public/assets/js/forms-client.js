@@ -78,7 +78,7 @@ $(document).ready(function (){
 
     //Get companies avaibles
     $.ajax({
-        url: "/company/getCompany",
+        url: "/public/company/getCompany",
         method: "GET",
         success: function(response){
             let companyselected = $('#companyselected').val();
@@ -98,7 +98,7 @@ $(document).ready(function (){
 function getpaises(selected="",type=""){
     if(type=='edit'){
         $.ajax({
-            url: "/getcountry",
+            url: "/public/getcountry",
             method: "GET",
             success: function(response){
                 $.each(response, function(index, value) {
@@ -113,7 +113,7 @@ function getpaises(selected="",type=""){
         });
     }else{
         $.ajax({
-            url: "/getcountry",
+            url: "/public/getcountry",
             method: "GET",
             success: function(response){
                 $.each(response, function(index, value) {

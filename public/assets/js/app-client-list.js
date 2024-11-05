@@ -369,6 +369,6 @@ $(function () {
   }, 300);
     //onchange company
 function indexclient(company){
-    window.location.href = "/client/index/"+btoa(company);
+    window.location.href = "/public/client/index/"+btoa(company);
     }
 });

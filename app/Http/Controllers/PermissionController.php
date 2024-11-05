@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rol;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
@@ -37,6 +39,23 @@ class PermissionController extends Controller
         }
         //dd($permission['data']);
         return response()->json($permission);
+    }
+
+    public function getmenujson(){
+        $userId = Auth::id();
+        $rolhasuser = "SELECT
+                a.model_id UserID,
+                b.id Rolid,
+                b.name Rol,
+                d.id PermisoID,
+                d.name Permiso
+                FROM model_has_roles a
+                INNER JOIN roles b ON a.role_id=b.id
+                INNER JOIN role_has_permissions c ON b.id=c.role_id
+                INNER JOIN permissions d ON c.permission_id=d.id
+                WHERE model_id=$userId";
+        $result = DB::select(DB::raw($rolhasuser));
+        dd($result);
     }
 
     /**

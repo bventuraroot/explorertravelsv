@@ -13173,6 +13173,10 @@ html:not([dir=rtl]) .card .card-separator {
   font-weight: 700 !important;
 }
 
+.menu-letra {
+    font-size: 10pt !important;
+}
+
 .fw-semibold {
   font-weight: 600 !important;
 }

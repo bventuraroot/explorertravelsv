@@ -25,7 +25,7 @@ $(document).ready(function (){
 function getpaises(selected="",type=""){
     if(type=='edit'){
         $.ajax({
-            url: "/getcountry",
+            url: "/public/getcountry",
             method: "GET",
             success: function(response){
                 $.each(response, function(index, value) {
@@ -40,7 +40,7 @@ function getpaises(selected="",type=""){
         });
     }else{
         $.ajax({
-            url: "/getcountry",
+            url: "/public/getcountry",
             method: "GET",
             success: function(response){
                 $.each(response, function(index, value) {
@@ -56,7 +56,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
  //Get countrys avaibles
  if(type=='edit'){
     $.ajax({
-        url: "/getdepartment/"+btoa(pais),
+        url: "/public/getdepartment/"+btoa(pais),
         method: "GET",
         success: function(response){
             $('#departamentedit').find('option:not(:first)').remove();
@@ -73,7 +73,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
 
      //Get acteconomica
  $.ajax({
-    url: "/geteconomicactivity/"+btoa(pais),
+    url: "/public/geteconomicactivity/"+btoa(pais),
     method: "GET",
     success: function(response){
         $.each(response, function(index, value) {
@@ -88,7 +88,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
 });
  }else{
     $.ajax({
-        url: "/getdepartment/"+btoa(pais),
+        url: "/public/getdepartment/"+btoa(pais),
         method: "GET",
         success: function(response){
             $('#departament').find('option:not(:first)').remove();
@@ -99,7 +99,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
     });
      //Get acteconomica
  $.ajax({
-    url: "/geteconomicactivity/"+btoa(pais),
+    url: "/public/geteconomicactivity/"+btoa(pais),
     method: "GET",
     success: function(response){
         $.each(response, function(index, value) {
@@ -114,7 +114,7 @@ function getmunicipio(dep, type="", selected){
     if(type=='edit'){
 //Get countrys avaibles
 $.ajax({
-    url: "/getmunicipality/"+btoa(dep),
+    url: "/public/getmunicipality/"+btoa(dep),
     method: "GET",
     success: function(response){
      $('#municipioedit').find('option:not(:first)').remove();
@@ -131,7 +131,7 @@ $.ajax({
     }else{
 //Get countrys avaibles
 $.ajax({
-    url: "/getmunicipality/"+btoa(dep),
+    url: "/public/getmunicipality/"+btoa(dep),
     method: "GET",
     success: function(response){
      $('#municipio').find('option:not(:first)').remove();
@@ -159,7 +159,7 @@ getmunicipio(departamento, 'edit', municipio);
             llamarselected(response[0]['country'],response[0]['departament'],response[0]['municipio'], response[0]['acteconomica']);
             $.each(response[0], function(index, value) {
                 if(index=='logo'){
-                    $('#logoview').html("<img src='http://inetv4.test/assets/img/logo/"+value+"' alt='logo' width='150px'><input type='hidden' name='logoeditoriginal' id='logoeditoriginal'/>");
+                    $('#logoview').html("<img src='http://explorertravelsv.test/public/assets/img/logo/"+value+"' alt='logo' width='150px'><input type='hidden' name='logoeditoriginal' id='logoeditoriginal'/>");
                     $('#logoeditoriginal').val(value);
                 }else{
                     if(index=='phone_id'){

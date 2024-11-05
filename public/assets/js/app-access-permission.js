@@ -82,7 +82,7 @@ $(function () {
               '<span class="text-nowrap"><button class="btn btn-sm btn-icon me-2" onclick="javascript:editpermission('+
               $id + ','+ "'" + $name + "'"
                +');"><i class="ti ti-edit"></i></button>' +
-              '<button class="btn btn-sm btn-icon onclick="javascript:deletepermission('+
+              '<button class="btn btn-sm btn-icon" onclick="javascript:deletepermission('+
               $id
               +');"><i class="ti ti-trash"></i></button></span>'
             );
@@ -190,7 +190,7 @@ function deletepermission(id){
       }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: "destroy/"+btoa(id),
+                url: "/public/permission/destroy/"+btoa(id),
                 method: "GET",
                 success: function(response){
                         if(response.res==1){

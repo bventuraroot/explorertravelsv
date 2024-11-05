@@ -2,16 +2,16 @@
     <!-- Add Role Modal -->
     <div class="modal fade" id="UpdateRoleModal{{ $rol->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-add-new-role">
-            <div class="modal-content p-3 p-md-5">
+            <div class="p-3 modal-content p-md-5">
                 <button type="button" class="btn-close btn-pinned" data-bs-dismiss="modal" aria-label="Close"></button>
                 <div class="modal-body">
-                    <div class="text-center mb-4">
-                        <h3 class="role-title mb-2">Editar Role {{ $rol->name }}</h3>
+                    <div class="mb-4 text-center">
+                        <h3 class="mb-2 role-title">Editar Role {{ $rol->name }}</h3>
                         <p class="text-muted">Establecer permisos de rol</p>
                     </div>
                     <!-- Add role form -->
                     <form id="addRoleForm{{ $rol->id }}" class="row g-3" action="{{route('rol.update')}}" method="POST">
-                        @csrf @method('POST')
+                        @csrf @method('PATCH')
                         <div class="col-12">
                             <h5>Permisos de Rol</h5>
                             <!-- Permission table -->
@@ -99,7 +99,7 @@
                             </div>
                             <!-- Permission table -->
                         </div>
-                        <div class="col-12 text-center mt-4">
+                        <div class="mt-4 text-center col-12">
                             <button type="submit" class="btn btn-primary me-sm-3 me-1">Enviar</button>
                             <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal"
                                 aria-label="Close">Cancelar</button>
@@ -115,17 +115,17 @@
 
 <div class="modal fade" id="addRoleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-add-new-role">
-        <div class="modal-content p-3 p-md-5">
+        <div class="p-3 modal-content p-md-5">
             <button type="button" class="btn-close btn-pinned" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="modal-body">
-                <div class="text-center mb-4">
-                    <h3 class="role-title mb-2">Crear Nuevo Rol</h3>
+                <div class="mb-4 text-center">
+                    <h3 class="mb-2 role-title">Crear Nuevo Rol</h3>
                     <p class="text-muted">Establecer permisos de rol</p>
                 </div>
                 <!-- Add role form -->
                 <form id="addRoleForm" class="row g-3" action="{{route('rol.store')}}" method="POST">
                     @csrf @method('POST')
-                    <div class="col-12 mb-4">
+                    <div class="mb-4 col-12">
                         <label class="form-label" for="modalRoleName">Nombre Rol</label>
                         <input type="text" id="modalRoleName" name="modalRoleName" class="form-control"
                             placeholder="Enter a role name" tabindex="-1" required/>
@@ -184,7 +184,7 @@
                         </div>
                         <!-- Permission table -->
                     </div>
-                    <div class="col-12 text-center mt-4">
+                    <div class="mt-4 text-center col-12">
                         <button type="submit" class="btn btn-primary me-sm-3 me-1">Enviar</button>
                         <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal"
                             aria-label="Close">Cancelar</button>

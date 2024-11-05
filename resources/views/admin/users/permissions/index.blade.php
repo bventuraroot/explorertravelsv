@@ -19,17 +19,17 @@
 @endsection
 
 @section('page-script')
-<script src="{{asset('assets/js/app-access-permission.js')}}"></script>
+<script src="{{asset('assets/js/app-access-permission.js')}}"></script> 
 @endsection
 
 @section('content')
-<h4 class="fw-semibold mb-4">Lista de Permisos</h4>
+<h4 class="mb-4 fw-semibold">Lista de Permisos</h4>
 
 
 <!-- Permission Table -->
 <div class="card">
   <div class="card-datatable table-responsive">
-    <table class="datatables-permissions table border-top">
+    <table class="table datatables-permissions border-top">
       <thead>
         <tr>
           <th></th>

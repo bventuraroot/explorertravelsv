@@ -12211,6 +12211,10 @@ button.list-group-item-gray.active {
   font-weight: 700 !important;
 }
 
+.menu-letra {
+    font-size: 12pt !important;
+}
+
 .fw-semibold {
   font-weight: 600 !important;
 }

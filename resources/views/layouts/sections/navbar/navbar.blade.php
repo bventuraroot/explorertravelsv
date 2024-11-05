@@ -15,8 +15,8 @@
 
 <!--  Brand demo (display only for navbar-full and hide on below xl) -->
 @if (isset($navbarFull))
-    <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-4">
-        <a href="{{ url('/') }}" class="app-brand-link gap-2">
+    <div class="py-0 navbar-brand app-brand demo d-none d-xl-flex me-4">
+        <a href="{{ url('/') }}" class="gap-2 app-brand-link">
             <span class="app-brand-logo demo">
                 @include('_partials.macros', ['height' => 20])
             </span>
@@ -29,7 +29,7 @@
 @if (!isset($navbarHideToggle))
     <div
         class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0{{ isset($menuHorizontal) ? ' d-xl-none ' : '' }} {{ isset($contentNavbar) ? ' d-xl-none ' : '' }}">
-        <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
+        <a class="px-0 nav-item nav-link me-xl-4" href="javascript:void(0)">
             <i class="ti ti-menu-2 ti-sm"></i>
         </a>
     </div>
@@ -45,7 +45,7 @@
     </div>
     <!--/ Style Switcher -->
 
-    <ul class="navbar-nav flex-row align-items-center ms-auto">
+    <ul class="flex-row navbar-nav align-items-center ms-auto">
 
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">

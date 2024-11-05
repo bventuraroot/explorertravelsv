@@ -23,7 +23,8 @@ class MenuServiceProvider extends ServiceProvider
    */
   public function boot()
   {
-    $verticalMenuJson = file_get_contents(base_path('resources/menu/verticalMenu.json'));
+    //$verticalMenuJson = file_get_contents(base_path('resources/menu/verticalMenu.json'));
+    $verticalMenuJson = 0;
     $verticalMenuData = json_decode($verticalMenuJson);
     $horizontalMenuJson = file_get_contents(base_path('resources/menu/horizontalMenu.json'));
     $horizontalMenuData = json_decode($horizontalMenuJson);

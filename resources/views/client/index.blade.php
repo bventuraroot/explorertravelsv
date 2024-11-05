@@ -37,7 +37,7 @@
 @endsection
 
 @section('page-script')
-    <script src="{{ asset('assets/js/app-client-list.js') }}"></script>
+    <script src="{{ asset('assets/js/app-client-list.js') }}"></script>  
     <script src="{{ asset('assets/js/forms-client.js') }}"></script>
 @endsection
 

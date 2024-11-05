@@ -209,7 +209,7 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label" for="address">Dirección</label>
+                            <label class="form-label" for="address">Dirección</label> 
                             <input type="text" id="address" class="form-control" placeholder="Direccion complementaria"
                                 aria-label="Direccion" name="address" />
                         </div>

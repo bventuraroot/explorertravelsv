@@ -20,7 +20,7 @@ $(function () {
 
   // Variable declaration for table
   var dt_company_table = $('.datatables-company'),
-    select2 = $('.select2country');
+    select2 = $('.select2country'); 
 
   if (select2.length) {
     var $this = select2;

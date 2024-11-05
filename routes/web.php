@@ -105,10 +105,12 @@ Route::group(['prefix' => 'permission', 'as' => 'permission.'], function(){
     Route::get('index', [PermissionController::class, 'index'])->name('index');
     Route::patch('update', [PermissionController::class, 'update'])->name('update');
     Route::post('store', [PermissionController::class, 'store'])->name('store');
-    Route::get('destroy', [PermissionController::class, 'destroy'])->name('destroy');
+    Route::get('destroy/{id}', [PermissionController::class, 'destroy'])->name('destroy');
     Route::get('getpermission', [PermissionController::class, 'getpermission'])->name('getpermission');
+    Route::get('getmenujson', [PermissionController::class, 'getmenujson'])->name('getmenujson');
 
     });
+
 Route::group(['prefix' => 'provider', 'as' => 'provider.'], function(){
         Route::get('index', [ProviderController::class, 'index'])->name('index');
         Route::get('getproviders', [ProviderController::class, 'getproviders'])->name('getproviders');
