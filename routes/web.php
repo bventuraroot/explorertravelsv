@@ -10,6 +10,7 @@ use App\Http\Controllers\MunicipalityController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FacturacionElectronicaController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +41,7 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'home'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'permission:manage_users'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -217,6 +219,7 @@ Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
     Route::get('update', [ConfigController::class, 'update'])->name('update');
     Route::get('getconfigid/{id}', [ConfigController::class, 'getconfigid'])->name('getconfigid');
     Route::get('destroy/{id}', [ConfigController::class, 'destroy'])->name('destroy');
+});
 });
 });
 

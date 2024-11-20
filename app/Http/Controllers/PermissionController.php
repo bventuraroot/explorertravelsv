@@ -42,7 +42,7 @@ class PermissionController extends Controller
     }
 
     public function getmenujson(){
-        $userId = Auth::id();
+        $userId=auth()->user()->id;
         $rolhasuser = "SELECT
                 a.model_id UserID,
                 b.id Rolid,
@@ -55,7 +55,221 @@ class PermissionController extends Controller
                 INNER JOIN permissions d ON c.permission_id=d.id
                 WHERE model_id=$userId";
         $result = DB::select(DB::raw($rolhasuser));
-        dd($result);
+        //dd($result);
+
+        $menu = [
+            [
+                "url" => "/",
+                "name" => "Home",
+                "icon" => "menu-icon fa-solid fa-home",
+                "slug" => "dashboard"
+            ],
+            [
+                "name" => "Administracion",
+                "icon" => "menu-icon fa-solid fa-shield",
+                "slug" => "user.index",
+                "badge" => ["primary", "2"],
+                "submenu" => [
+                    [
+                        "url" => "/user/index",
+                        "name" => "Usuarios",
+                        "slug" => "user.index"
+                    ],
+                    [
+                        "url" => "/rol/index",
+                        "name" => "Roles",
+                        "slug" => "user.rol.index"
+                    ],
+                    [
+                        "url" => "/permission/index",
+                        "name" => "Permisos",
+                        "slug" => "user.permission.index"
+                    ]
+                ]
+            ],
+            [
+                "url" => "/company/index",
+                "name" => "Empresas",
+                "icon" => "menu-icon fa-solid fa-id-badge",
+                "slug" => "company.index"
+            ],
+            [
+                "url" => "/client/index",
+                "name" => "Clientes",
+                "icon" => "menu-icon fa-solid fa-user-plus",
+                "slug" => "client.index"
+            ],
+            [
+                "name" => "Produccion",
+                "icon" => "menu-icon fa-solid fa-feed",
+                "slug" => "user.index",
+                "badge" => ["primary", "2"],
+                "submenu" => [
+                    [
+                        "url" => "/product/index",
+                        "name" => "Productos",
+                        "slug" => "product.index"
+                    ],
+                    [
+                        "url" => "/provider/index",
+                        "name" => "Proveedores",
+                        "slug" => "provider.index"
+                    ]
+                ]
+            ],
+            [
+                "url" => "/sale/index",
+                "name" => "Ventas",
+                "icon" => "menu-icon fa-solid fa-dollar",
+                "slug" => "sale.index"
+            ],
+            [
+                "url" => "/purchase/index",
+                "name" => "Compras",
+                "icon" => "menu-icon fa-solid fa-truck",
+                "slug" => "purchase.index"
+            ],
+            [
+                "url" => "/credit/index",
+                "name" => "Creditos",
+                "icon" => "menu-icon fa-solid fa-credit-card",
+                "slug" => "credit.index"
+            ],
+            [
+                "url" => "/report/index",
+                "name" => "Reportes",
+                "icon" => "menu-icon fa-solid fa-line-chart",
+                "slug" => "report.index",
+                "badge" => ["primary", "6"],
+                "submenu" => [
+                    [
+                        "url" => "/report/sales",
+                        "name" => "Ventas",
+                        "slug" => "report.sales"
+                    ],
+                    [
+                        "url" => "/report/contribuyentes",
+                        "name" => "Ventas Contribuyentes",
+                        "slug" => "report.contribuyentes"
+                    ],
+                    [
+                        "url" => "/report/directas",
+                        "name" => "Ventas Directas",
+                        "slug" => "report.directas"
+                    ],
+                    [
+                        "url" => "/report/consumidor",
+                        "name" => "Ventas Consumidor",
+                        "slug" => "report.consumidor"
+                    ],
+                    [
+                        "url" => "/report/purchases",
+                        "name" => "Compras",
+                        "slug" => "report.purchases"
+                    ],
+                    [
+                        "url" => "/report/bookpurchases",
+                        "name" => "Libro de Compras",
+                        "slug" => "report.bookpurchases"
+                    ],
+                    [
+                        "url" => "/report/reportyear",
+                        "name" => "Ventas y compras por año",
+                        "slug" => "report.reportyear"
+                    ]
+                ]
+            ],
+            [
+                "url" => "/factmh/index",
+                "name" => "Administracion DTE",
+                "icon" => "menu-icon fa-solid fa-satellite-dish",
+                "slug" => "factmh.index",
+                "badge" => ["primary", "5"],
+                "submenu" => [
+                    [
+                        "url" => "/factmh/contingencias",
+                        "name" => "Contingencias",
+                        "slug" => "factmh.contingencias"
+                    ],
+                    [
+                        "url" => "/factmh/test_crt",
+                        "name" => "Muestra Enviados",
+                        "slug" => "factmh.test_crt"
+                    ],
+                    [
+                        "url" => "/config/index",
+                        "name" => "Configuraciones Ambiente",
+                        "slug" => "config.index"
+                    ]
+                ]
+            ]
+        ];
+
+        $filteredMenu = [];
+        //dd($result);
+        if($result[0]->Rolid!=1){
+
+        // Agregar el primer elemento "Home" directamente
+        if (isset($menu[0])) {
+            $filteredMenu[] = $menu[0];
+        }
+
+        foreach ($menu as $index => $menuItem) {
+            // Saltar el primer elemento (ya agregado)
+            if ($index === 0) {
+                continue;
+            }
+
+            // Verifica si el usuario tiene acceso a la sección principal (slug)
+            if (in_array($menuItem['slug'], array_column($result, 'Permiso'))) {
+                // Clona el menú principal
+                $filteredItem = $menuItem;
+
+                // Filtra el submenu si existe
+                if (isset($menuItem['submenu'])) {
+                    $filteredSubmenu = [];
+                    foreach ($menuItem['submenu'] as $submenuItem) {
+                        // Verifica el permiso para cada subelemento del menú
+                        if (in_array($submenuItem['slug'], array_column($result, 'Permiso'))) {
+                            $filteredSubmenu[] = $submenuItem;
+                        }
+                    }
+                    // Solo añade el submenu si hay permisos
+                    if (!empty($filteredSubmenu)) {
+                        $filteredItem['submenu'] = $filteredSubmenu;
+                    }
+                }
+
+                $filteredMenu[] = $filteredItem;
+            }
+        }
+
+        // Encerrar todo en la palabra "menu"
+$finalMenu = ['menu' => $filteredMenu];
+$menuJson = json_encode($finalMenu);
+//dd($menuJson);
+}else {
+    $finalMenu = ['menu' => $menu];
+    $menuJson = json_encode($finalMenu);;
+}
+return response()->json($menuJson);
+    }
+
+    public function getpermissionjson(){
+        $userId=auth()->user()->id;
+        $rolhasuser = "SELECT
+                a.model_id UserID,
+                b.id Rolid,
+                b.name Rol,
+                d.id PermisoID,
+                d.name Permiso
+                FROM model_has_roles a
+                INNER JOIN roles b ON a.role_id=b.id
+                INNER JOIN role_has_permissions c ON b.id=c.role_id
+                INNER JOIN permissions d ON c.permission_id=d.id
+                WHERE model_id=$userId";
+        $result = DB::select(DB::raw($rolhasuser));
+        return response()->json($result);
     }
 
     /**

@@ -25,20 +25,22 @@
     <div class="menu-inner-shadow"></div>
 
     <ul class="py-1 menu-inner">
+        @php
+            //dd($menuData);
+        @endphp
         @foreach ($menuData[0]->menu as $menu)
             {{-- adding active and open class if child is active --}}
 
             {{-- menu headers --}}
             @if (isset($menu->menuHeader))
                 <li class="menu-header small text-uppercase">
-                    <span class="menu-header-text">{{ $menu->menuHeader }}</span>
+                    <span class="menu-header-text">{{  $menu->menuHeader }}</span>
                 </li>
             @else
                 {{-- active menu method --}}
                 @php
                     $activeClass = null;
                     $currentRouteName = Route::currentRouteName();
-
                     if ($currentRouteName === $menu->slug) {
                         $activeClass = 'active';
                     } elseif (isset($menu->submenu)) {
