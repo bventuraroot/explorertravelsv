@@ -42,7 +42,7 @@ $(function () {
     //Get companies avaibles
     var iduser = $("#iduser").val();
     $.ajax({
-        url: "/company/getCompanybyuser/" + iduser,
+        url: "/public/company/getCompanybyuser/" + iduser,
         method: "GET",
         success: function (response) {
             $("#company").append('<option value="0">Seleccione</option>');
@@ -60,7 +60,7 @@ $(function () {
 
     //Get products avaibles
     $.ajax({
-        url: "/product/getproductall",
+        url: "/public/product/getproductall",
         method: "GET",
         success: function (response) {
             $("#psearch").append('<option value="0">Seleccione</option>');

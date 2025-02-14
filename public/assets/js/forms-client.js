@@ -160,7 +160,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
 
         //Get acteconomica
     $.ajax({
-       url: "/geteconomicactivity/"+btoa(pais),
+       url: "public/geteconomicactivity/"+btoa(pais),
        method: "GET",
        success: function(response){
            $.each(response, function(index, value) {

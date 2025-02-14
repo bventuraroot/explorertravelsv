@@ -51,8 +51,8 @@ class PermissionController extends Controller
                 d.name Permiso
                 FROM model_has_roles a
                 INNER JOIN roles b ON a.role_id=b.id
-                INNER JOIN role_has_permissions c ON b.id=c.role_id
-                INNER JOIN permissions d ON c.permission_id=d.id
+                LEFT JOIN role_has_permissions c ON b.id=c.role_id
+                LEFT JOIN permissions d ON c.permission_id=d.id
                 WHERE model_id=$userId";
         $result = DB::select(DB::raw($rolhasuser));
         //dd($result);
@@ -207,7 +207,7 @@ class PermissionController extends Controller
 
         $filteredMenu = [];
         //dd($result);
-        if($result[0]->Rolid!=1){
+        if(@$result[0]->Rolid!=1){
 
         // Agregar el primer elemento "Home" directamente
         if (isset($menu[0])) {
@@ -265,8 +265,8 @@ return response()->json($menuJson);
                 d.name Permiso
                 FROM model_has_roles a
                 INNER JOIN roles b ON a.role_id=b.id
-                INNER JOIN role_has_permissions c ON b.id=c.role_id
-                INNER JOIN permissions d ON c.permission_id=d.id
+                LEFT JOIN role_has_permissions c ON b.id=c.role_id
+                LEFT JOIN permissions d ON c.permission_id=d.id
                 WHERE model_id=$userId";
         $result = DB::select(DB::raw($rolhasuser));
         return response()->json($result);
