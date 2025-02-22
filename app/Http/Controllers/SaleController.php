@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Mail;
 use Session;
 use App\Mail\EnviarCorreo;
 use App\Models\Correlativo;
+use Illuminate\Http\JsonResponse;
 
 class SaleController extends Controller
 {
@@ -103,18 +104,52 @@ class SaleController extends Controller
         ));
     }
 
-    public function newcorrsale($idempresa, $iduser, $iddoc)
+    public function newcorrsale($idempresa, $iduser, $iddoc): JsonResponse
     {
-        $corr = new Sale();
-        $corr->company_id = $idempresa;
-        $corr->typedocument_id = $iddoc;
-        $corr->user_id = $iduser;
-        $corr->date = date('Y-m-d');
-        $corr->state = 1;
-        $corr->typesale = 2;
-        $corr->save();
-        return response()->json($corr['id']);
+        DB::beginTransaction();
+
+        try {
+            // Obtener la última venta sin detalles y no usada recientemente
+            $lastSale = DB::table('sales')
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('salesdetails')
+                        ->whereRaw('sales.id = salesdetails.sale_id');
+                })
+                ->where('created_at', '<', now()->subMinutes(5)) // Solo ventas inactivas por más de 5 min
+                ->lockForUpdate() // Bloquea para evitar que otro usuario lo use al mismo tiempo
+                ->orderByDesc('id')
+                ->first();
+                //dd($lastSale);
+            if ($lastSale) {
+                // Si la última venta no tiene detalles y está inactiva, la reutilizamos
+                $newId = $lastSale->id;
+                DB::table('sales')->where('id', $lastSale->id)->delete();
+            } else {
+                // Si la última venta tiene detalles o está en uso, crear una nueva con auto-incremento
+                $newId = null;
+            }
+
+            // Crear la nueva venta
+            $corr = new Sale();
+            $corr->id = $newId; // Si es null, Laravel usará auto-increment
+            $corr->company_id = $idempresa;
+            $corr->typedocument_id = $iddoc;
+            $corr->user_id = $iduser;
+            $corr->date = now();
+            $corr->state = 1;
+            $corr->typesale = 2;
+            $corr->save();
+
+            DB::commit();
+
+            return response()->json(['sale_id' => $corr->id], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'No se pudo procesar la venta', 'message' => $e->getMessage()], 500);
+        }
     }
+
 
     public function destroysaledetail($idsaledetail)
     {
@@ -193,7 +228,7 @@ class SaleController extends Controller
         ->select('docs.actual',
                 'docs.id')
         ->get();
-        
+
         $salesave->nu_doc = $newCorr[0]->actual;
         $salesave->save();
 

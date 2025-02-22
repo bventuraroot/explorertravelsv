@@ -36,7 +36,7 @@
 @endsection
 
 @section('page-script')
-    <script src="{{ asset('assets/js/app-sale-list.js') }}"></script>
+    <script src="{{ asset('assets/js/app-sale-list.js') }}"></script> 
     <script>
         function EnviarCorreo(id_factura,correo,numero) {
             (async () => {
@@ -60,12 +60,12 @@
                     email: email,
                     numero: numero,
                     _token : _token
-        
+
                     },
                     success: function(data,status)
                     {
                         Swal.fire(`Comprobante Enviado a: ${email}`)
-        
+
                     },
                     error: function(){
                     mensaje("Creación de Factura", "No se pudo Actualizar", "error")
@@ -74,7 +74,7 @@
                 }
             })()
         }
-        
+
             </script>
 @endsection
 

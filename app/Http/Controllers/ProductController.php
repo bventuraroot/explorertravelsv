@@ -74,7 +74,7 @@ class ProductController extends Controller
         if($request->hasFile("image")){
             $imagen = $request->file("image");
             $nombre =  time()."_".$imagen->getClientOriginalName();
-            dd(Storage::disk('products')->put($nombre,  File::get($imagen)));
+            Storage::disk('products')->put($nombre,  File::get($imagen));
             //Storage::disk('products')->put($nombre,  File::get($imagen));
            }
         $product->image = $nombre;

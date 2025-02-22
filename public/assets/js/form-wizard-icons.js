@@ -587,14 +587,14 @@ function createcorrsale() {
             method: "GET",
             async: false,
             success: function (response) {
-                if ($.isNumeric(response)) {
+                if ($.isNumeric(response.sale_id)) {
                     //recargar la pagina para retomar si una factura quedo en modo borrador
                     //$("#corr").val(response);
                     //salida = true;
                     window.location.href =
-                        "create?corr=" + response + "&draft=true&typedocument=" + typedocument;
+                        "create?corr=" + response.sale_id + "&draft=true&typedocument=" + typedocument;
                 } else {
-                    Swal.fire("Hay un problema, favor verificar");
+                    Swal.fire("Hay un problema, favor verificar"+response);
                 }
             },
         });

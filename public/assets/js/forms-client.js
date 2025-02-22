@@ -25,7 +25,7 @@ $(document).ready(function (){
             key = $('#ncr').val();
         }
         $.ajax({
-            url: "/client/keyclient/" + btoa(key) +"/"+btoa(tpersona),
+            url: "/public/client/keyclient/" + btoa(key) +"/"+btoa(tpersona),
             method: "GET",
             success: function(response){
                 $.each(response, function(index, value) {
@@ -160,7 +160,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
 
         //Get acteconomica
     $.ajax({
-       url: "public/geteconomicactivity/"+btoa(pais),
+       url: "/public/geteconomicactivity/"+btoa(pais),
        method: "GET",
        success: function(response){
            $.each(response, function(index, value) {
@@ -175,7 +175,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
    });
     }else{
        $.ajax({
-           url: "/getdepartment/"+btoa(pais),
+           url: "/public/getdepartment/"+btoa(pais),
            method: "GET",
            success: function(response){
                $('#departament').find('option:not(:first)').remove();
@@ -186,7 +186,7 @@ function getdepartamentos(pais, type="", selected, selectedact){
        });
         //Get acteconomica
     $.ajax({
-       url: "/geteconomicactivity/"+btoa(pais),
+       url: "/public/geteconomicactivity/"+btoa(pais),
        method: "GET",
        success: function(response){
            $.each(response, function(index, value) {
@@ -218,7 +218,7 @@ $.ajax({
     }else{
 //Get countrys avaibles
 $.ajax({
-    url: "/getmunicipality/"+btoa(dep),
+    url: "/public/getmunicipality/"+btoa(dep),
     method: "GET",
     success: function(response){
      $('#municipio').find('option:not(:first)').remove();
