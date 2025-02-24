@@ -93,6 +93,7 @@ class ProviderController extends Controller
         $address->reference = $request->address;
         $address->save();
         //dd($request);
+        $id_user = auth()->user()->id;
         $provider = new Provider();
         $provider->razonsocial = $request->razonsocial;
         $provider->ncr = $request->ncr;
@@ -101,6 +102,7 @@ class ProviderController extends Controller
         $provider->company_id = $request->company;
         $provider->address_id = $address['id'];
         $provider->phone_id = $phone['id'];
+        $provider->user_id = $id_user;
         $provider->save();
         return redirect()->route('provider.index');
     }
@@ -149,6 +151,7 @@ class ProviderController extends Controller
         $address->reference = $request->addressupdate;
         $address->save();
         //dd($request);
+        $id_user = auth()->user()->id;
         $provider = Provider::find($request->idupdate);
         $provider->razonsocial = $request->razonsocialupdate;
         $provider->ncr = $request->ncrupdate;
@@ -157,6 +160,7 @@ class ProviderController extends Controller
         $provider->company_id = $request->companyupdate;
         $provider->address_id = $address['id'];
         $provider->phone_id = $phone['id'];
+        $provider->user_id = $id_user;
         $provider->save();
         return redirect()->route('provider.index');
     }

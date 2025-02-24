@@ -36,7 +36,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js" integrity="sha512-efAcjYoYT0sXxQRtxGY37CKYmqsFVOIwMApaEbrxJr4RwqVVGw8o+Lfh/+59TU07+suZn1BWq4fDl5fdgyCNkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 @endsection
 
-@section('page-script') 
+@section('page-script')
     <script src="{{ asset('assets/js/app-client-list.js') }}"></script>
     <script src="{{ asset('assets/js/forms-client.js') }}"></script>
 @endsection

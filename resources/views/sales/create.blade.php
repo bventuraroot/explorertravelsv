@@ -196,7 +196,7 @@
                             <small>Agregue los productos necesarios.</small>
                         </div>
                         <div class="row g-3 col-12" style="margin-bottom: 3%">
-                            <div class="col-sm-5">
+                            <div class="col-sm-10">
                                 <label class="form-label" for="psearch">Buscar Producto</label>
                                 <select class="select2psearch" id="psearch" name="psearch" onchange="searchproduct(this.value)">
                                 </select>
@@ -237,17 +237,61 @@
                                 <label class="form-label" for="ivarete">Iva Percibido</label>
                                 <input type="number" id="ivarete" name="ivarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
                             </div>
+                            <div class="col-sm-1">
+                                <label class="form-label" for="fee">Fee</label>
+                                <input type="number" id="fee" name="fee" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                            </div>
+                            <div class="col-sm-1">
+                                <label class="form-label" for="fee2">Fee 2</label>
+                                <input type="number" id="fee2" name="fee2" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                            </div>
                             @if(request('typedocument')==8)
                             <div class="col-sm-1">
                                 <label class="form-label" for="rentarete">Renta 10%</label>
                                 <input type="number" id="rentarete" name="rentarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
                             </div>
                             @endif
-                            <div class="col-sm-4" style="margin-top: 3%">
-                                <button type="button" class="btn btn-primary" onclick="agregarp()">
-                                    <span class="ti ti-playlist-add"></span> &nbsp;&nbsp;&nbsp;Agregar
-                                </button>
+
+                        </div>
+                        <div class="row g-3 col-12" style="margin-bottom: 3%; display: none;" id="add-information-tickets">
+                            <label>Información de producto</label>
+                            <div class="col-sm-2">
+                                <label class="form-label" for="reserva">Reserva #</label>
+                                <input type="text" id="reserva" name="reserva" class="form-control">
                             </div>
+                            <div class="col-sm-2">
+                                <label class="form-label" for="ruta">Ruta</label>
+                                <input type="text" id="ruta" name="ruta" class="form-control">
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label" for="destino">Destino</label>
+                                <select class="form-select select2destino" id="destino" name="destino">
+                                    <option value="">Seleccione</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label" for="linea">Aerolínea</label>
+                                <select class="form-select select2linea" id="linea" name="linea">
+                                    <option value="">Seleccione</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label" for="Canal">Canal</label>
+                                <select class="form-select select2canal" id="Canal" name="Canal">
+                                    <option value="">Seleccione</option>
+                                    <option value="Facebook">Facebook</option>
+                                    <option value="Instagram">Instagram</option>
+                                    <option value="Referido por cliente">Referido por cliente</option>
+                                    <option value="Correos Masivos">Correos Masivos</option>
+                                    <option value="Whatsapp">Whatsapp</option>
+                                    <option value="Flyers">Flyers</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-4" style="margin-bottom: 5%">
+                            <button type="button" class="btn btn-primary" onclick="agregarp()">
+                                <span class="ti ti-playlist-add"></span> &nbsp;&nbsp;&nbsp;Agregar
+                            </button>
                         </div>
                         <div class="card-datatable table-responsive" id="resultados">
                             <div class="panel">

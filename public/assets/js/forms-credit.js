@@ -3,7 +3,7 @@
  */
 
 'use strict';
-$(document).ready(function (){
+$(document).ready(function (){ 
 
    $("#amountpay").on("change", function () {
     var amountpay = parseFloat($(this).val());

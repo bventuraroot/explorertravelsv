@@ -158,7 +158,7 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-
+        $id_user = auth()->user()->id;
         $phone = new Phone();
         $phone->phone = $request->tel1;
         $phone->phone_fijo = $request->tel2;
@@ -197,6 +197,7 @@ class ClientController extends Controller
         $client->company_id = $request->companyselected;
         $client->address_id = $address['id'];
         $client->phone_id = $phone['id'];
+        $client->user_id = $id_user;
         $client->save();
         $com=$request->companyselected;
         return redirect()->route('client.index',base64_encode($com));
@@ -241,7 +242,7 @@ class ClientController extends Controller
      */
     public function update(Request $request, Client $client)
     {
-
+        $id_user = auth()->user()->id;
         $phone = Phone::find($request->phoneeditid);
         $phone->phone = $request->tel1edit;
         $phone->phone_fijo = $request->tel2edit;
@@ -274,6 +275,8 @@ class ClientController extends Controller
         $client->empresa = $request->empresaedit;
         $client->address_id = $address['id'];
         $client->phone_id = $phone['id'];
+        $client->phone_id = $phone['id'];
+        $client->user_id_update = $id_user;
         $client->save();
         $com=$request->companyselectededit;
         return redirect()->route('client.index',base64_encode($com));

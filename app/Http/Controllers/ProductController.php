@@ -35,7 +35,9 @@ class ProductController extends Controller
     }
 
     public function getproductall(){
-        $product = Product::all();
+        $product = Product::join('providers', 'products.provider_id', '=', 'providers.id')
+        ->select('providers.razonsocial as nameprovider', 'providers.id as idprovider', 'products.*')
+         ->get();
         return response()->json($product);
     }
 

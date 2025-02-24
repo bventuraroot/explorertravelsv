@@ -42,7 +42,7 @@ $(function () {
     //Get companies avaibles
     var iduser = $("#iduser").val();
     $.ajax({
-        url: "/public/company/getCompanybyuser/" + iduser,
+        url: "/company/getCompanybyuser/" + iduser,
         method: "GET",
         success: function (response) {
             $("#company").append('<option value="0">Seleccione</option>');
@@ -60,7 +60,7 @@ $(function () {
 
     //Get products avaibles
     $.ajax({
-        url: "/public/product/getproductall",
+        url: "/product/getproductall",
         method: "GET",
         success: function (response) {
             $("#psearch").append('<option value="0">Seleccione</option>');
@@ -69,7 +69,7 @@ $(function () {
                     '<option value="' +
                         value.id +
                         '" title="'+ value.image +'">' +
-                        value.name.toUpperCase() + " ($ "+value.price + ")" + " " + value.description +
+                        value.name.toUpperCase() + "| Descripción: " + value.description + "| Proveedor: " + value.nameprovider +
                         "</option>"
                 );
             });
@@ -82,6 +82,36 @@ $(function () {
         var $this = selectdcompany;
         $this.wrap('<div class="position-relative"></div>').select2({
             placeholder: "Seleccionar empresa",
+            dropdownParent: $this.parent(),
+        });
+    }
+
+    var selectddestino = $(".select2destino");
+
+    if (selectddestino.length) {
+        var $this = selectddestino;
+        $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: "Seleccionar destino",
+            dropdownParent: $this.parent(),
+        });
+    }
+
+    var selectdcanal = $(".select2canal");
+
+    if (selectdcanal.length) {
+        var $this = selectdcanal;
+        $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: "Seleccionar destino",
+            dropdownParent: $this.parent(),
+        });
+    }
+
+    var selectdlinea = $(".select2linea");
+
+    if (selectdlinea.length) {
+        var $this = selectdlinea;
+        $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: "Seleccionar linea aerea",
             dropdownParent: $this.parent(),
         });
     }
@@ -115,6 +145,40 @@ $(function () {
             templateResult: formatState
         });
     }
+        //Get destinos
+        $.ajax({
+            url: "/sale/destinos",
+            method: "GET",
+            success: function (response) {
+                $("#destino").append('<option value="0">Seleccione</option>');
+                $.each(response, function (index, value) {
+                    //console.log(value.iata);
+                    $("#linea").append(
+                        '<option value="' +
+                            value.id_aeropuerto +'">'+ value.iata + '-' +value.ciudad + '-' + value.pais + '-' + value.continente +
+                            "</option>"
+                    );
+                });
+            },
+        });
+
+        //Get linea aerea
+        $.ajax({
+            url: "/sale/linea",
+            method: "GET",
+            success: function (response) {
+                $("#linea").append('<option value="0">Seleccione</option>');
+                $.each(response, function (index, value) {
+                    //console.log(value.iata);
+                    $("#destino").append(
+                        '<option value="' +
+                            value.id_aerolinea +'">'+ value.iata + '-' + value.nombre +
+                            "</option>"
+                    );
+
+                });
+            },
+        });
 });
 
 var valcorrdoc = $("#valcorr").val();
@@ -126,6 +190,16 @@ if (valcorrdoc != "" && valdraftdoc == "true") {
 
 
 function agregarp() {
+
+    //guardar la informacion de productos
+    var fee = $('#fee').val();
+    var fee2 = $('#fee2').val();
+    var reserva = $('#reserva').val();
+    var ruta = $('#ruta').val();
+    var destino = $('#destino').val();
+    var linea = $('#linea').val();
+    var canal = $('#canal').val();
+    //
     var typedoc = $('#typedocument').val();
     var clientid = $("#client").val();
     var corrid = $("#corr").val();
@@ -366,13 +440,18 @@ $('#precio').on('change', function() {
     }
   });
 function searchproduct(idpro) {
+    if(idpro==9){
+        $("#add-information-tickets").css("display", "");
+    }else{
+        $("#add-information-tickets").css("display", "none");
+    }
     //Get products by id avaibles
     var typedoc = $('#typedocument').val();
     var typecontricompany = $("#typecontribuyente").val();
     var typecontriclient = $("#typecontribuyenteclient").val();
     var iva = parseFloat($("#iva").val());
     var iva_entre = parseFloat($("#iva_entre").val());
-    var typecontriclient = $("#typecontribuyenteclient").val();
+    //var typecontriclient = $("#typecontribuyenteclient").val();
     var retencion=0.00;
     var pricevalue;
     $.ajax({
@@ -616,6 +695,7 @@ function draftdocument(corr, draft) {
             method: "GET",
             async: false,
             success: function (response) {
+                //console.log(response);
                 $.each(response, function (index, value) {
                     //campo de company
                     $('#company').empty();

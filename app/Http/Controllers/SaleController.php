@@ -1544,4 +1544,14 @@ class SaleController extends Controller
         $pdf = $this->genera_pdf($id);
         return $pdf->stream('comprobante.pdf');
     }
+
+    public function destinos(){
+        $destinos = DB::table('aeropuertos')->get();
+        return response()->json($destinos, 200);
+    }
+
+    public function linea(){
+        $lineas = DB::table('aerolineas')->get();
+        return response()->json($lineas, 200);
+    }
 }
