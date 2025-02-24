@@ -127,6 +127,7 @@ $(function () {
     }
 
     function formatState(state) {
+        console.log(state);
         if (state.id==0) {
           return state.text;
         }
@@ -292,7 +293,21 @@ function agregarp() {
             "/" +
             acuenta +
             "/" +
-            fpago,
+            fpago +
+            "/" +
+            fee +
+            "/" +
+            fee2 +
+            "/" +
+            reserva +
+            "/" +
+            ruta +
+            "/" +
+            destino +
+            "/" +
+            linea +
+            "/" +
+            canal,
         method: "GET",
         success: function (response) {
             if (response.res == 1) {
@@ -413,18 +428,30 @@ $('#precio').on('change', function() {
     var typedoc = $('#typedocument').val();
     var iva = parseFloat($("#iva").val());
     var valor = parseFloat($('#precio').val());
-    var retencion;
-    if (typecontricompany == "GRA") {
-        if (typecontriclient == "GRA") {
-            retencion = 0.01;
-        } else if (
-            typecontriclient == "MED" ||
-            typecontriclient == "PEQ" ||
-            typecontriclient == "OTR"
-        ) {
-            retencion = 0.00;
-        }
+    //if (typecontricompany == "GRA") {
+       // if (typecontriclient == "GRA") {
+          //  retencion = 0.01;
+        //} else if (
+           // typecontriclient == "MED" ||
+            //typecontriclient == "PEQ" ||
+            //typecontriclient == "OTR"
+        //) {
+           // retencion = 0.00;
+        //}
+    //}
+    let retencion = 0.00;
+
+// Evaluar la retención de IVA según el tipo de contribuyente
+if (typecontricompany == "GRA") { // Empresa grande
+    if (typecontriclient == "GRA") {
+        retencion = 0.01; // 1% de retención cuando ambas son grandes
+    } else if (["MED", "PEQ", "OTR"].includes(typecontriclient)) {
+        retencion = 0.01; // 1% cuando empresa grande paga a mediana, pequeña u otro
     }
+} else if (["MED", "PEQ", "OTR"].includes(typecontricompany)) { // Empresa no es grande
+    retencion = 0.00; // No retiene IVA
+}
+
     if(typedoc=='6' || typedoc=='8'){
         $("#ivarete13").val(0);
     }else{

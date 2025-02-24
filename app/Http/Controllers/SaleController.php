@@ -58,8 +58,9 @@ class SaleController extends Controller
         return view('sales.impdoc', array("corr" => $corr));
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago)
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $fee2, $reserva, $ruta, $destino, $linea, $canal)
     {
+        $id_user = auth()->user()->id;
         $sale = Sale::find($idsale);
         $sale->client_id = $clientid;
         $sale->acuenta = $acuenta;
@@ -97,6 +98,14 @@ class SaleController extends Controller
         $saledetails->detained13 = ($sale->typedocument_id=='6' || $sale->typedocument_id=='8') ? round($ivafac,2) : $ivarete13;
         $saledetails->detained = $ivarete;
         $saledetails->renta = ($sale->typedocument_id != '8' ) ? round(0.00,2) : round($renta*$cantidad,2);
+        $saledetails->fee = $fee;
+        $saledetails->fee2 = $fee2;
+        $saledetails->reserva = $reserva;
+        $saledetails->ruta = $ruta;
+        $saledetails->destino = $destino;
+        $saledetails->linea = $linea;
+        $saledetails->canal = $canal;
+        $saledetails->user_id = $id_user;
         $saledetails->save();
         return response()->json(array(
             "res" => "1",
