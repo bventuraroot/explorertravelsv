@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\Client;
+use App\Models\Company;
+use App\Models\Department;
+use App\Models\Municipality;
 use App\Models\Product;
 use PhpParser\Node\Stmt\Foreach_;
 
@@ -80,6 +84,49 @@ if (!function_exists('FNumero')) {
         return number_format($numero, 2, '.', ',');
     }
 }
+
+if (!function_exists('logo_pdf')) {
+    function logo_pdf($ncr) {
+        $company = Company::where('ncr', $ncr)->select('logo')->first();
+
+        if (!$company || !$company->logo) {
+            return null; // Si no hay logo, retorna null
+        }
+
+        $logoPath = public_path('assets/img/logo/' . $company->logo);
+
+        if (File::exists($logoPath)) {
+            $logoData = File::get($logoPath);
+            return 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
+        return null; // Si la imagen no existe, retorna null
+    }
+}
+
+if (!function_exists('get_name_departamento')) {
+    function get_name_departamento($id) {
+        // Usando find() para obtener el departamento por su ID
+        $department = Department::find($id);
+        // Verifica si el departamento fue encontrado
+        if ($department) {
+            return $department->name; // Devuelve el nombre del departamento
+        }
+        return null; // Si no se encuentra el departamento, devuelve null
+    }
+}
+if (!function_exists('get_name_municipio')) {
+    function get_name_municipio($id) {
+        // Usando find() para obtener el municipio por su ID
+        $municipio = Municipality::find($id);
+        // Verifica si el municipio fue encontrado
+        if ($municipio) {
+            return $municipio->name; // Devuelve el nombre del municipio
+        }
+        return null; // Si no se encuentra el municipio, devuelve null
+    }
+}
+
 if (!function_exists('numeroDTE')) {
     function numeroDTE($numero, $tipo, $establecimiento, $cod_establecimiento)
     {

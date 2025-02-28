@@ -166,7 +166,7 @@
                                     <option value="0">Seleccione</option>
                                     <option value="1">Contado</option>
                                     <option value="2">A crédito</option>
-                                    <option value="3">Otro</option>
+                                    <option value="3">Tarjeta</option>
                                 </select>
                             </div>
                             <div class="col-sm-8">
@@ -196,7 +196,7 @@
                             <small>Agregue los productos necesarios.</small>
                         </div>
                         <div class="row g-3 col-12" style="margin-bottom: 3%">
-                            <div class="col-sm-9">
+                            <div class="col-sm-10">
                                 <label class="form-label" for="psearch">Buscar Producto</label>
                                 <select class="select2psearch" id="psearch" name="psearch" onchange="searchproduct(this.value)">
                                 </select>
@@ -213,13 +213,9 @@
                                 <input type="hidden" id="ventatotal" value="0" name="ventatotal">
                                 <input type="hidden" id="ventatotallhidden" value="0" name="ventatotallhidden">
                             </div>
-                            <div class="col-sm-4">
-                                <label class="form-label" for="cantidad">Cantidad</label>
-                                <input type="number" id="cantidad" name="cantidad" min="1" max="10" value="1" class="form-control">
-                            </div>
                             <div class="col-sm-1">
-                                <label class="form-label" for="precio">Precio</label>
-                                <input type="number" id="precio" name="precio" step="0.01" min="0" max="10000" placeholder="0.00" class="form-control">
+                                <label class="form-label" for="cantidad">Cantidad</label>
+                                <input type="number" id="cantidad" name="cantidad" min="1" max="10" value="1" class="form-control" onchange="totalamount();">
                             </div>
                             <div class="col-sm-2">
                                 <label class="form-label" for="typesale">Tipo de venta</label>
@@ -229,29 +225,35 @@
                                     <option value="nosujeta">No Sujeta</option>
                                 </select>
                             </div>
-                            <div class="col-sm-1">
-                                <label class="form-label" for="fee">Fee</label>
-                                <input type="number" id="fee" name="fee" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                            <div class="col-sm-2">
+                                <label class="form-label" for="precio">Precio Unitario</label>
+                                <input type="number" id="precio" name="precio" step="0.01" min="0" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
                             </div>
-                            <div class="col-sm-1">
+                            @if(request('typedocument')==6)
+                            <div class="col-sm-2">
+                                <label class="form-label" for="fee">Fee</label>
+                                <input type="number" id="fee" name="fee" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
+                            </div>
+                            @endif
+                            <div class="col-sm-2">
                                 <label class="form-label" for="ivarete13">Iva 13%</label>
-                                <input type="number" id="ivarete13" name="ivarete13" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                                <input type="number" id="ivarete13" name="ivarete13" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
                             </div>
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete">Iva Percibido</label>
-                                <input type="number" id="ivarete" name="ivarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                                <input type="number" id="ivarete" name="ivarete" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
                             </div>
 
-                            <div class="col-sm-1">
-                                <label class="form-label" for="fee2">Fee 2</label>
-                                <input type="number" id="fee2" name="fee2" step="0.01" max="10000" placeholder="0.00" class="form-control">
-                            </div>
                             @if(request('typedocument')==8)
-                            <div class="col-sm-1">
+                            <div class="col-sm-2">
                                 <label class="form-label" for="rentarete">Renta 10%</label>
                                 <input type="number" id="rentarete" name="rentarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
                             </div>
                             @endif
+                            <div class="col-sm-2">
+                                <label class="form-label" for="total">Total</label>
+                                <input type="number" id="total" name="total" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                            </div>
 
                         </div>
                         <div class="row g-3 col-12" style="margin-bottom: 3%; display: none;" id="add-information-tickets">
@@ -317,12 +319,13 @@
                                             <td class="text-center" id="sumasl">$ 0.00</td>
                                             <td class="quitar_documents"></td>
                                         </tr>
-
+                                        @if(request('typedocument')==3 || request('typedocument')==8)
                                         <tr>
                                             <td class="text-right">IVA 13%</td>
                                             <td class="text-center" id="13ival">$ 0.00</td>
                                             <td class="quitar_documents"></td>
                                         </tr>
+                                        @endif
                                         @if(request('typedocument')==8)
                                         <tr>
                                             <td class="text-right">(-) Renta 10%</td>

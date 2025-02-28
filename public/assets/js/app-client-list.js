@@ -135,13 +135,13 @@ $(function () {
           className: 'control',
           searchable: false,
           orderable: false,
-          responsivePriority: 0,
+          responsivePriority: 1,
           targets: 0,
           render: function (data, type, full, meta) {
             return '';
           }
         },
-        { responsivePriority: 1, targets: 3 }
+        { responsivePriority: 1, targets: 14 }
       ],
       order: [[2, 'desc']],
       dom:
@@ -158,6 +158,7 @@ $(function () {
         search: '',
         searchPlaceholder: 'Buscar'
       },
+      scrollX: true,
       // Buttons with Dropdown
       buttons: [
         {
@@ -170,7 +171,7 @@ $(function () {
               text: '<i class="ti ti-printer me-2" ></i>Print',
               className: 'dropdown-item',
               exportOptions: {
-                columns: [1, 2, 3, 4, 5],
+                columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
                 // prevent avatar to be print
                 format: {
                   body: function (inner, coldex, rowdex) {
@@ -189,17 +190,27 @@ $(function () {
                 }
               },
               customize: function (win) {
-                //customize print view for dark
                 $(win.document.body)
-                  .css('color', headingColor)
-                  .css('border-color', borderColor)
-                  .css('background-color', bodyBg);
-                $(win.document.body)
-                  .find('table')
-                  .addClass('compact')
-                  .css('color', 'inherit')
-                  .css('border-color', 'inherit')
-                  .css('background-color', 'inherit');
+                .css('color', headingColor)
+                .css('border-color', borderColor)
+                .css('background-color', bodyBg)
+                .css('font-size', '10px')  // Reducir el tamaño de la fuente
+                .css('margin', '10px');  // Reducir márgenes
+
+            $(win.document.body)
+                .find('table')
+                .addClass('compact')
+                .css('color', 'inherit')
+                .css('border-color', 'inherit')
+                .css('background-color', 'inherit')
+                .css('width', '100%');  // Asegurar que la tabla use todo el ancho disponible
+
+            $(win.document.body)
+                .find('table td, table th')
+                .css('padding', '4px')  // Reducir el espacio en celdas
+                .css('font-size', '9px');  // Ajustar tamaño de texto en celdas
+
+            $(win.document.body).find('table').css('page-break-inside', 'auto'); // Evitar cortes en la tabla
               }
             },
             {
@@ -345,7 +356,7 @@ $(function () {
       initComplete: function () {
         // Adding plan filter once table initialized
         this.api()
-          .columns(2)
+          .columns(1)
           .every(function () {
             var column = this;
             var select = $(

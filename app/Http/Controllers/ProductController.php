@@ -28,7 +28,7 @@ class ProductController extends Controller
 
     public function getproductid($id){
         $provider = Product::join('providers', 'products.provider_id', '=', 'providers.id')
-        ->select('products.id as productid',  DB::raw('CONCAT(products.name, " - ", products.description) as productname'), 'products.*')
+        ->select('products.id as productid',  DB::raw('products.name as productname'), 'products.*')
         ->where('products.id', '=', base64_decode($id))
         ->get();
         return response()->json($provider);

@@ -196,6 +196,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\MenuServiceProvider::class,
 
+
     ],
 
     /*
@@ -211,7 +212,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'ExampleClass' => App\Example\ExampleClass::class,
-        'Helper' => App\Helpers\Helpers::class
+        'Helper' => App\Helpers\Helpers::class,
     ])->toArray(),
 
 ];

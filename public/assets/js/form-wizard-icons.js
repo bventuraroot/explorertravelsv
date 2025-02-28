@@ -127,7 +127,7 @@ $(function () {
     }
 
     function formatState(state) {
-        console.log(state);
+        //console.log(state);
         if (state.id==0) {
           return state.text;
         }
@@ -154,7 +154,7 @@ $(function () {
                 $("#destino").append('<option value="0">Seleccione</option>');
                 $.each(response, function (index, value) {
                     //console.log(value.iata);
-                    $("#linea").append(
+                    $("#destino").append(
                         '<option value="' +
                             value.id_aeropuerto +'">'+ value.iata + '-' +value.ciudad + '-' + value.pais + '-' + value.continente +
                             "</option>"
@@ -171,7 +171,7 @@ $(function () {
                 $("#linea").append('<option value="0">Seleccione</option>');
                 $.each(response, function (index, value) {
                     //console.log(value.iata);
-                    $("#destino").append(
+                    $("#linea").append(
                         '<option value="' +
                             value.id_aerolinea +'">'+ value.iata + '-' + value.nombre +
                             "</option>"
@@ -192,25 +192,39 @@ if (valcorrdoc != "" && valdraftdoc == "true") {
 
 function agregarp() {
 
-    //guardar la informacion de productos
-    var fee = $('#fee').val();
-    var fee2 = $('#fee2').val();
+    var productid = $("#productid").val();
+    alert(productid);
     var reserva = $('#reserva').val();
     var ruta = $('#ruta').val();
     var destino = $('#destino').val();
     var linea = $('#linea').val();
-    var canal = $('#canal').val();
-    //
+    var canal = $('#Canal').val();
+    var fee = parseFloat($("#fee").val()) || 0.00;
+    //var fee2 = parseFloat($("#fee2").val()) || 0.00;
+
+    // Validar si el producto es 9 y los campos son obligatorios
+    if (productid == 9) {
+        if (!reserva || !ruta || !destino || !linea || !canal) {
+            swal.fire("Favor complete la información del producto");
+            return;
+        }
+    } else {
+        // Si el producto no es 9, enviar valores vacíos
+        reserva = "null";
+        ruta = "null";
+        destino = "0";
+        linea = "0";
+        canal = "null";
+    }
     var typedoc = $('#typedocument').val();
     var clientid = $("#client").val();
     var corrid = $("#corr").val();
-    var productid = $("#productid").val();
     var acuenta = ($("#acuenta").val()==""?'SIN VALOR DEFINIDO':$("#acuenta").val());
     var fpago = $("#fpago").val();
     var productname = $("#productname").val();
     var price = parseFloat($("#precio").val());
     var ivarete13 = parseFloat($("#ivarete13").val());
-    var rentarete = parseFloat($("#rentarete").val());
+    var rentarete = parseFloat($("#rentarete").val())||0.00;
     var ivarete = parseFloat($("#ivarete").val());
     var type = $("#typesale").val();
     var cantidad = parseFloat($("#cantidad").val());
@@ -225,6 +239,7 @@ function agregarp() {
     var ventasnosujetas = parseFloat($("#ventasnosujetas").val());
     var ventasexentas = parseFloat($("#ventasexentas").val());
     var ventatotal = parseFloat($("#ventatotal").val());
+    var descriptionbyproduct;
     //ventatotal = parseFloat(ventatotal/1.13).toFixed(2);
     var sumasl = 0;
     var ivaretenidol = 0;
@@ -236,10 +251,16 @@ function agregarp() {
     var iva13temp = 0;
     var renta10temp = 0;
     var totaltempgravado = 0;
+    var priceunitariofee = 0;
     if (type == "gravada") {
-        pricegravada = parseFloat(price * cantidad);
+        pricegravada = parseFloat((price * cantidad)+fee);
         totaltempgravado = parseFloat(pricegravada);
-        iva13temp = parseFloat(pricegravada * 0.13).toFixed(2);
+        if(typedoc==6 || typedoc==8){
+            iva13temp = 0.00;
+        }else if(typedoc==3){
+            iva13temp = parseFloat(pricegravada * 0.13).toFixed(2);
+        }
+
         //iva13temp = parseFloat(ivarete13 * cantidad).toFixed(2);
     } else if (type == "exenta") {
         priceexenta = parseFloat(price * cantidad);
@@ -252,11 +273,12 @@ function agregarp() {
         iva13temp = 0.00;
     }
     if(!$.isNumeric(ivarete)){
-        ivarete = 0;
+        ivarete = 0.00;
     }
     renta10temp = parseFloat(rentarete*cantidad).toFixed(2);
     var totaltemp = parseFloat(parseFloat(pricegravada) + parseFloat(priceexenta) + parseFloat(pricenosujeta));
     var ventatotaltotal =  parseFloat(ventatotal); //+ parseFloat(iva13) + parseFloat(ivaretenido);
+    priceunitariofee = price + (fee/cantidad);
     var totaltemptotal = parseFloat(
     ($.isNumeric(pricegravada)? pricegravada: 0) +
     ($.isNumeric(priceexenta)? priceexenta: 0) +
@@ -264,6 +286,13 @@ function agregarp() {
     ($.isNumeric(iva13temp)? parseFloat(iva13temp): 0) -
     ($.isNumeric(renta10temp)? parseFloat(renta10temp): 0) -
     ($.isNumeric(ivarete)? ivarete: 0));
+
+    //descripcion factura
+    if(productid==10){
+        descriptionbyproduct = productname;
+    }else {
+        descriptionbyproduct =  productname + " " + reserva + " " + ruta;
+    }
 
     //enviar a temp factura
     $.ajax({
@@ -297,8 +326,6 @@ function agregarp() {
             "/" +
             fee +
             "/" +
-            fee2 +
-            "/" +
             reserva +
             "/" +
             ruta +
@@ -317,9 +344,9 @@ function agregarp() {
                     '"><td>' +
                     cantidad +
                     "</td><td>" +
-                    productname +
+                    descriptionbyproduct +
                     "</td><td>" +
-                    price.toLocaleString("en-US", {
+                    priceunitariofee.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
@@ -355,8 +382,12 @@ function agregarp() {
                     })
                 );
                 $("#sumas").val(sumasl);
-                //calculo de iva 13%
-                iva13l = parseFloat(parseFloat(iva13) + parseFloat(iva13temp));
+                if(typedoc==6 || typedoc==8){
+                    iva13l=0.00;
+                }else if(typedoc==3){
+                    //calculo de iva 13%
+                    iva13l = parseFloat(parseFloat(iva13) + parseFloat(iva13temp));
+                }
                 $("#13ival").html(
                     iva13l.toLocaleString("en-US", {
                         style: "currency",
@@ -416,56 +447,90 @@ function agregarp() {
         },
     });
     $('#precio').val(0.00);
+    $('#fee').val(0.00);
     $('#ivarete13').val(0.00);
     $('#ivarete').val(0.00);
     $('#rentarete').val(0.00);
+    $('#reserva').val();
+    $('#ruta').val();
+    $('#destino').val(null).trigger('change');
+    $('#linea').val(null).trigger('change');
+    $('#canal').val(null).trigger('change');
     $("#psearch").val("0").trigger("change.select2");
 }
 
-$('#precio').on('change', function() {
+function totalamount() {
     var typecontricompany = $("#typecontribuyente").val();
     var typecontriclient = $("#typecontribuyenteclient").val();
     var typedoc = $('#typedocument').val();
-    var iva = parseFloat($("#iva").val());
-    var valor = parseFloat($('#precio').val());
-    //if (typecontricompany == "GRA") {
-       // if (typecontriclient == "GRA") {
-          //  retencion = 0.01;
-        //} else if (
-           // typecontriclient == "MED" ||
-            //typecontriclient == "PEQ" ||
-            //typecontriclient == "OTR"
-        //) {
-           // retencion = 0.00;
-        //}
-    //}
+
+    // Convertir valores a números asegurando que no sean NaN
+    var cantidad = parseFloat($("#cantidad").val()) || 0.00;
+    var fee = parseFloat($("#fee").val()) || 0.00;
+    //var fee2 = parseFloat($("#fee2").val()) || 0.00;
+    var iva = parseFloat($("#iva").val()) || 0.00;
+    var valor = parseFloat($('#precio').val()) || 0.00;
+
+    var ivarete13 = 0.00;
+    var retencionamount = 0.00;
+    var renta = 0.00;
+    var totalamount = 0.00;
+    var totaamountsinivi = 0.00;
+
     let retencion = 0.00;
 
-// Evaluar la retención de IVA según el tipo de contribuyente
-if (typecontricompany == "GRA") { // Empresa grande
-    if (typecontriclient == "GRA") {
-        retencion = 0.01; // 1% de retención cuando ambas son grandes
-    } else if (["MED", "PEQ", "OTR"].includes(typecontriclient)) {
-        retencion = 0.01; // 1% cuando empresa grande paga a mediana, pequeña u otro
+    // Evaluar la retención de IVA según el tipo de contribuyente
+    if (typecontricompany === "GRA") { // Empresa grande
+        if (typecontriclient === "GRA") {
+            retencion = 0.01; // 1% de retención cuando ambas son grandes
+        } else if (["MED", "PEQ", "OTR"].includes(typecontriclient)) {
+            retencion = 0.01; // 1% cuando empresa grande paga a mediana, pequeña u otro
+        }
+    } else if (["MED", "PEQ", "OTR"].includes(typecontricompany)) { // Empresa no es grande
+        retencion = 0.00; // No retiene IVA
     }
-} else if (["MED", "PEQ", "OTR"].includes(typecontricompany)) { // Empresa no es grande
-    retencion = 0.00; // No retiene IVA
+
+    totalamount = parseFloat(valor * cantidad);
+    totaamountsinivi = parseFloat(totalamount/1.13);
+
+    // Cálculo de IVA retenido
+    if (typedoc === '6' || typedoc === '8') {
+        $("#ivarete13").val(0);
+        ivarete13 = 0.00;
+    } else {
+        ivarete13 = parseFloat(valor * iva);
+        $("#ivarete13").val(ivarete13.toFixed(2));
+    }
+
+    // Cálculo de retención
+    retencionamount = parseFloat(valor * retencion);
+    $("#ivarete").val(retencionamount.toFixed(2));
+
+    // Cálculo de renta retenida
+    if (typedoc === '8') {
+        renta = parseFloat(valor * 0.10);
+        $("#rentarete").val(renta.toFixed(2));
+    } else {
+        renta = 0.00;
+    }
+
+    // Depuración: Verificar tipos de datos
+    //console.log("fee:", typeof fee, fee);
+    //console.log("fee2:", typeof fee2, fee2);
+    //console.log("iva:", typeof iva, iva);
+    //console.log("ivarete13:", typeof ivarete13, ivarete13);
+    //console.log("retencionamount:", typeof retencionamount, retencionamount);
+    //console.log("renta:", typeof renta, renta);
+
+    // Cálculo del total asegurando que todo es número
+
+
+    var totalFinal = totalamount + fee + ivarete13 + retencionamount + renta;
+
+    $("#total").val(totalFinal.toFixed(2)); // Aplicar `.toFixed(2)` solo después de la suma final
 }
 
-    if(typedoc=='6' || typedoc=='8'){
-        $("#ivarete13").val(0);
-    }else{
-        $("#ivarete13").val(parseFloat(valor.toFixed(2) * iva).toFixed(2));
-    }
-    $("#ivarete").val(
-        parseFloat(valor.toFixed(2) * retencion).toFixed(2)
-    );
-    if(typedoc=='8'){
-        $("#rentarete").val(
-            parseFloat(valor.toFixed(2) * 0.10).toFixed(2)
-        );
-    }
-  });
+
 function searchproduct(idpro) {
     if(idpro==9){
         $("#add-information-tickets").css("display", "");
@@ -527,6 +592,7 @@ function searchproduct(idpro) {
                     );
                 }
             });
+            var updateamounts = totalamount();
         },
     });
 }
@@ -745,7 +811,7 @@ function draftdocument(corr, draft) {
                     $("#corr").val(corr);
                     $("#date").val(value.date);
                     //campo cliente
-                    if(value.client_id != null){
+                    if(value.client_id != null && value.client_firstname!='N/A'){
                         $("#client").append(
                             '<option value="' +
                                 value.client_id +
@@ -754,8 +820,17 @@ function draftdocument(corr, draft) {
                                 "</option>"
                         );
                         $('#client').prop('disabled', true);
-                    }else {
-                       var getsclient =  getclientbycompanyurl(value.id);
+                    }else if(value.client_firstname=='N/A') {
+                        $("#client").append(
+                            '<option value="' +
+                                value.client_id +
+                                '">' +
+                                value.comercial_name +
+                                "</option>"
+                        );
+                        $('#client').prop('disabled', true);
+                    }else{
+                        var getsclient =  getclientbycompanyurl(value.id);
                     }
                     if(value.waytopay != null){
                         $("#fpago option[value="+ value.waytopay +"]").attr("selected",true);
@@ -938,14 +1013,21 @@ function agregarfacdetails(corr) {
             let nosujetatotal = 0;
             let exempttotal = 0;
             let pricesaletotal = 0;
+            let preciounitario = 0;
+            let preciogravadas = 0;
             $.each(response, function (index, value) {
-                var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(value.pricesale));
-                totalsumas += totaltemp;
+
                 if(typedoc=='6' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
+                    preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
+                    preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
                 }else{
                     ivarete13total += parseFloat(value.detained13);
+                    preciounitario = parseFloat(value.priceunit);
+                    preciogravadas = parseFloat(value.pricesale);
                 }
+                var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
+                totalsumas += totaltemp;
                 rentatotal += parseFloat(value.renta);
                 ivaretetotal += parseFloat(value.detained);
                 nosujetatotal += parseFloat(value.nosujeta);
@@ -968,7 +1050,7 @@ function agregarfacdetails(corr) {
                     "</td><td>" +
                     value.product_name +
                     "</td><td>" +
-                    parseFloat(value.priceunit+(value.detained13/value.amountp)).toLocaleString("en-US", {
+                    preciounitario.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
@@ -983,7 +1065,7 @@ function agregarfacdetails(corr) {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    parseFloat(value.pricesale+value.detained13).toLocaleString("en-US", {
+                    preciogravadas.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
