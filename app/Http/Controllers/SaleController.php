@@ -28,6 +28,12 @@ class SaleController extends Controller
      */
     public function index()
     {
+        $id_user = auth()->user()->id;
+        // Consultar el rol del usuario (asumiendo que el rol de admin tiene role_id = 1)
+        $rolQuery = "SELECT a.role_id FROM model_has_roles a WHERE a.model_id = ?";
+        $rolResult = DB::select($rolQuery, [$id_user]);
+        $isAdmin = !empty($rolResult) && $rolResult[0]->role_id == 1;
+
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
@@ -45,9 +51,14 @@ class SaleController extends Controller
                 'dte.estadoHacienda',
                 'dte.id_doc',
                 'dte.company_name',
-                \DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale')
-            )
-            ->get();
+                \DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'));
+        // Si no es admin, solo muestra los clientes ingresados por él
+        if (!$isAdmin) {
+            $sales->where('sales.user_id', $id_user);
+        }
+
+        // Obtener los clientes filtrados
+        $sales = $sales->get();
         return view('sales.index', array(
             "sales" => $sales
         ));

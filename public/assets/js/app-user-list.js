@@ -19,7 +19,7 @@ $(function () {
   }
 
   $.ajax({
-    url: "/public/getroles",
+    url: "/getroles",
     method: "GET",
     success: function(response){
         $.each(response, function(index, value) {
@@ -451,7 +451,7 @@ $(function () {
   const TagifyUserListEl = document.querySelector('#permissioncompany');
   //var usersList;
   $.ajax({
-    url: "/public/company/getCompanytag",
+    url: "/company/getCompanytag",
     method: "GET",
     success: function(response){
         var usersList = response
@@ -605,7 +605,7 @@ function editUsers(id){
     const TagifyUserListEl = document.querySelector('#permissioncompanyedit');
   //var usersList;
   $.ajax({
-    url: "/public/company/getCompanytag",
+    url: "/company/getCompanytag",
     method: "GET",
     success: function(response){
         var usersList = response

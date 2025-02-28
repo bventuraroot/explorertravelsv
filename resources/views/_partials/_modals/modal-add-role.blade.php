@@ -1,4 +1,4 @@
-@foreach ($roles as $rol)
+@foreach ($roles as $rol) 
     <!-- Add Role Modal -->
     <div class="modal fade" id="UpdateRoleModal{{ $rol->id }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-add-new-role">

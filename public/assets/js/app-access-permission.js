@@ -190,7 +190,7 @@ function deletepermission(id){
       }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: "/public/permission/destroy/"+btoa(id),
+                url: "/permission/destroy/"+btoa(id),
                 method: "GET",
                 success: function(response){
                         if(response.res==1){

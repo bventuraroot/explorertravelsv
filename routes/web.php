@@ -63,7 +63,7 @@ Route::group(['prefix' => 'client', 'as' => 'client.'], function(){
 
     });
 
-Route::group(['prefix' => 'company', 'as' => 'company.'], function(){ 
+Route::group(['prefix' => 'company', 'as' => 'company.'], function(){
 
     Route::get('index', [CompanyController::class, 'index'])->name('index');
     Route::get('view/{company}', [CompanyController::class, 'show'])->name('view');
