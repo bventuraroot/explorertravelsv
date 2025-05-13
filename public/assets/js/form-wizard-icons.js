@@ -193,7 +193,7 @@ if (valcorrdoc != "" && valdraftdoc == "true") {
 function agregarp() {
 
     var productid = $("#productid").val();
-    alert(productid);
+    //alert(productid);
     var reserva = $('#reserva').val();
     var ruta = $('#ruta').val();
     var destino = $('#destino').val();
@@ -476,7 +476,8 @@ function totalamount() {
     var renta = 0.00;
     var totalamount = 0.00;
     var totaamountsinivi = 0.00;
-
+    var totalvalor = 0.00;
+    var totalfee = 0.00;
     let retencion = 0.00;
 
     // Evaluar la retención de IVA según el tipo de contribuyente
@@ -498,7 +499,9 @@ function totalamount() {
         $("#ivarete13").val(0);
         ivarete13 = 0.00;
     } else {
-        ivarete13 = parseFloat(valor * iva);
+        totalvalor = parseFloat(valor * iva);
+        totalfee = parseFloat(fee * iva);
+        ivarete13 = parseFloat(totalvalor + totalfee);
         $("#ivarete13").val(ivarete13.toFixed(2));
     }
 

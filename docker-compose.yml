@@ -1,0 +1,41 @@
+version: '3'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: explorertravelsv-web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - explorertravelsv
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: explorertravelsv-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-explorertravelsv}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-explorertravelsv}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - explorertravelsv
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  explorertravelsv:
+    driver: bridge
+
+volumes:
+  dbdata:

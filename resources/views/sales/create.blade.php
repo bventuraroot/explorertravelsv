@@ -229,7 +229,7 @@
                                 <label class="form-label" for="precio">Precio Unitario</label>
                                 <input type="number" id="precio" name="precio" step="0.01" min="0" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
                             </div>
-                            @if(request('typedocument')==6)
+                            @if(request('typedocument')==6 || request('typedocument')==3)
                             <div class="col-sm-2">
                                 <label class="form-label" for="fee">Fee</label>
                                 <input type="number" id="fee" name="fee" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
