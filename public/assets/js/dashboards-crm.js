@@ -21,101 +21,47 @@
 
   // Sales last year Area Chart
   // --------------------------------------------------------------------
-  const salesLastYearEl = document.querySelector('#salesLastYear'),
-    salesLastYearConfig = {
+  const salesLastYearEl = document.querySelector('#salesLastYear');
+  if (salesLastYearEl) {
+    const salesLastYearConfig = {
       chart: {
         height: 78,
         type: 'area',
         parentHeightOffset: 0,
-        toolbar: {
-          show: false
-        },
-        sparkline: {
-          enabled: true
-        }
+        toolbar: { show: false },
+        sparkline: { enabled: true }
       },
-      markers: {
-        colors: 'transparent',
-        strokeColors: 'transparent'
-      },
-      grid: {
-        show: false
-      },
-      colors: [config.colors.success],
+      markers: { colors: 'transparent', strokeColors: 'transparent' },
+      grid: { show: false },
+      colors: ['#28c76f'],
       fill: {
         type: 'gradient',
-        gradient: {
-          shade: shadeColor,
-          shadeIntensity: 0.8,
-          opacityFrom: 0.6,
-          opacityTo: 0.25
-        }
+        gradient: { shade: 'light', shadeIntensity: 0.8, opacityFrom: 0.6, opacityTo: 0.25 }
       },
-      dataLabels: {
-        enabled: false
-      },
-      stroke: {
-        width: 2,
-        curve: 'smooth'
-      },
-      series: [
-        {
-          data: [200, 55, 400, 250]
-        }
-      ],
-      xaxis: {
-        show: true,
-        lines: {
-          show: false
-        },
-        labels: {
-          show: false
-        },
-        stroke: {
-          width: 0
-        },
-        axisBorder: {
-          show: false
-        }
-      },
-      yaxis: {
-        stroke: {
-          width: 0
-        },
-        show: false
-      },
-      tooltip: {
-        enabled: false
-      }
+      dataLabels: { enabled: false },
+      stroke: { width: 2, curve: 'smooth' },
+      series: [{ data: window.ventasUltimoAno || [] }],
+      xaxis: { show: true, lines: { show: false }, labels: { show: false }, stroke: { width: 0 }, axisBorder: { show: false } },
+      yaxis: { stroke: { width: 0 }, show: false },
+      tooltip: { enabled: false }
     };
-  if (typeof salesLastYearEl !== undefined && salesLastYearEl !== null) {
-    const salesLastYear = new ApexCharts(salesLastYearEl, salesLastYearConfig);
-    salesLastYear.render();
+    new ApexCharts(salesLastYearEl, salesLastYearConfig).render();
   }
 
   // Sessions Last Month - Staked Bar Chart
   // --------------------------------------------------------------------
-  const sessionsLastMonthEl = document.querySelector('#sessionsLastMonth'),
-    sessionsLastMonthConfig = {
+  const sessionsLastMonthEl = document.querySelector('#sessionsLastMonth');
+  if (sessionsLastMonthEl) {
+    const ventasUltimoMes = window.ventasUltimoMes || [];
+    const sessionsLastMonthConfig = {
       chart: {
         type: 'bar',
         height: 78,
         parentHeightOffset: 0,
-        stacked: true,
-        toolbar: {
-          show: false
-        }
+        stacked: false,
+        toolbar: { show: false }
       },
-      series: [
-        {
-          name: 'PRODUCT A',
-          data: [4, 3, 6, 4, 3]
-        },
-        {
-          name: 'PRODUCT B',
-          data: [-3, -4, -3, -2, -3]
-        }
-      ],
+      series: [{ name: 'Ventas', data: ventasUltimoMes }],
       plotOptions: {
         bar: {
           horizontal: false,
@@ -126,315 +72,44 @@
           endingShape: 'rounded'
         }
       },
-      dataLabels: {
-        enabled: false
-      },
-      tooltip: {
-        enabled: false
-      },
-      stroke: {
-        curve: 'smooth',
-        width: 1,
-        lineCap: 'round',
-        colors: [cardColor]
-      },
-      legend: {
-        show: false
-      },
-      colors: [config.colors.primary, config.colors.success],
-      grid: {
-        show: false,
-        padding: {
-          top: -41,
-          right: -10,
-          left: -8,
-          bottom: -22
-        }
-      },
+      dataLabels: { enabled: false },
+      tooltip: { enabled: false },
+      stroke: { curve: 'smooth', width: 1, lineCap: 'round', colors: ['#fff'] },
+      legend: { show: false },
+      colors: ['#696cff'],
+      grid: { show: false, padding: { top: -41, right: -10, left: -8, bottom: -22 } },
       xaxis: {
-        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        labels: {
-          show: false
-        },
-        axisBorder: {
-          show: false
-        },
-        axisTicks: {
-          show: false
-        }
+        categories: Array.from({length: ventasUltimoMes.length}, (_, i) => (i+1).toString()),
+        labels: { show: false },
+        axisBorder: { show: false },
+        axisTicks: { show: false }
       },
-      yaxis: {
-        show: false
-      },
-      responsive: [
-        {
-          breakpoint: 1441,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '40%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 1300,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '50%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 1200,
-          options: {
-            plotOptions: {
-              bar: {
-                borderRadius: 6,
-                columnWidth: '20%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 1025,
-          options: {
-            plotOptions: {
-              bar: {
-                borderRadius: 6,
-                columnWidth: '20%'
-              }
-            },
-            chart: {
-              height: 80
-            }
-          }
-        },
-        {
-          breakpoint: 900,
-          options: {
-            plotOptions: {
-              bar: {
-                borderRadius: 6
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 782,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '30%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 426,
-          options: {
-            plotOptions: {
-              bar: {
-                borderRadius: 5,
-                columnWidth: '35%'
-              }
-            },
-            chart: {
-              height: 78
-            }
-          }
-        },
-        {
-          breakpoint: 376,
-          options: {
-            plotOptions: {
-              bar: {
-                borderRadius: 6
-              }
-            }
-          }
-        }
-      ],
-      states: {
-        hover: {
-          filter: {
-            type: 'none'
-          }
-        },
-        active: {
-          filter: {
-            type: 'none'
-          }
-        }
-      }
+      yaxis: { show: false }
     };
-  if (typeof sessionsLastMonthEl !== undefined && sessionsLastMonthEl !== null) {
-    const sessionsLastMonth = new ApexCharts(sessionsLastMonthEl, sessionsLastMonthConfig);
-    sessionsLastMonth.render();
+    new ApexCharts(sessionsLastMonthEl, sessionsLastMonthConfig).render();
   }
 
   // Revenue Growth Chart
   // --------------------------------------------------------------------
-  const revenueGrowthEl = document.querySelector('#revenueGrowth'),
-    revenueGrowthConfig = {
+  const revenueGrowthEl = document.querySelector('#revenueGrowth');
+  if (revenueGrowthEl) {
+    const revenueGrowthConfig = {
       chart: {
-        height: 170,
-        type: 'bar',
+        height: 80,
+        type: 'line',
         parentHeightOffset: 0,
-        toolbar: {
-          show: false
-        }
+        toolbar: { show: false },
+        sparkline: { enabled: true }
       },
-      plotOptions: {
-        bar: {
-          barHeight: '80%',
-          columnWidth: '30%',
-          startingShape: 'rounded',
-          endingShape: 'rounded',
-          borderRadius: 6,
-          distributed: true
-        }
-      },
-      tooltip: {
-        enabled: false
-      },
-      grid: {
-        show: false,
-        padding: {
-          top: -20,
-          bottom: -12,
-          left: -10,
-          right: 0
-        }
-      },
-      colors: [
-        config.colors_label.success,
-        config.colors_label.success,
-        config.colors_label.success,
-        config.colors_label.success,
-        config.colors.success,
-        config.colors_label.success,
-        config.colors_label.success
-      ],
-      dataLabels: {
-        enabled: false
-      },
-      series: [
-        {
-          data: [25, 40, 55, 70, 85, 70, 55]
-        }
-      ],
-      legend: {
-        show: false
-      },
-      xaxis: {
-        categories: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
-        axisBorder: {
-          show: false
-        },
-        axisTicks: {
-          show: false
-        },
-        labels: {
-          style: {
-            colors: labelColor,
-            fontSize: '13px',
-            fontFamily: 'Public Sans'
-          }
-        }
-      },
-      yaxis: {
-        labels: {
-          show: false
-        }
-      },
-      states: {
-        hover: {
-          filter: {
-            type: 'none'
-          }
-        }
-      },
-      responsive: [
-        {
-          breakpoint: 1471,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '50%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 1350,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '57%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 1032,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '60%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 992,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '40%',
-                borderRadius: 8
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 855,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '50%',
-                borderRadius: 6
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 440,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '40%'
-              }
-            }
-          }
-        },
-        {
-          breakpoint: 381,
-          options: {
-            plotOptions: {
-              bar: {
-                columnWidth: '45%'
-              }
-            }
-          }
-        }
-      ]
+      series: [{ data: window.ventasUltimaSemana || [] }],
+      stroke: { width: 2, curve: 'smooth' },
+      colors: ['#28c76f'],
+      grid: { show: false, padding: { top: -10, right: -10, left: -10, bottom: -10 } },
+      tooltip: { enabled: false },
+      xaxis: { show: false, lines: { show: false } },
+      yaxis: { show: false }
     };
-  if (typeof revenueGrowthEl !== undefined && revenueGrowthEl !== null) {
-    const revenueGrowth = new ApexCharts(revenueGrowthEl, revenueGrowthConfig);
-    revenueGrowth.render();
+    new ApexCharts(revenueGrowthEl, revenueGrowthConfig).render();
   }
 
   // Earning Reports Tabs Function
@@ -591,47 +266,85 @@
 
   // Earning Reports Tabs Orders
   // --------------------------------------------------------------------
-  const earningReportsTabsOrdersEl = document.querySelector('#earningReportsTabsOrders'),
-    earningReportsTabsOrdersConfig = EarningReportsBarChart(
-      earningReportsChart['data'][0]['chart_data'],
-      earningReportsChart['data'][0]['active_option']
-    );
-  if (typeof earningReportsTabsOrdersEl !== undefined && earningReportsTabsOrdersEl !== null) {
-    const earningReportsTabsOrders = new ApexCharts(earningReportsTabsOrdersEl, earningReportsTabsOrdersConfig);
-    earningReportsTabsOrders.render();
+  const earningReportsTabsOrdersEl = document.querySelector('#earningReportsTabsOrders');
+  if (earningReportsTabsOrdersEl) {
+    const meses = Object.keys(window.ventasPorMes || {});
+    const datos = Object.values(window.ventasPorMes || {});
+    const earningReportsOrdersConfig = {
+      chart: { height: 200, type: 'bar', parentHeightOffset: 0, toolbar: { show: false } },
+      series: [{ name: 'Ventas', data: datos }],
+      xaxis: { categories: meses, labels: { style: { colors: '#a1acb8' } } },
+      yaxis: { labels: { style: { colors: '#a1acb8' } } },
+      colors: ['#696cff'],
+      plotOptions: { bar: { borderRadius: 8, columnWidth: '60%' } },
+      grid: { borderColor: '#a1acb8', strokeDashArray: 6 },
+      legend: { show: false }
+    };
+    new ApexCharts(earningReportsTabsOrdersEl, earningReportsOrdersConfig).render();
   }
   // Earning Reports Tabs Sales
   // --------------------------------------------------------------------
-  const earningReportsTabsSalesEl = document.querySelector('#earningReportsTabsSales'),
-    earningReportsTabsSalesConfig = EarningReportsBarChart(
-      earningReportsChart['data'][1]['chart_data'],
-      earningReportsChart['data'][1]['active_option']
-    );
-  if (typeof earningReportsTabsSalesEl !== undefined && earningReportsTabsSalesEl !== null) {
-    const earningReportsTabsSales = new ApexCharts(earningReportsTabsSalesEl, earningReportsTabsSalesConfig);
-    earningReportsTabsSales.render();
+  const earningReportsTabsSalesEl = document.querySelector('#earningReportsTabsSales');
+  if (earningReportsTabsSalesEl) {
+    const meses = Object.keys(window.ventasPorMes || {});
+    const datos = Object.values(window.ventasPorMes || {});
+    const earningReportsSalesConfig = {
+      chart: { height: 200, type: 'bar', parentHeightOffset: 0, toolbar: { show: false } },
+      series: [{ name: 'Ventas', data: datos }],
+      xaxis: { categories: meses, labels: { style: { colors: '#a1acb8' } } },
+      yaxis: { labels: { style: { colors: '#a1acb8' } } },
+      colors: ['#28c76f'],
+      plotOptions: { bar: { borderRadius: 8, columnWidth: '60%' } },
+      grid: { borderColor: '#a1acb8', strokeDashArray: 6 },
+      legend: { show: false }
+    };
+    new ApexCharts(earningReportsTabsSalesEl, earningReportsSalesConfig).render();
   }
   // Earning Reports Tabs Profit
   // --------------------------------------------------------------------
-  const earningReportsTabsProfitEl = document.querySelector('#earningReportsTabsProfit'),
-    earningReportsTabsProfitConfig = EarningReportsBarChart(
-      earningReportsChart['data'][2]['chart_data'],
-      earningReportsChart['data'][2]['active_option']
-    );
-  if (typeof earningReportsTabsProfitEl !== undefined && earningReportsTabsProfitEl !== null) {
-    const earningReportsTabsProfit = new ApexCharts(earningReportsTabsProfitEl, earningReportsTabsProfitConfig);
-    earningReportsTabsProfit.render();
+  const earningReportsTabsProfitEl = document.querySelector('#earningReportsTabsProfit');
+  if (earningReportsTabsProfitEl) {
+    const meses = Object.keys(window.ventasPorMes || {});
+    const datos = Object.values(window.ventasPorMes || {}).map(val => val * 0.3);
+    const earningReportsProfitConfig = {
+      chart: { height: 200, type: 'area', parentHeightOffset: 0, toolbar: { show: false } },
+      series: [{ name: 'Beneficios', data: datos }],
+      xaxis: { categories: meses, labels: { style: { colors: '#a1acb8' } } },
+      yaxis: { labels: { style: { colors: '#a1acb8' } } },
+      colors: ['#ff6b6b'],
+      fill: { type: 'gradient', gradient: { shade: 'light', shadeIntensity: 0.8, opacityFrom: 0.6, opacityTo: 0.25 } },
+      stroke: { curve: 'smooth', width: 2 },
+      grid: { borderColor: '#a1acb8', strokeDashArray: 6 },
+      legend: { show: false }
+    };
+    new ApexCharts(earningReportsTabsProfitEl, earningReportsProfitConfig).render();
   }
   // Earning Reports Tabs Income
   // --------------------------------------------------------------------
-  const earningReportsTabsIncomeEl = document.querySelector('#earningReportsTabsIncome'),
-    earningReportsTabsIncomeConfig = EarningReportsBarChart(
-      earningReportsChart['data'][3]['chart_data'],
-      earningReportsChart['data'][3]['active_option']
-    );
-  if (typeof earningReportsTabsIncomeEl !== undefined && earningReportsTabsIncomeEl !== null) {
-    const earningReportsTabsIncome = new ApexCharts(earningReportsTabsIncomeEl, earningReportsTabsIncomeConfig);
-    earningReportsTabsIncome.render();
+  const earningReportsTabsIncomeEl = document.querySelector('#earningReportsTabsIncome');
+  if (earningReportsTabsIncomeEl) {
+    const meses = Object.keys(window.ventasPorMes || {});
+    const datos = Object.values(window.ventasPorMes || {});
+    const earningReportsIncomeConfig = {
+      chart: { height: 200, type: 'donut', parentHeightOffset: 0, toolbar: { show: false } },
+      series: datos,
+      labels: meses,
+      colors: ['#696cff', '#28c76f', '#ff6b6b', '#ffc107', '#17a2b8', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d', '#343a40', '#007bff'],
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '75%',
+            labels: {
+              show: true,
+              name: { show: true, fontSize: '12px', fontFamily: 'Public Sans' },
+              value: { show: true, fontSize: '12px', fontFamily: 'Public Sans' }
+            }
+          }
+        }
+      },
+      legend: { show: false }
+    };
+    new ApexCharts(earningReportsTabsIncomeEl, earningReportsIncomeConfig).render();
   }
 
   // Sales Last 6 Months - Radar Chart

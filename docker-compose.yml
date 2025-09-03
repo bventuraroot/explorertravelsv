@@ -7,7 +7,7 @@ services:
     container_name: explorertravelsv-web
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8001:80"
     volumes:
       - ./:/var/www/html
     networks:
@@ -28,7 +28,7 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - explorertravelsv
     command: --default-authentication-plugin=mysql_native_password
