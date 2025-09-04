@@ -59,7 +59,7 @@ $configData = Helper::appClasses();
     .btn-manual {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
-        color: white;
+        color: white !important;
         padding: 0.5rem 1rem;
         border-radius: 0.375rem;
         transition: all 0.3s ease;
@@ -68,7 +68,7 @@ $configData = Helper::appClasses();
     .btn-manual:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        color: white;
+        color: white !important;
     }
 
     .btn-download {
@@ -124,7 +124,7 @@ $configData = Helper::appClasses();
                         </h4>
                         <p class="mb-0 text-muted">Documentación y guías de usuario para todos los módulos</p>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="gap-2 d-flex">
                         <button type="button" class="btn btn-outline-primary" onclick="refreshManuals()">
                             <i class="ti ti-refresh me-1"></i>
                             Actualizar
@@ -156,7 +156,7 @@ $configData = Helper::appClasses();
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="d-flex gap-2">
+                        <div class="gap-2 d-flex">
                             <select id="sort-manuals" class="form-select">
                                 <option value="date-desc">Más recientes primero</option>
                                 <option value="date-asc">Más antiguos primero</option>
@@ -175,12 +175,12 @@ $configData = Helper::appClasses();
         @if(count($manuals) > 0)
             @foreach($manuals as $module => $moduleManuals)
                 @foreach($moduleManuals as $manual)
-                <div class="col-lg-4 col-md-6 mb-4 manual-item"
+                <div class="mb-4 col-lg-4 col-md-6 manual-item"
                      data-title="{{ strtolower($manual['titulo']) }}"
                      data-description="{{ strtolower($manual['descripcion']) }}"
                      data-date="{{ strtotime($manual['updated_at']) }}">
                     <div class="card manual-card h-100">
-                        <div class="card-body text-center">
+                        <div class="text-center card-body">
                             <div class="manual-icon">
                                 <i class="ti ti-{{ $manual['icono'] ?? 'book' }}"></i>
                             </div>
@@ -192,7 +192,7 @@ $configData = Helper::appClasses();
                             </p>
 
                             <div class="manual-meta">
-                                <div class="row text-center">
+                                <div class="text-center row">
                                     <div class="col-6">
                                         <small>
                                             <i class="ti ti-calendar me-1"></i>
@@ -208,7 +208,7 @@ $configData = Helper::appClasses();
                                 </div>
                             </div>
 
-                            <div class="mt-3 d-flex gap-2 justify-content-center">
+                            <div class="gap-2 mt-3 d-flex justify-content-center">
                                 <a href="{{ route('manuals.show', $manual['id']) }}"
                                    class="btn btn-manual btn-sm">
                                     <i class="ti ti-eye me-1"></i>
@@ -249,7 +249,7 @@ $configData = Helper::appClasses();
                             <h5>No hay manuales disponibles</h5>
                             <p>Los manuales aparecerán aquí cuando estén disponibles.</p>
                             @if($isAdmin)
-                            <a href="{{ route('manuals.create') }}" class="btn btn-primary mt-3">
+                            <a href="{{ route('manuals.create') }}" class="mt-3 btn btn-primary">
                                 <i class="ti ti-plus me-1"></i>Crear Primer Manual
                             </a>
                             @endif
