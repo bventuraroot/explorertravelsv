@@ -24,6 +24,7 @@ use App\Http\Controllers\CorrelativoController;
 use App\Http\Controllers\DteAdminController;
 use App\Http\Controllers\FirmadorTestController;
 use App\Http\Controllers\ManualController;
+use App\Http\Controllers\DteDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,10 +46,12 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'home'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::middleware(['auth', 'permission:manage_users'])->group(function () {
+    // Rutas del perfil - accesibles para todos los usuarios autenticados
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::middleware(['auth', 'permission:manage_users'])->group(function () {
 
 
 Route::group(['prefix' => 'client', 'as' => 'client.'], function(){
@@ -275,6 +278,44 @@ Route::middleware('auth')->group(function () {
         Route::put('{id}', [ManualController::class, 'update'])->name('update');
         Route::delete('{id}', [ManualController::class, 'destroy'])->name('destroy');
         Route::get('modulo/{modulo}', [ManualController::class, 'porModulo'])->name('por-modulo');
+    });
+
+    // Dashboard DTE
+    Route::group(['prefix' => 'dte', 'as' => 'dte.'], function(){
+        Route::get('dashboard', [DteDashboardController::class, 'index'])->name('dashboard');
+        Route::post('procesar-cola', [DteDashboardController::class, 'procesarCola'])->name('procesar-cola');
+        Route::post('procesar-reintentos', [DteDashboardController::class, 'procesarReintentos'])->name('procesar-reintentos');
+        Route::get('estadisticas-tiempo-real', [DteDashboardController::class, 'estadisticasTiempoReal'])->name('estadisticas-tiempo-real');
+        Route::get('{id}', [DteDashboardController::class, 'show'])->name('show');
+    });
+
+    // Administración DTE
+    Route::group(['prefix' => 'dte-admin', 'as' => 'dte.'], function(){
+        // Dashboard y estadísticas
+        Route::get('dashboard', [DteAdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('estadisticas', [DteAdminController::class, 'estadisticas'])->name('estadisticas');
+        Route::get('estadisticas-tiempo-real', [DteAdminController::class, 'estadisticasTiempoReal'])->name('estadisticas-tiempo-real');
+
+        // Procesamiento
+        Route::post('procesar-cola', [DteAdminController::class, 'procesarCola'])->name('procesar-cola');
+        Route::post('procesar-reintentos', [DteAdminController::class, 'procesarReintentos'])->name('procesar-reintentos');
+        Route::post('reintentar/{dteId}', [DteAdminController::class, 'reintentarDte'])->name('reintentar-dte');
+
+        // Gestión de errores
+        Route::get('errores', [DteAdminController::class, 'errores'])->name('errores');
+        Route::post('errores/{errorId}/resolver', [DteAdminController::class, 'resolverError'])->name('resolver-error');
+
+        // Gestión de contingencias
+        Route::get('contingencias', [DteAdminController::class, 'contingencias'])->name('contingencias');
+        Route::post('contingencias', [DteAdminController::class, 'crearContingencia'])->name('crear-contingencia');
+        Route::post('contingencias/{id}/aprobar', [DteAdminController::class, 'aprobarContingencia'])->name('aprobar-contingencia');
+        Route::post('contingencias/{id}/activar', [DteAdminController::class, 'activarContingencia'])->name('activar-contingencia');
+
+        // Detalles de DTE
+        Route::get('{id}', [DteAdminController::class, 'showDte'])->name('show');
+
+        // API para contingencias
+        Route::get('dtes-para-contingencia', [DteAdminController::class, 'getDtesParaContingencia'])->name('dtes-para-contingencia');
     });
 });
 });

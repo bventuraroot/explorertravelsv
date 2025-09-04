@@ -226,6 +226,37 @@ class PermissionController extends Controller
                 "name" => "Manuales",
                 "icon" => "menu-icon fa-solid fa-book",
                 "slug" => "manuals.index"
+            ],
+            [
+                "url" => "/dte/dashboard",
+                "name" => "Dashboard DTE",
+                "icon" => "menu-icon fa-solid fa-chart-line",
+                "slug" => "dte.dashboard"
+            ],
+            [
+                "name" => "Administración DTE",
+                "icon" => "menu-icon fa-solid fa-cogs",
+                "slug" => "dte.dashboard",
+                "submenu" => [
+                    [
+                        "url" => "/dte-admin/dashboard",
+                        "name" => "Dashboard Admin",
+                        "icon" => "menu-icon fa-solid fa-tachometer-alt",
+                        "slug" => "dte.dashboard"
+                    ],
+                    [
+                        "url" => "/dte-admin/errores",
+                        "name" => "Gestión de Errores",
+                        "icon" => "menu-icon fa-solid fa-exclamation-triangle",
+                        "slug" => "dte.errores"
+                    ],
+                    [
+                        "url" => "/dte-admin/contingencias",
+                        "name" => "Gestión de Contingencias",
+                        "icon" => "menu-icon fa-solid fa-shield-alt",
+                        "slug" => "dte.contingencias"
+                    ]
+                ]
             ]
         ];
 

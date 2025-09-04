@@ -23,6 +23,8 @@ class DteError extends Model
         'solucion',
         'resolved_by',
         'resolved_at',
+        'intentos_realizados',
+        'max_intentos',
     ];
 
     protected $casts = [
@@ -30,6 +32,8 @@ class DteError extends Model
         'trace' => 'array',
         'resuelto' => 'boolean',
         'resolved_at' => 'datetime',
+        'intentos_realizados' => 'integer',
+        'max_intentos' => 'integer',
     ];
 
     public function dte(): BelongsTo
@@ -77,6 +81,43 @@ class DteError extends Model
         $this->resolved_by = $userId;
         $this->resolved_at = now();
         return $this->save();
+    }
+
+    public function incrementarIntento(): bool
+    {
+        $this->intentos_realizados++;
+        return $this->save();
+    }
+
+    public function puedeReintentar(): bool
+    {
+        return $this->intentos_realizados < $this->max_intentos && !$this->resuelto;
+    }
+
+    public function getEstadoBadgeAttribute(): string
+    {
+        if ($this->resuelto) {
+            return '<span class="badge bg-success">Resuelto</span>';
+        }
+
+        if ($this->intentos_realizados >= $this->max_intentos) {
+            return '<span class="badge bg-danger">Agotado</span>';
+        }
+
+        return '<span class="badge bg-warning">Pendiente</span>';
+    }
+
+    public function getTipoBadgeAttribute(): string
+    {
+        $badgeClass = match($this->tipo_error) {
+            'hacienda' => 'bg-warning',
+            'sistema' => 'bg-secondary',
+            'validacion' => 'bg-info',
+            'autenticacion', 'firma' => 'bg-danger',
+            default => 'bg-secondary'
+        };
+
+        return '<span class="badge ' . $badgeClass . '">' . ucfirst($this->tipo_error) . '</span>';
     }
 }
 
