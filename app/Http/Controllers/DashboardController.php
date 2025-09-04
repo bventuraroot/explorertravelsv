@@ -94,7 +94,7 @@ class DashboardController extends Controller
         // También se hace alias a ventasPorMes y ventasPorDia por compatibilidad
         $ventasPorDia = $ventasPorDia7;
 
-        return view('dashboard')
+        return view('reports.dashboard')
             ->with('tclientes', $tclientes)
             ->with('tproviders', $tproviders)
             ->with('tproducts', $tproducts)
