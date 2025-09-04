@@ -136,24 +136,6 @@ class PermissionController extends Controller
                 "slug" => "credit.index"
             ],
             [
-                "url" => "/correlativos",
-                "name" => "Correlativos",
-                "icon" => "menu-icon fa-solid fa-list-ol",
-                "slug" => "correlativos.index"
-            ],
-            [
-                "url" => "/dte/estadisticas",
-                "name" => "DTE",
-                "icon" => "menu-icon fa-solid fa-file-invoice",
-                "slug" => "dte.estadisticas"
-            ],
-            [
-                "url" => "/firmador/test",
-                "name" => "Firmador",
-                "icon" => "menu-icon fa-solid fa-server",
-                "slug" => "firmador.test"
-            ],
-            [
                 "url" => "/report/index",
                 "name" => "Reportes",
                 "icon" => "menu-icon fa-solid fa-line-chart",
@@ -198,63 +180,58 @@ class PermissionController extends Controller
                 ]
             ],
             [
-                "url" => "/factmh/index",
-                "name" => "Administracion DTE",
-                "icon" => "menu-icon fa-solid fa-satellite-dish",
-                "slug" => "factmh.index",
-                "badge" => ["primary", "5"],
-                "submenu" => [
-                    [
-                        "url" => "/factmh/contingencias",
-                        "name" => "Contingencias",
-                        "slug" => "factmh.contingencias"
-                    ],
-                    [
-                        "url" => "/factmh/test_crt",
-                        "name" => "Muestra Enviados",
-                        "slug" => "factmh.test_crt"
-                    ],
-                    [
-                        "url" => "/config/index",
-                        "name" => "Configuraciones Ambiente",
-                        "slug" => "config.index"
-                    ]
-                ]
-            ],
-            [
                 "url" => "/manuals",
                 "name" => "Manuales",
                 "icon" => "menu-icon fa-solid fa-book",
                 "slug" => "manuals.index"
             ],
             [
-                "url" => "/dte/dashboard",
-                "name" => "Dashboard DTE",
-                "icon" => "menu-icon fa-solid fa-chart-line",
-                "slug" => "dte.dashboard"
-            ],
-            [
                 "name" => "Administración DTE",
                 "icon" => "menu-icon fa-solid fa-cogs",
                 "slug" => "dte.dashboard",
+                "badge" => ["primary", "8"],
                 "submenu" => [
                     [
-                        "url" => "/dte-admin/dashboard",
-                        "name" => "Dashboard Admin",
-                        "icon" => "menu-icon fa-solid fa-tachometer-alt",
+                        "url" => "/correlativos",
+                        "name" => "Correlativos",
+                        "icon" => "menu-icon fa-solid fa-list-ol",
+                        "slug" => "correlativos.index"
+                    ],
+                    [
+                        "url" => "/firmador/test",
+                        "name" => "Firmador",
+                        "icon" => "menu-icon fa-solid fa-server",
+                        "slug" => "firmador.test"
+                    ],
+                    [
+                        "url" => "/dte/dashboard",
+                        "name" => "Dashboard DTE",
+                        "icon" => "menu-icon fa-solid fa-chart-line",
                         "slug" => "dte.dashboard"
                     ],
                     [
                         "url" => "/dte-admin/errores",
                         "name" => "Gestión de Errores",
                         "icon" => "menu-icon fa-solid fa-exclamation-triangle",
-                        "slug" => "dte.errores"
+                        "slug" => "dte.dashboard"
                     ],
                     [
                         "url" => "/dte-admin/contingencias",
                         "name" => "Gestión de Contingencias",
                         "icon" => "menu-icon fa-solid fa-shield-alt",
-                        "slug" => "dte.contingencias"
+                        "slug" => "dte.dashboard"
+                    ],
+                    [
+                        "url" => "/factmh/contingencias",
+                        "name" => "Contingencias MH",
+                        "icon" => "menu-icon fa-solid fa-satellite-dish",
+                        "slug" => "factmh.contingencias"
+                    ],
+                    [
+                        "url" => "/config/index",
+                        "name" => "Configuraciones Ambiente",
+                        "icon" => "menu-icon fa-solid fa-cog",
+                        "slug" => "config.index"
                     ]
                 ]
             ]

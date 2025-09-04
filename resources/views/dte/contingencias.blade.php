@@ -188,11 +188,11 @@ $(document).ready(function() {
                             <label for="estado" class="form-label">Estado</label>
                             <select name="estado" id="estado" class="form-select">
                                 <option value="">Todos los estados</option>
-                                <option value="pendiente" {{ $filtros['estado'] == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                <option value="aprobada" {{ $filtros['estado'] == 'aprobada' ? 'selected' : '' }}>Aprobada</option>
-                                <option value="activa" {{ $filtros['estado'] == 'activa' ? 'selected' : '' }}>Activa</option>
-                                <option value="finalizada" {{ $filtros['estado'] == 'finalizada' ? 'selected' : '' }}>Finalizada</option>
-                                <option value="cancelada" {{ $filtros['estado'] == 'cancelada' ? 'selected' : '' }}>Cancelada</option>
+                                <option value="pendiente" {{ isset($filtros['estado']) && $filtros['estado'] == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                <option value="aprobada" {{ isset($filtros['estado']) && $filtros['estado'] == 'aprobada' ? 'selected' : '' }}>Aprobada</option>
+                                <option value="activa" {{ isset($filtros['estado']) && $filtros['estado'] == 'activa' ? 'selected' : '' }}>Activa</option>
+                                <option value="finalizada" {{ isset($filtros['estado']) && $filtros['estado'] == 'finalizada' ? 'selected' : '' }}>Finalizada</option>
+                                <option value="cancelada" {{ isset($filtros['estado']) && $filtros['estado'] == 'cancelada' ? 'selected' : '' }}>Cancelada</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -200,7 +200,7 @@ $(document).ready(function() {
                             <select name="empresa_id" id="empresa_id" class="form-select">
                                 <option value="">Todas las empresas</option>
                                 @foreach($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}" {{ $filtros['empresa_id'] == $empresa->id ? 'selected' : '' }}>
+                                    <option value="{{ $empresa->id }}" {{ isset($filtros['empresa_id']) && $filtros['empresa_id'] == $empresa->id ? 'selected' : '' }}>
                                         {{ $empresa->name }}
                                     </option>
                                 @endforeach
@@ -210,9 +210,9 @@ $(document).ready(function() {
                             <label for="tipo" class="form-label">Tipo</label>
                             <select name="tipo" id="tipo" class="form-select">
                                 <option value="">Todos los tipos</option>
-                                <option value="tecnica" {{ $filtros['tipo'] == 'tecnica' ? 'selected' : '' }}>Técnica</option>
-                                <option value="administrativa" {{ $filtros['tipo'] == 'administrativa' ? 'selected' : '' }}>Administrativa</option>
-                                <option value="emergencia" {{ $filtros['tipo'] == 'emergencia' ? 'selected' : '' }}>Emergencia</option>
+                                <option value="tecnica" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'tecnica' ? 'selected' : '' }}>Técnica</option>
+                                <option value="administrativa" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'administrativa' ? 'selected' : '' }}>Administrativa</option>
+                                <option value="emergencia" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'emergencia' ? 'selected' : '' }}>Emergencia</option>
                             </select>
                         </div>
                         <div class="col-md-3 d-flex align-items-end">

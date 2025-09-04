@@ -121,12 +121,12 @@
                             <label for="tipo" class="form-label">Tipo de Error</label>
                             <select class="form-select" id="tipo" name="tipo">
                                 <option value="">Todos los tipos</option>
-                                <option value="validacion" {{ $filtros['tipo'] == 'validacion' ? 'selected' : '' }}>Validación</option>
-                                <option value="hacienda" {{ $filtros['tipo'] == 'hacienda' ? 'selected' : '' }}>Hacienda</option>
-                                <option value="sistema" {{ $filtros['tipo'] == 'sistema' ? 'selected' : '' }}>Sistema</option>
-                                <option value="autenticacion" {{ $filtros['tipo'] == 'autenticacion' ? 'selected' : '' }}>Autenticación</option>
-                                <option value="firma" {{ $filtros['tipo'] == 'firma' ? 'selected' : '' }}>Firma</option>
-                                <option value="datos" {{ $filtros['tipo'] == 'datos' ? 'selected' : '' }}>Datos</option>
+                                <option value="validacion" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'validacion' ? 'selected' : '' }}>Validación</option>
+                                <option value="hacienda" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'hacienda' ? 'selected' : '' }}>Hacienda</option>
+                                <option value="sistema" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'sistema' ? 'selected' : '' }}>Sistema</option>
+                                <option value="autenticacion" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'autenticacion' ? 'selected' : '' }}>Autenticación</option>
+                                <option value="firma" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'firma' ? 'selected' : '' }}>Firma</option>
+                                <option value="datos" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'datos' ? 'selected' : '' }}>Datos</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -134,7 +134,7 @@
                             <select class="form-select" id="empresa" name="empresa_id">
                                 <option value="">Todas las empresas</option>
                                 @foreach($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}" {{ $filtros['empresa_id'] == $empresa->id ? 'selected' : '' }}>
+                                    <option value="{{ $empresa->id }}" {{ isset($filtros['empresa_id']) && $filtros['empresa_id'] == $empresa->id ? 'selected' : '' }}>
                                         {{ $empresa->name }}
                                     </option>
                                 @endforeach
@@ -144,8 +144,8 @@
                             <label for="resuelto" class="form-label">Estado</label>
                             <select class="form-select" id="resuelto" name="resuelto">
                                 <option value="">Todos los estados</option>
-                                <option value="0" {{ $filtros['resuelto'] === '0' ? 'selected' : '' }}>No resueltos</option>
-                                <option value="1" {{ $filtros['resuelto'] === '1' ? 'selected' : '' }}>Resueltos</option>
+                                <option value="0" {{ isset($filtros['resuelto']) && $filtros['resuelto'] === '0' ? 'selected' : '' }}>No resueltos</option>
+                                <option value="1" {{ isset($filtros['resuelto']) && $filtros['resuelto'] === '1' ? 'selected' : '' }}>Resueltos</option>
                             </select>
                         </div>
                         <div class="col-md-3">

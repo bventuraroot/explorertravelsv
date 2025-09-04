@@ -22,6 +22,7 @@ class DteAdminController extends Controller
     {
         $this->dteService = $dteService;
         $this->middleware('auth');
+        $this->middleware('permission:dte.dashboard');
     }
 
     /**

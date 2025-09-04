@@ -1,97 +1,3 @@
-@extends('layouts/layoutMaster')
-
-@section('title', 'Configuración DTE / Llaves')
-
-@section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
-  <h4 class="mb-3">Configuraciones de Ambiente y Llaves</h4>
-  <div class="card p-3">
-    <div class="table-responsive">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Empresa</th>
-            <th>Ambiente</th>
-            <th>Modelo</th>
-            <th>Transmisión</th>
-            <th>Versión JSON</th>
-            <th>Clave Pri</th>
-            <th>Clave Pub</th>
-            <th>Clave MH</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($configs as $c)
-          <tr>
-            <td>{{ $c->name_company }}</td>
-            <td>{{ $c->ambiente }}</td>
-            <td>{{ $c->typeModel }}</td>
-            <td>{{ $c->typeTransmission }}</td>
-            <td>{{ $c->versionJson }}</td>
-            <td>{{ Str::mask($c->passPrivateKey, '*', 0) }}</td>
-            <td>{{ Str::mask($c->passkeyPublic, '*', 0) }}</td>
-            <td>{{ Str::mask($c->passMH, '*', 0) }}</td>
-          </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <h5 class="mt-4">Nueva configuración</h5>
-  <div class="card p-3">
-    <form method="POST" action="{{ route('config.store') }}">
-      @csrf
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label">Empresa (ID)</label>
-          <input type="number" name="company" class="form-control" required />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Versión</label>
-          <input type="number" name="version" class="form-control" value="2" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Ambiente</label>
-          <input type="number" name="ambiente" class="form-control" value="1" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Modelo</label>
-          <input type="number" name="typemodel" class="form-control" value="1" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Transmisión</label>
-          <input type="number" name="typetransmission" class="form-control" value="1" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Contingencia</label>
-          <input type="number" name="typecontingencia" class="form-control" value="0" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Versión JSON</label>
-          <input type="number" name="versionjson" class="form-control" value="2" />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Clave Privada</label>
-          <input type="text" name="passprivatekey" class="form-control" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Clave Pública</label>
-          <input type="text" name="passpublickey" class="form-control" />
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Clave API MH</label>
-          <input type="text" name="passmh" class="form-control" />
-        </div>
-      </div>
-      <div class="mt-3">
-        <button class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
-@endsection
-
 @php
     $configData = Helper::appClasses();
 @endphp
@@ -136,11 +42,45 @@
 @section('title', 'Configuraciones Credenciales Facturacion Electronica SV-DTE')
 
 @section('content')
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>Errores de validación:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-header border-bottom">
             <h5 class="mb-3 card-title">Configuraciones</h5>
             <div class="gap-3 pb-2 d-flex justify-content-between align-items-center row gap-md-0">
                 <div class="col-md-4 companies"></div>
+                <div class="col-md-4 text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConfigModal">
+                        <i class="fas fa-plus me-2"></i>Nueva Configuración
+                    </button>
+                </div>
             </div>
         </div>
         <div class="card-datatable table-responsive">
@@ -152,15 +92,13 @@
                         <th>EMPRESA</th>
                         <th>VERSION</th>
                         <th>AMBIENTE</th>
-                        <!--<th>TIPO MODELO</th>
-                        <th>TIPO TRANSMISION</th>
-                        <th>TIPO CONTINGENCIA</th>-->
                         <th>VERSION JSON</th>
                         <th>PASS_PRIVATE_KEY</th>
                         <th>PASS_PUBLIC_KEY</th>
                         <th>PASS_MH</th>
                         <th>CODE COUNTRY</th>
                         <th>NAME COUNTRY</th>
+                        <th>EMISIÓN DTE</th>
                         <th>ACCIONES</th>
                     </tr>
                 </thead>
@@ -173,15 +111,19 @@
                                 <td>{{ $config->name_company }}</td>
                                 <td>{{ $config->version }}</td>
                                 <td>{{ $config->ambiente }}</td>
-                                <!--<td></td>
-                                <td></td>
-                                <td></td>-->
                                 <td>{{ $config->versionJson }}</td>
-                                <td>{{ $config->passPrivateKey }}</td>
-                                <td>{{ $config->passkeyPublic }}</td>
-                                <td>{{ $config->passPpassMHrivateKey }}</td>
+                                <td>{{ Str::mask($config->passPrivateKey, '*', 0) }}</td>
+                                <td>{{ Str::mask($config->passkeyPublic, '*', 0) }}</td>
+                                <td>{{ Str::mask($config->passMH, '*', 0) }}</td>
                                 <td>{{ $config->codeCountry }}</td>
                                 <td>{{ $config->nameCountry }}</td>
+                                <td>
+                                    @if($config->dte_emission_enabled)
+                                        <span class="badge bg-success">Habilitado</span>
+                                    @else
+                                        <span class="badge bg-danger">Deshabilitado</span>
+                                    @endif
+                                </td>
                                 <td><div class="d-flex align-items-center">
                                     <a href="javascript: editconfig({{ $config->id }});" class="dropdown-item"><i
                                         class="ti ti-edit ti-sm me-2"></i>Editar</a>
@@ -196,18 +138,16 @@
                             </tr>
                             @empty
                                 <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>No hay datos</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
+                                    <td colspan="13" class="text-center">
+                                        <div class="py-4">
+                                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">No hay configuraciones</h5>
+                                            <p class="text-muted">No se han encontrado configuraciones de DTE.</p>
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addConfigModal">
+                                                <i class="fas fa-plus me-2"></i>Crear Primera Configuración
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         @endisset
@@ -275,6 +215,18 @@
               <label class="form-label" for="name">Contraseña MH</label>
               <input type="text" id="passmh" name="passmh" class="form-control" placeholder="Pass MH" required/>
             </div>
+            <div class="mb-3 col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="dte_emission_enabled" name="dte_emission_enabled" checked>
+                <label class="form-check-label" for="dte_emission_enabled">
+                  Habilitar emisión de DTE
+                </label>
+              </div>
+            </div>
+            <div class="mb-3 col-12">
+              <label class="form-label" for="dte_emission_notes">Notas sobre emisión DTE</label>
+              <textarea id="dte_emission_notes" name="dte_emission_notes" class="form-control" rows="3" placeholder="Notas sobre la configuración de emisión DTE..."></textarea>
+            </div>
             <div class="text-center col-12 demo-vertical-spacing">
               <button type="submit" class="btn btn-primary me-sm-3 me-1">Crear</button>
               <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="modal" aria-label="Close">Descartar</button>
@@ -295,7 +247,7 @@
             <h3 class="mb-2">Editar Config</h3>
           </div>
           <form id="addproductForm" class="row" action="{{Route('config.update')}}" method="POST">
-            @csrf @method('PATCH')
+            @csrf
             <input type="hidden" name="iduser" id="iduser" value="{{Auth::user()->id}}">
             <input type="hidden" name="idedit" id="idedit">
             <div class="mb-3 col-12">
@@ -345,6 +297,18 @@
             <div class="mb-3 col-12">
               <label class="form-label" for="name">Contraseña MH</label>
               <input type="text" id="passmhedit" name="passmhedit" class="form-control" placeholder="Pass MH" required/>
+            </div>
+            <div class="mb-3 col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="dte_emission_enabled_edit" name="dte_emission_enabled_edit">
+                <label class="form-check-label" for="dte_emission_enabled_edit">
+                  Habilitar emisión de DTE
+                </label>
+              </div>
+            </div>
+            <div class="mb-3 col-12">
+              <label class="form-label" for="dte_emission_notes_edit">Notas sobre emisión DTE</label>
+              <textarea id="dte_emission_notes_edit" name="dte_emission_notes_edit" class="form-control" rows="3" placeholder="Notas sobre la configuración de emisión DTE..."></textarea>
             </div>
             <div class="text-center col-12 demo-vertical-spacing">
               <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>

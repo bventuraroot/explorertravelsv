@@ -466,6 +466,26 @@ class SaleController extends Controller
                 "cliente"   => $cliente
             ];
 
+            // Verificar si la emisión de DTE está habilitada para esta empresa
+            if (!Config::isDteEmissionEnabled($idempresa)) {
+                \Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
+
+                // Solo guardar la venta sin crear DTE
+                $salesave = Sale::find(base64_decode($corr));
+                $salesave->json = json_encode($comprobante);
+                $salesave->save();
+
+                // Actualizar correlativo
+                $updateCorr = Correlativo::find($newCorr->id);
+                $updateCorr->incrementarCorrelativo();
+
+                DB::commit();
+                return response()->json(array(
+                    "res" => "1",
+                    "message" => "Venta guardada correctamente. DTE deshabilitado para esta empresa."
+                ));
+            }
+
             // Crear DTE en cola para emisión (portado de RomaCopies)
             $dtecreate = new Dte();
             $dtecreate->versionJson = $documento[0]->versionJson;
