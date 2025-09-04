@@ -39,14 +39,14 @@ RUN php artisan key:generate
 # Permisos
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Cambia el DocumentRoot a /var/www/html/public
-RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
+# Cambia el DocumentRoot a /var/www/public
+RUN sed -i 's!/var/www/html!/var/www/public!g' /etc/apache2/sites-available/000-default.conf
 
 # Habilita mod_rewrite
 RUN a2enmod rewrite
 
 # Copia el .htaccess (opcional, si no se copia con el volumen)
-COPY public/.htaccess /var/www/html/public/.htaccess
+COPY public/.htaccess /var/www/public/.htaccess
 
 # Exponer puerto 80
 EXPOSE 80

@@ -136,6 +136,24 @@ class PermissionController extends Controller
                 "slug" => "credit.index"
             ],
             [
+                "url" => "/correlativos",
+                "name" => "Correlativos",
+                "icon" => "menu-icon fa-solid fa-list-ol",
+                "slug" => "correlativos.index"
+            ],
+            [
+                "url" => "/dte/estadisticas",
+                "name" => "DTE",
+                "icon" => "menu-icon fa-solid fa-file-invoice",
+                "slug" => "dte.estadisticas"
+            ],
+            [
+                "url" => "/firmador/test",
+                "name" => "Firmador",
+                "icon" => "menu-icon fa-solid fa-server",
+                "slug" => "firmador.test"
+            ],
+            [
                 "url" => "/report/index",
                 "name" => "Reportes",
                 "icon" => "menu-icon fa-solid fa-line-chart",
@@ -202,6 +220,12 @@ class PermissionController extends Controller
                         "slug" => "config.index"
                     ]
                 ]
+            ],
+            [
+                "url" => "/manuals",
+                "name" => "Manuales",
+                "icon" => "menu-icon fa-solid fa-book",
+                "slug" => "manuals.index"
             ]
         ];
 

@@ -1,3 +1,97 @@
+@extends('layouts/layoutMaster')
+
+@section('title', 'Configuración DTE / Llaves')
+
+@section('content')
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="mb-3">Configuraciones de Ambiente y Llaves</h4>
+  <div class="card p-3">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Ambiente</th>
+            <th>Modelo</th>
+            <th>Transmisión</th>
+            <th>Versión JSON</th>
+            <th>Clave Pri</th>
+            <th>Clave Pub</th>
+            <th>Clave MH</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($configs as $c)
+          <tr>
+            <td>{{ $c->name_company }}</td>
+            <td>{{ $c->ambiente }}</td>
+            <td>{{ $c->typeModel }}</td>
+            <td>{{ $c->typeTransmission }}</td>
+            <td>{{ $c->versionJson }}</td>
+            <td>{{ Str::mask($c->passPrivateKey, '*', 0) }}</td>
+            <td>{{ Str::mask($c->passkeyPublic, '*', 0) }}</td>
+            <td>{{ Str::mask($c->passMH, '*', 0) }}</td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h5 class="mt-4">Nueva configuración</h5>
+  <div class="card p-3">
+    <form method="POST" action="{{ route('config.store') }}">
+      @csrf
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Empresa (ID)</label>
+          <input type="number" name="company" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Versión</label>
+          <input type="number" name="version" class="form-control" value="2" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Ambiente</label>
+          <input type="number" name="ambiente" class="form-control" value="1" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Modelo</label>
+          <input type="number" name="typemodel" class="form-control" value="1" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Transmisión</label>
+          <input type="number" name="typetransmission" class="form-control" value="1" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Contingencia</label>
+          <input type="number" name="typecontingencia" class="form-control" value="0" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Versión JSON</label>
+          <input type="number" name="versionjson" class="form-control" value="2" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Clave Privada</label>
+          <input type="text" name="passprivatekey" class="form-control" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Clave Pública</label>
+          <input type="text" name="passpublickey" class="form-control" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Clave API MH</label>
+          <input type="text" name="passmh" class="form-control" />
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+@endsection
+
 @php
     $configData = Helper::appClasses();
 @endphp

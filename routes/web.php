@@ -20,6 +20,10 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CorrelativoController;
+use App\Http\Controllers\DteAdminController;
+use App\Http\Controllers\FirmadorTestController;
+use App\Http\Controllers\ManualController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -221,6 +225,57 @@ Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
     Route::get('update', [ConfigController::class, 'update'])->name('update');
     Route::get('getconfigid/{id}', [ConfigController::class, 'getconfigid'])->name('getconfigid');
     Route::get('destroy/{id}', [ConfigController::class, 'destroy'])->name('destroy');
+});
+
+// Gestión de correlativos y APIs
+Route::middleware('auth')->group(function () {
+    Route::group(['prefix' => 'correlativos', 'as' => 'correlativos.'], function(){
+        Route::get('/', [CorrelativoController::class, 'index'])->name('index');
+        Route::get('create', [CorrelativoController::class, 'create'])->name('create');
+        Route::post('/', [CorrelativoController::class, 'store'])->name('store');
+        Route::get('{id}', [CorrelativoController::class, 'show'])->name('show');
+        Route::get('{id}/edit', [CorrelativoController::class, 'edit'])->name('edit');
+        Route::put('{id}', [CorrelativoController::class, 'update'])->name('update');
+        Route::delete('{id}', [CorrelativoController::class, 'destroy'])->name('destroy');
+        Route::get('estadisticas/view', [CorrelativoController::class, 'estadisticas'])->name('estadisticas');
+        Route::post('{id}/reactivar', [CorrelativoController::class, 'reactivar'])->name('reactivar');
+        Route::patch('{id}/estado', [CorrelativoController::class, 'cambiarEstado'])->name('cambiar-estado');
+        Route::get('por-empresa/ajax', [CorrelativoController::class, 'porEmpresa'])->name('por-empresa');
+    });
+
+    Route::group(['prefix' => 'api/correlativos', 'as' => 'correlativos.api.'], function(){
+        Route::post('siguiente-numero', [CorrelativoController::class, 'apiSiguienteNumero'])->name('siguiente-numero');
+        Route::post('validar-disponibilidad', [CorrelativoController::class, 'apiValidarDisponibilidad'])->name('validar-disponibilidad');
+        Route::get('estadisticas', [CorrelativoController::class, 'apiEstadisticas'])->name('estadisticas');
+        Route::get('por-empresa', [CorrelativoController::class, 'porEmpresa'])->name('por-empresa-api');
+    });
+
+    // Administración DTE
+    Route::group(['prefix' => 'dte', 'as' => 'dte.'], function(){
+        Route::get('estadisticas', [DteAdminController::class, 'estadisticas'])->name('estadisticas');
+        Route::post('procesar-cola', [DteAdminController::class, 'procesarCola'])->name('procesar-cola');
+        Route::post('procesar-reintentos', [DteAdminController::class, 'procesarReintentos'])->name('procesar-reintentos');
+    });
+
+    // Prueba de firmador (similar a RomaCopies)
+    Route::group(['prefix' => 'firmador', 'as' => 'firmador.'], function(){
+        Route::get('test', [FirmadorTestController::class, 'index'])->name('test');
+        Route::post('test-connection', [FirmadorTestController::class, 'testConnection'])->name('test-connection');
+        Route::post('test-firma', [FirmadorTestController::class, 'testFirma'])->name('test-firma');
+        Route::get('server-info', [FirmadorTestController::class, 'serverInfo'])->name('server-info');
+    });
+
+    // Manuales de Usuario
+    Route::group(['prefix' => 'manuals', 'as' => 'manuals.'], function(){
+        Route::get('/', [ManualController::class, 'index'])->name('index');
+        Route::get('create', [ManualController::class, 'create'])->name('create');
+        Route::post('/', [ManualController::class, 'store'])->name('store');
+        Route::get('{id}', [ManualController::class, 'show'])->name('show');
+        Route::get('{id}/edit', [ManualController::class, 'edit'])->name('edit');
+        Route::put('{id}', [ManualController::class, 'update'])->name('update');
+        Route::delete('{id}', [ManualController::class, 'destroy'])->name('destroy');
+        Route::get('modulo/{modulo}', [ManualController::class, 'porModulo'])->name('por-modulo');
+    });
 });
 });
 });

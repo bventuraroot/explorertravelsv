@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Session;
+use Illuminate\Support\Facades\Session;
 use App\Mail\EnviarCorreo;
 use App\Models\Correlativo;
 use Illuminate\Http\JsonResponse;
@@ -51,7 +51,7 @@ class SaleController extends Controller
                 'dte.estadoHacienda',
                 'dte.id_doc',
                 'dte.company_name',
-                \DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'));
+                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'));
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
@@ -259,17 +259,21 @@ class SaleController extends Controller
             $salesave->totalamount = $amount;
             $salesave->typesale = 1;
             //dd($amount);
-            //buscar el correlativo actual
+            //buscar el correlativo actual de forma segura
             $newCorr = Correlativo::join('typedocuments as tdoc', 'tdoc.type', '=', 'docs.id_tipo_doc')
                 ->where('tdoc.id', '=', $salesave->typedocument_id)
                 ->where('docs.id_empresa', '=', $salesave->company_id)
-                ->select(
-                    'docs.actual',
-                    'docs.id'
-                )
-                ->get();
+                ->select('docs.*')
+                ->first();
 
-            $salesave->nu_doc = $newCorr[0]->actual;
+            if (!$newCorr) {
+                throw new \Exception('No hay correlativo configurado para este documento y empresa');
+            }
+            if (!(new Correlativo($newCorr->toArray()))->estaDisponible()) {
+                throw new \Exception('Correlativo no disponible o agotado');
+            }
+
+            $salesave->nu_doc = $newCorr->actual;
             $salesave->save();
 
             $idempresa = $salesave->company_id;
@@ -462,64 +466,40 @@ class SaleController extends Controller
                 "cliente"   => $cliente
             ];
 
-            if (8 == 7) {
-                //dd(json_encode($comprobante));
-                $contingencia = [];
-                $respuesta_hacienda = [];
-                //dd($documento[0]->tipogeneracion);
-                if ($documento[0]->tipogeneracion == 1) {
-                    //$contingencia = DB::table('Contingencias')->where('idEmpresa', $idempresa)->where('codEstado', '01')->get();
-                    $contingencia = 1;
-                    if ($contingencia) {
-                        $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
-                        //dd($respuesta_hacienda);
-                        if ($respuesta_hacienda["codEstado"] == "03") {
-                            return json_encode($respuesta_hacienda);
-                        }
-                        $comprobante["json"] = $respuesta_hacienda;
-                    }
-                }
-                //dd($respuesta_hacienda);
-                //create respuesta de MH
-                $dtecreate = new Dte();
-                $dtecreate->versionJson = $documento[0]->versionJson;
-                $dtecreate->ambiente_id = $documento[0]->ambiente;
-                $dtecreate->tipoDte = $documento[0]->tipodocumento;
-                $dtecreate->tipoModelo = $documento[0]->tipogeneracion;
-                $dtecreate->tipoTransmision = 1;
-                $dtecreate->tipoContingencia = "null";
-                $dtecreate->idContingencia = "null";
-                $dtecreate->nameTable = 'Sales';
-                $dtecreate->company_id = $idempresa;
-                $dtecreate->company_name = $emisor[0]->nombreComercial;
-                $dtecreate->id_doc = $respuesta_hacienda["identificacion"]["numeroControl"];
-                $dtecreate->codTransaction = "01";
-                $dtecreate->desTransaction = "Emision";
-                $dtecreate->type_document = $documento[0]->tipodocumento;
-                $dtecreate->id_doc_Ref1 = "null";
-                $dtecreate->id_doc_Ref2 = "null";
-                $dtecreate->type_invalidacion = "null";
-                $dtecreate->codEstado = $respuesta_hacienda["codEstado"];
-                $dtecreate->Estado = $respuesta_hacienda["estado"];
-                $dtecreate->codigoGeneracion = $respuesta_hacienda["codigoGeneracion"];
-                $dtecreate->selloRecibido = $respuesta_hacienda["selloRecibido"];
-                $dtecreate->fhRecibido = $respuesta_hacienda["fhRecibido"];
-                $dtecreate->estadoHacienda = $respuesta_hacienda["estadoHacienda"];
-                $dtecreate->json = json_encode($comprobante);
-                $dtecreate->nSends = $respuesta_hacienda["nuEnvios"];
-                $dtecreate->codeMessage = $respuesta_hacienda["codigoMsg"];
-                $dtecreate->claMessage = $respuesta_hacienda["clasificaMsg"];
-                $dtecreate->descriptionMessage = $respuesta_hacienda["descripcionMsg"];
-                $dtecreate->detailsMessage = $respuesta_hacienda["observacionesMsg"];
-                $dtecreate->sale_id = base64_decode($corr);
-                $dtecreate->created_by = $documento[0]->NombreUsuario;
-                $dtecreate->save();
-            }
+            // Crear DTE en cola para emisión (portado de RomaCopies)
+            $dtecreate = new Dte();
+            $dtecreate->versionJson = $documento[0]->versionJson;
+            $dtecreate->ambiente_id = $documento[0]->ambiente;
+            $dtecreate->tipoDte = $documento[0]->tipodocumento;
+            $dtecreate->tipoModelo = $documento[0]->tipogeneracion;
+            $dtecreate->tipoTransmision = 1;
+            $dtecreate->tipoContingencia = null;
+            $dtecreate->idContingencia = null;
+            $dtecreate->nameTable = 'Sales';
+            $dtecreate->company_id = $idempresa;
+            $dtecreate->company_name = $emisor[0]->nombreComercial;
+            $dtecreate->id_doc = null; // se asignará tras envío
+            $dtecreate->codTransaction = "01";
+            $dtecreate->desTransaction = "Emision";
+            $dtecreate->type_document = $documento[0]->tipodocumento;
+            $dtecreate->id_doc_Ref1 = null;
+            $dtecreate->id_doc_Ref2 = null;
+            $dtecreate->type_invalidacion = null;
+            $dtecreate->codEstado = "01"; // En cola
+            $dtecreate->Estado = "En cola";
+            $dtecreate->codigoGeneracion = null;
+            $dtecreate->selloRecibido = null;
+            $dtecreate->fhRecibido = null;
+            $dtecreate->estadoHacienda = null;
+            $dtecreate->json = json_encode($comprobante);
+            $dtecreate->nSends = 0;
+            $dtecreate->sale_id = base64_decode($corr);
+            $dtecreate->created_by = $documento[0]->NombreUsuario;
+            $dtecreate->save();
 
-            //update correlativo
-            $updateCorr = Correlativo::find($newCorr[0]->id);
-            $updateCorr->actual = ($updateCorr->actual + 1);
-            $updateCorr->save();
+            //update correlativo con validación de agotamiento
+            $updateCorr = Correlativo::find($newCorr->id);
+            $updateCorr->incrementarCorrelativo();
             //if ($dtecreate) $exit = 1;
             $salesave = Sale::find(base64_decode($corr));
             $salesave->json = json_encode($comprobante);

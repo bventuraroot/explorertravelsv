@@ -26,3 +26,4 @@ yarn-error.log
 *.sql.tar.bz2
 *.sql.tar.xz
 *.sql.tar.tar.gz
+/RomaCopies
