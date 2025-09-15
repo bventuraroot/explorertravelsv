@@ -128,7 +128,7 @@ $(document).ready(function () {
                 var firstId = response[0].id;
                 $("#companyselected").val(firstId);
                 $("#selectcompany").val(firstId);
-                window.location.href = "client/index/" + btoa(firstId);
+                window.location.href = "/client/index/" + btoa(firstId);
             }
         },
     });
