@@ -61,6 +61,16 @@ class Dte extends Model
         return $this->belongsTo(Company::class, 'company_id');
     }
 
+    public function sale(): BelongsTo
+    {
+        return $this->belongsTo(Sale::class, 'sale_id');
+    }
+
+    public function contingencia(): BelongsTo
+    {
+        return $this->belongsTo(Contingencia::class, 'idContingencia');
+    }
+
     public function scopeEnCola($query)
     {
         return $query->where('codEstado', '01');
@@ -91,42 +101,118 @@ class Dte extends Model
         return $query->whereNull('idContingencia')->where('codEstado', '03');
     }
 
-    public function marcarComoEnviado(array $datos): bool
+    /**
+     * Marcar DTE como enviado exitosamente
+     */
+    public function marcarComoEnviado(array $datosRespuesta): void
     {
-        $this->codEstado = $datos['codEstado'] ?? '02';
-        $this->Estado = $datos['estado'] ?? 'Enviado';
-        $this->codigoGeneracion = $datos['codigoGeneracion'] ?? $this->codigoGeneracion;
-        $this->selloRecibido = $datos['selloRecibido'] ?? $this->selloRecibido;
-        $this->fhRecibido = $datos['fhRecibido'] ?? now();
-        $this->estadoHacienda = $datos['estadoHacienda'] ?? $this->estadoHacienda;
-        $this->nSends = 1;
-        $this->codeMessage = $datos['codigoMsg'] ?? null;
-        $this->claMessage = $datos['clasificaMsg'] ?? null;
-        $this->descriptionMessage = $datos['descripcionMsg'] ?? null;
-        $this->detailsMessage = $datos['observacionesMsg'] ?? null;
-        $this->json = isset($this->json['json_enviado']) ? $this->json : array_merge($this->json ?? [], ['json_enviado' => $datos['json_enviado'] ?? []]);
-        return $this->save();
+        $this->update([
+            'codEstado' => '02',
+            'Estado' => 'Enviado',
+            'estadoHacienda' => $datosRespuesta['estado'] ?? null,
+            'selloRecibido' => $datosRespuesta['selloRecibido'] ?? null,
+            'fhRecibido' => $datosRespuesta['fhRecibido'] ?? now(),
+            'descripcionMsg' => $datosRespuesta['descripcionMsg'] ?? 'Enviado exitosamente',
+            'observacionesMsg' => $datosRespuesta['observacionesMsg'] ?? null,
+            'nSends' => ($this->nSends ?? 0) + 1
+        ]);
     }
 
-    public function marcarComoRechazado(array $datos): bool
+    /**
+     * Marcar DTE como rechazado
+     */
+    public function marcarComoRechazado(array $datosError): void
     {
-        $this->codEstado = '03';
-        $this->Estado = 'Rechazado';
-        $this->codeMessage = $datos['codigoMsg'] ?? null;
-        $this->claMessage = $datos['clasificaMsg'] ?? null;
-        $this->descriptionMessage = $datos['descripcionMsg'] ?? null;
-        $this->detailsMessage = $datos['observacionesMsg'] ?? null;
-        $this->nSends = ($this->nSends ?? 0) + 1;
-        return $this->save();
+        $this->update([
+            'codEstado' => '03',
+            'Estado' => 'Rechazado',
+            'descripcionMsg' => $datosError['descripcionMsg'] ?? 'Error en procesamiento',
+            'observacionesMsg' => $datosError['observacionesMsg'] ?? null,
+            'nSends' => ($this->nSends ?? 0) + 1
+        ]);
     }
 
-    public function necesitaContingencia(): bool
+    /**
+     * Marcar DTE para revisión
+     */
+    public function marcarEnRevision(string $motivo): void
     {
-        return $this->codEstado === '03' && empty($this->idContingencia);
+        $this->update([
+            'codEstado' => '10',
+            'Estado' => 'En Revisión',
+            'observacionesMsg' => $motivo
+        ]);
     }
 
+    /**
+     * Verificar si el DTE puede reintentarse
+     */
     public function puedeReintentar(): bool
     {
-        return $this->codEstado === '03' && ($this->nSends ?? 0) < 3;
+        return $this->codEstado === '01' &&
+               ($this->nSends ?? 0) < 3 &&
+               !$this->idContingencia;
+    }
+
+    /**
+     * Verificar si el DTE necesita contingencia
+     */
+    public function necesitaContingencia(): bool
+    {
+        return $this->codEstado === '03' &&
+               ($this->nSends ?? 0) >= 3 &&
+               !$this->idContingencia;
+    }
+
+    /**
+     * Incrementar correlativo de envíos
+     */
+    public function incrementarCorrelativo(): void
+    {
+        $this->increment('nSends');
+    }
+
+    /**
+     * Obtener el ambiente como string
+     */
+    public function getAmbienteAttribute(): string
+    {
+        return $this->ambiente_id === '01' ? 'Producción' : 'Pruebas';
+    }
+
+    /**
+     * Verificar si es ambiente de producción
+     */
+    public function esProduccion(): bool
+    {
+        return $this->ambiente_id === '01';
+    }
+
+    /**
+     * Obtener estado como texto legible
+     */
+    public function getEstadoTextoAttribute(): string
+    {
+        return match($this->codEstado) {
+            '01' => 'En Cola',
+            '02' => 'Enviado',
+            '03' => 'Rechazado',
+            '10' => 'En Revisión',
+            default => 'Desconocido'
+        };
+    }
+
+    /**
+     * Obtener clase CSS para el estado
+     */
+    public function getEstadoClaseAttribute(): string
+    {
+        return match($this->codEstado) {
+            '01' => 'warning',
+            '02' => 'success',
+            '03' => 'danger',
+            '10' => 'info',
+            default => 'secondary'
+        };
     }
 }

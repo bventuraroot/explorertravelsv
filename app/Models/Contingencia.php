@@ -14,29 +14,23 @@ class Contingencia extends Model
 
     protected $fillable = [
         'idEmpresa',
-        'company_id',
-        'idTienda',
         'codInterno',
-        'nombre',
         'versionJson',
         'ambiente',
         'codEstado',
-        'activa',
         'estado',
-        'codigoGeneracion',
-        'fechaCreacion',
-        'horaCreacion',
-        'fInicio',
-        'fecha_inicio',
-        'fFin',
-        'fecha_fin',
-        'hInicio',
-        'hFin',
         'tipoContingencia',
         'motivoContingencia',
         'nombreResponsable',
         'tipoDocResponsable',
         'nuDocResponsable',
+        'fechaCreacion',
+        'horaCreacion',
+        'fInicio',
+        'fFin',
+        'hInicio',
+        'hFin',
+        'codigoGeneracion',
         'selloRecibido',
         'fhRecibido',
         'codEstadoHacienda',
@@ -45,20 +39,18 @@ class Contingencia extends Model
         'clasificaMsg',
         'descripcionMsg',
         'observacionesMsg',
-        'documentos_afectados',
         'created_by',
         'updated_by'
     ];
 
     protected $casts = [
-        'activa' => 'boolean',
-        'fecha_inicio' => 'date',
-        'fecha_fin' => 'date',
-        'fechaCreacion' => 'date',
+        'fechaCreacion' => 'datetime',
         'fInicio' => 'date',
         'fFin' => 'date',
         'fhRecibido' => 'datetime',
-        'documentos_afectados' => 'integer'
+        'horaCreacion' => 'datetime:H:i:s',
+        'hInicio' => 'datetime:H:i:s',
+        'hFin' => 'datetime:H:i:s'
     ];
 
     /**
@@ -66,6 +58,22 @@ class Contingencia extends Model
      */
     public function company(): BelongsTo
     {
-        return $this->belongsTo(Company::class, 'company_id');
+        return $this->belongsTo(Company::class, 'idEmpresa');
+    }
+
+    /**
+     * Relación con el usuario que la creó
+     */
+    public function creador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Relación con el usuario que la actualizó
+     */
+    public function actualizador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

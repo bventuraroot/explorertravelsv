@@ -7,34 +7,81 @@ use App\Models\DteError;
 use App\Models\Contingencia;
 use App\Models\Sale;
 use App\Models\Company;
+use App\Mail\EnviarCorreo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Exception;
 
 class DteService
 {
+    protected $errorHandler;
+
+    public function __construct()
+    {
+        $this->errorHandler = new ElectronicInvoiceErrorHandler();
+    }
+
+    /**
+     * Procesar cola de DTE con gestión de errores
+     */
     public function procesarCola(int $limite = 10): array
     {
-        $resultados = ['procesados' => 0, 'exitosos' => 0, 'errores' => 0, 'contingencias_creadas' => 0, 'detalles' => []];
+        $resultados = [
+            'procesados' => 0,
+            'exitosos' => 0,
+            'errores' => 0,
+            'contingencias_creadas' => 0,
+            'correos_enviados' => 0,
+            'detalles' => []
+        ];
 
-        $dtesEnCola = Dte::enCola()->limit($limite)->get();
+        $dtesEnCola = Dte::where('codEstado', '01')
+            ->whereNull('idContingencia')
+            ->limit($limite)
+            ->get();
+
         foreach ($dtesEnCola as $dte) {
             try {
                 $resultado = $this->procesarDte($dte);
+
+                if ($resultado['exitoso']) {
+                    $resultados['exitosos']++;
+
+                    // Enviar correo si es ambiente de producción
+                    if ($resultado['ambiente'] === '01') {
+                        $this->enviarCorreoAutomatico($dte);
+                        $resultados['correos_enviados']++;
+                    }
+                } else {
+                    $resultados['errores']++;
+
+                    // Usar el manejador de errores
+                    $this->errorHandler->handleDocumentError($dte, $resultado['error_data']);
+
+                    // Crear contingencia si es necesario
+                    if ($resultado['necesita_contingencia']) {
+                        $this->crearContingenciaAutomatica($dte, $resultado['error']);
+                        $resultados['contingencias_creadas']++;
+                    }
+                }
+
                 $resultados['procesados']++;
                 $resultados['detalles'][] = $resultado;
-                $resultado['exitoso'] ? $resultados['exitosos']++ : $resultados['errores']++;
-                if (!$resultado['exitoso'] && $resultado['necesita_contingencia']) {
-                    $this->crearContingenciaAutomatica($dte, $resultado['error']);
-                    $resultados['contingencias_creadas']++;
-                }
+
             } catch (Exception $e) {
-                Log::error('Error procesando DTE', ['dte_id' => $dte->id, 'error' => $e->getMessage()]);
-                $this->registrarError($dte, 'sistema', 'PROCESS_ERROR', $e->getMessage());
+                Log::error('Error procesando DTE', [
+                    'dte_id' => $dte->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                $this->errorHandler->handleDocumentError($dte, [], $e);
                 $resultados['errores']++;
             }
         }
+
         return $resultados;
     }
 
@@ -261,6 +308,92 @@ class DteService
             'porcentaje_exito' => $total > 0 ? round(($enviados / $total) * 100, 2) : 0,
             'pendientes_reintento' => Dte::paraReintento()->count(),
             'necesitan_contingencia' => Dte::necesitanContingencia()->count()
+        ];
+    }
+
+    /**
+     * Enviar correo automático después de DTE exitoso
+     */
+    private function enviarCorreoAutomatico(Dte $dte): void
+    {
+        try {
+            // Obtener datos de la venta
+            $sale = Sale::with(['client', 'company'])
+                ->find($dte->sale_id);
+
+            if (!$sale || !$sale->client->email) {
+                Log::warning('No se puede enviar correo: venta no encontrada o cliente sin email', [
+                    'dte_id' => $dte->id,
+                    'sale_id' => $dte->sale_id
+                ]);
+                return;
+            }
+
+            // Obtener JSON del DTE
+            $jsonDte = json_decode($dte->jsonDte ?? '{}', true);
+            if (empty($jsonDte)) {
+                Log::warning('No se puede enviar correo: JSON del DTE vacío', [
+                    'dte_id' => $dte->id
+                ]);
+                return;
+            }
+
+            // Preparar datos para el correo
+            $data = [
+                'nombre' => $sale->client->name,
+                'json' => (object) $jsonDte
+            ];
+
+            // Crear y enviar correo
+            $asunto = "Comprobante de Venta No." . $jsonDte['identificacion']['numeroControl'] .
+                     ' de Proveedor: ' . $jsonDte['emisor']['nombre'];
+
+            $correo = new EnviarCorreo($data);
+            $correo->subject($asunto);
+
+            Mail::to($sale->client->email)->send($correo);
+
+            Log::info('Correo enviado exitosamente', [
+                'dte_id' => $dte->id,
+                'email' => $sale->client->email,
+                'numero_control' => $jsonDte['identificacion']['numeroControl']
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Error enviando correo automático', [
+                'dte_id' => $dte->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener estadísticas de errores
+     */
+    public function obtenerEstadisticasErrores(int $empresaId = null): array
+    {
+        $query = DteError::query();
+
+        if ($empresaId) {
+            $query->whereHas('dte', function($q) use ($empresaId) {
+                $q->where('company_id', $empresaId);
+            });
+        }
+
+        $total = $query->count();
+        $noResueltos = $query->clone()->noResueltos()->count();
+        $criticos = $query->clone()->criticos()->count();
+        $porTipo = $query->clone()->selectRaw('tipo_error, count(*) as total')
+            ->groupBy('tipo_error')
+            ->pluck('total', 'tipo_error');
+
+        return [
+            'total_errores' => $total,
+            'no_resueltos' => $noResueltos,
+            'criticos' => $criticos,
+            'por_tipo' => $porTipo,
+            'porcentaje_resueltos' => $total > 0 ? round((($total - $noResueltos) / $total) * 100, 2) : 0
         ];
     }
 }

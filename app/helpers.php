@@ -6,6 +6,11 @@ use App\Models\Department;
 use App\Models\Municipality;
 use App\Models\Product;
 use PhpParser\Node\Stmt\Foreach_;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Str;
 
 if (!function_exists('get_multi_result_set')) {
     function get_multi_result_set($conn, $statement)
@@ -240,6 +245,9 @@ if (!function_exists('convertir_json')) {
                 break;
             case '05':  //NCR
                 $retorno = ncr($compro, $uuid_generado);; // ncr($compro, $uuid_generado);
+                break;
+            case '06':  //NDB
+                $retorno = ndb($compro, $uuid_generado);;
                 break;
             case '08':  //CLQ
                 $retorno = []; //clq($compro, $uuid_generado);
@@ -2446,3 +2454,277 @@ if (! function_exists('numtoletras')) {
             return $documento;
         }
     }
+
+if (!function_exists('ndb')) {
+    function ndb($comprobante_procesar, $uuid_generado)
+    {
+        //dd($comprobante_procesar);
+        $encabezado = $comprobante_procesar["encabezado"][0];
+        //dd($encabezado);
+        $cuerpo = $comprobante_procesar["detalle"];
+        //dd($cuerpo);
+        $uuid = $uuid_generado;
+        $numero_documento = CerosIzquierda($encabezado["nu_doc"], 15);
+        $tipo_documento = $encabezado["cod_tipo_documento"];
+        $caja = $encabezado["cod_establecimiento"];; // "0001";
+        $tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        $empresa = $comprobante_procesar["empresa"][0];
+        $identificacion = [
+            "version"           => intval($encabezado["version"]),
+            "ambiente"          => $empresa["ambiente"],
+            "tipoDte"           => $tipo_documento,
+            "numeroControl"     => "DTE-" . $tipo_documento . "-" . $tipo_establecimiento . $caja . "-" . $numero_documento, //Cambiar
+            "codigoGeneracion"  => $uuid,
+            "tipoModelo"        => 1,
+            "tipoOperacion"     => 1,
+            "tipoContingencia"  => null,
+            "motivoContin"      => null,
+            "fecEmi"            => date('Y-m-d'), // "2022-07-23", //$encabezado["fecEmi"],    //Cambiar
+            "horEmi"            => $encabezado["horEmi"],      //Cambiar
+            "tipoMoneda"        => "USD"            //Cambiar
+        ];
+        $comprobante = [
+            "identificacion" => $identificacion
+        ];
+        //dd($comprobante);
+        $documentoRelacionado = null;
+        $docRelacionado = (isset($comprobante_procesar["Documentosrelacionados"]))? $comprobante_procesar["Documentosrelacionados"]: [];
+        //dd($docRelacionado);
+        foreach ($docRelacionado as $dr) {
+            $documentoRelacionado[] = [
+                "tipoDocumento"     =>  $dr["tipoDodocumento"],
+                "tipoGeneracion"    => intval($dr["tipoGeneracion"]),
+                "numeroDocumento"   => $dr["nuDocRelacionado"],
+                "fechaEmision"       => $dr["fechaEmision"],
+            ];
+        }
+        //dd($documentoRelacionado);
+
+        $direccion_emisor = [
+            "departamento"  => $encabezado["departamento_emisor"],
+            "municipio"     => $encabezado["municipio_emisor"],
+            "complemento"   => $encabezado["complemento_emisor"]
+        ];
+
+        $emisor = [
+            "nit"                   => $encabezado["nit_emisor"],
+            "nrc"                   => $encabezado["nrc_emisor"],
+            "nombre"                => $encabezado["nombre_empresa"],
+            "codActividad"          => $encabezado["codActividad"],
+            "descActividad"         => $encabezado["descActividad"],
+            "nombreComercial"       => $encabezado["nombreComercial"],
+            "tipoEstablecimiento"   => $encabezado["tipo_establecimiento"],
+            "direccion"             => $direccion_emisor,
+            "telefono"              => $encabezado["telefono"],
+            "correo"                => $encabezado["correo"]
+
+        ];
+        //dd($emisor);
+        $direccion_receptor = [
+            "departamento"  => $encabezado["departamento_receptor"],
+            "municipio"     => $encabezado["municipio_receptor"],
+            "complemento"   => $encabezado["complemento_receptor"]
+        ];
+
+        $receptor = [
+            "nit"                   => $encabezado["nit_receptor"],
+            "nrc"                   => $encabezado["nrc_receptor"],
+            "nombre"                => $encabezado["nombre"],
+            "codActividad"          => $encabezado["codActividad_receptor"],
+            "descActividad"         => $encabezado["descActividad_receptor"],
+            "nombreComercial"       => $encabezado["nombreComercial_receptor"],
+            "direccion"             => $direccion_receptor
+
+        ];
+
+        if ($encabezado["telefono_receptor"] != '') {
+            $receptor["telefono"] = $encabezado["telefono_receptor"];
+        }
+        if ($encabezado["correo_receptor"] != '') {
+            $receptor["correo"] = $encabezado["correo_receptor"];
+        }
+        //dd($receptor);
+        $ventaTercero = null;
+
+        if (isset($comprobante_procesar["terceros"][0])) {
+            // dd($comprobante_procesar[2]);
+            $ventaTercero = [
+                "nit"       => $comprobante_procesar["terceros"][0]["nit"],
+                "nombre"    => $comprobante_procesar["terceros"][0]["nombre"],
+
+            ];
+        }
+
+
+
+        $codigos_tributos = [];
+        $i = 0;
+
+        foreach ($cuerpo as $item) {
+            # code...
+            //dd($item);
+            $i += 1;
+            $tributos_properties_items_cuerpoDocumento = array();
+
+            if ($item["iva"] != 0 and count($codigos_tributos) == 0) {
+                $codigos_tributos = [
+                    "codigo"        =>  "20",
+                    "descripcion"   =>  "Impuesto al Valor Agregado 13%",
+                    "valor"         => (float)$item["iva"]
+                ];
+            } else {
+                if ($item["iva"] != 0 and count($codigos_tributos) > 0) {
+                    $iva =  $codigos_tributos["valor"] + $item["iva"];
+                    $codigos_tributos["valor"] = $iva;
+                }
+            }
+
+            $tributos_properties_items_cuerpoDocumento = ($item["iva"] != 0) ? "20" : "C3";
+
+            $properties_items_cuerpoDocumento = array();
+
+            $properties_items_cuerpoDocumento = [
+                "numItem"           => $i,
+                "tipoItem"          => intval($item["tipoItem"]),  //Bienes y Servicios
+                "numeroDocumento"   => $item["nuDocRelacionado"],
+                "cantidad"          => intval($item["cantidad"]),
+                "codigo"            => $item["id_producto"],
+                "codTributo"        => null,
+                "uniMedida"         => intval($item["uniMedida"]),
+                "descripcion"       => $item["descripcion"],
+
+
+                "precioUni"         => (float)($item["pre_unitario"]),
+                "montoDescu"        => 0.00,
+                "ventaNoSuj"        => (float)($item["no_sujetas"]),
+                "ventaExenta"       => (float)($item["excento"]),
+                "ventaGravada"      => (float)($item["gravado"]),
+                "tributos"          => ($item["gravado"] != 0) ? ["20"] : null,
+               // "noGravado"         => (float)$item["imp_int_det"]
+            ];
+
+            $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
+        }
+
+        $cuerpoDocumento = $items_cuerpoDocumento;
+        //dd($cuerpoDocumento);
+        $properties_items_tributo_resumen = [
+            "codigo"        => "",
+            "descripcion"   => "",
+            "valor"         => ""
+        ];
+
+        $tributos_resumen = [
+            "properties"   => $properties_items_tributo_resumen
+        ];
+
+        $properties_items_pagos = [];
+        //contado
+        if ($encabezado["contado"] != 0) {
+            $properties_items_pagos[] = [
+                "codigo"        => "01",
+                "montoPago"     => (float)$encabezado["contado"],
+                "referencia"    => null,
+                "plazo"         => null,
+                "periodo"       => null
+            ];
+        }
+
+        //credito
+        if ($encabezado["credito"] != 0) {
+            $properties_items_pagos[] = [
+                "codigo"        => "13",
+                "montoPago"     => (float)$encabezado["credito"],
+                "referencia"    => "",
+                "plazo"         => "01",
+                "periodo"       => intval($encabezado["periodo"])
+            ];
+        }
+
+        //tarjeta
+        if ($encabezado["tarjeta"] != 0) {
+            $properties_items_pagos[] = [
+                "codigo"        => "03",
+                "montoPago"     => (float)$encabezado["tarjeta"],
+                "referencia"    => $encabezado["referencia_tarjeta"],
+                "plazo"         => null,
+                "periodo"       => null
+            ];
+        }
+
+        $pagos = $properties_items_pagos;
+        if (count($codigos_tributos) > 0) {
+            if ($encabezado["tot_gravado"] * 0.13 <> $codigos_tributos["valor"]) {
+                $codigos_tributos["valor"] = round($encabezado["tot_gravado"] * 0.13,  2);
+                // $codigos_tributos["valor"] = bcdiv($encabezado["tot_gravado"] * 0.13,1,2);
+
+            }
+        }
+
+        // $codigos_tributos["valor"] = intval($codigos_tributos["valor"]/0.01);
+
+        $resumen = [
+            "totalNoSuj"            => (float)$encabezado["tot_nosujeto"],
+            "totalExenta"           => (float)$encabezado["tot_exento"],
+            "totalGravada"          => (float)$encabezado["tot_gravado"],
+            "subTotalVentas"        => (float)$encabezado["subTotalVentas"],
+            "descuNoSuj"            => (float)$encabezado["descuNoSuj"],
+            "descuExenta"           => (float)$encabezado["descuExenta"],
+            "descuGravada"          => (float)$encabezado["descuGravada"],
+           // "porcentajeDescuento"   => (float)$encabezado["porcentajeDescuento"],
+            "totalDescu"            => (float)$encabezado["totalDescu"],
+            "tributos"              => [$codigos_tributos],
+            "subTotal"              => (float)$encabezado["subTotal"],
+            "ivaPerci1"             => (float)$encabezado["ivaPerci1"],
+            "ivaRete1"              => (float)$encabezado["ivaRete1"],
+            "reteRenta"             => round((float)$encabezado["reteRenta"],2),
+            "montoTotalOperacion"   => round((float)($encabezado["subTotalVentas"] + $encabezado["total_iva"]), 2), //(float)$encabezado["montoTotalOperacion"],
+            //"totalNoGravado"        => (float)$encabezado["totalNoGravado"],
+            //"totalPagar"            => (float)$encabezado["totalPagar"],
+            "totalLetras"           => $encabezado["total_letras"],
+            //"saldoFavor"            => (float)$encabezado["saldoFavor"],
+            "condicionOperacion"    => intval($encabezado["condicionOperacion"]),
+            //"pagos"                 => $pagos,
+            "numPagoElectronico"    => ""
+        ];
+
+
+
+        $es_mayor = ($encabezado["totalPagar"] >= 11428.57);
+
+        $extension = [
+            "nombEntrega"   => ($es_mayor) ? $encabezado["nombEntrega"] : null,
+            "docuEntrega"   => ($es_mayor) ? $encabezado["docuEntrega"] : null,
+            "nombRecibe"    => ($es_mayor) ? $encabezado["nombRecibe"] : null,
+            "docuRecibe"    => ($es_mayor) ? $encabezado["docuRecibe"] : null,
+            "observaciones" => ($es_mayor) ? $encabezado["observaciones"] : null,
+           // "placaVehiculo" => ($es_mayor) ? $encabezado["placaVehiculo"] : null
+        ];
+
+        $apendice[] = [
+            "campo"         => "vendedor",
+            "etiqueta"      => "Vendedor",
+            "valor"         => $encabezado["id_vendedor"]
+        ];
+        $apendice[] = [
+            "campo"         => "cliente",
+            "etiqueta"      => "Cliente",
+            "valor"         => $encabezado["id_cliente"]
+        ];
+
+
+
+        $comprobante["documentoRelacionado"]     = $documentoRelacionado;
+        $comprobante["emisor"]                   = $emisor;
+        $comprobante["receptor"]                 = $receptor;
+        $comprobante["ventaTercero"]             = $ventaTercero;
+        $comprobante["cuerpoDocumento"]          = $cuerpoDocumento;
+        $comprobante["resumen"]                  = $resumen;
+        $comprobante["extension"]                = $extension;
+        $comprobante["apendice"]                 = $apendice;
+        //echo '<br>'. var_dump($comprobante) . '<br>';
+
+        //dd($comprobante);
+        return ($comprobante);
+    }
+}

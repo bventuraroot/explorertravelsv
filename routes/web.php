@@ -317,6 +317,16 @@ Route::middleware('auth')->group(function () {
         // API para contingencias
         Route::get('dtes-para-contingencia', [DteAdminController::class, 'getDtesParaContingencia'])->name('dtes-para-contingencia');
     });
+
+    // Rutas para prueba del firmador
+    Route::group(['prefix' => 'firmador', 'as' => 'firmador.'], function(){
+        Route::get('test', [FirmadorTestController::class, 'index'])->name('test');
+        Route::post('test-connection', [FirmadorTestController::class, 'testConnection'])->name('test-connection');
+        Route::post('test-firma', [FirmadorTestController::class, 'testFirma'])->name('test-firma');
+        Route::get('test-network', [FirmadorTestController::class, 'testNetwork'])->name('test-network');
+        Route::get('server-info', [FirmadorTestController::class, 'serverInfo'])->name('server-info');
+        Route::get('ambientes', [FirmadorTestController::class, 'getAmbientes'])->name('ambientes');
+    });
 });
 });
 });

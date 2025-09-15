@@ -199,8 +199,8 @@ class PermissionController extends Controller
                     ],
                     [
                         "url" => "/firmador/test",
-                        "name" => "Firmador",
-                        "icon" => "menu-icon fa-solid fa-server",
+                        "name" => "Prueba de Conectividad Firmador",
+                        "icon" => "menu-icon fa-solid fa-network-wired",
                         "slug" => "firmador.test"
                     ],
                     [

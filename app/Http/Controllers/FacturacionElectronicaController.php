@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Dte;
+use App\Models\Sale;
+use App\Mail\EnviarCorreo;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class FacturacionElectronicaController extends Controller
 {
     public function procesa_cola(){
         date_default_timezone_set('America/El_Salvador');
-        ini_set('max_execution_time', '300'); 
+        ini_set('max_execution_time', '300');
         $cola = Dte::where('codEstado', '01')->where('idContingencia', null)->limit(5)->get();
         //$cola = DTE::where('id', 7832)->limit(5)->get();
         //dd($cola);
@@ -401,5 +406,72 @@ class FacturacionElectronicaController extends Controller
             $comprobante["resumenTributo"] = $resumenTributo;
           // dd($comprobante);
         return $comprobante;
+    }
+
+    /**
+     * Enviar correo automático después de procesar DTE exitoso
+     */
+    public function envia_correo($dteId, $docEntry, $idEmpresa, $codTransaccion, $nmTablaDoc, $tipoDte)
+    {
+        try {
+            // Obtener el DTE
+            $dte = Dte::find($dteId);
+            if (!$dte) {
+                Log::warning('DTE no encontrado para envío de correo', ['dte_id' => $dteId]);
+                return false;
+            }
+
+            // Obtener la venta asociada
+            $sale = Sale::with(['client', 'company'])
+                ->find($dte->sale_id);
+
+            if (!$sale || !$sale->client->email) {
+                Log::warning('No se puede enviar correo: venta no encontrada o cliente sin email', [
+                    'dte_id' => $dteId,
+                    'sale_id' => $dte->sale_id
+                ]);
+                return false;
+            }
+
+            // Obtener JSON del DTE
+            $jsonDte = json_decode($dte->jsonDte ?? '{}', true);
+            if (empty($jsonDte)) {
+                Log::warning('No se puede enviar correo: JSON del DTE vacío', [
+                    'dte_id' => $dteId
+                ]);
+                return false;
+            }
+
+            // Preparar datos para el correo
+            $data = [
+                'nombre' => $sale->client->name,
+                'json' => (object) $jsonDte
+            ];
+
+            // Crear y enviar correo
+            $asunto = "Comprobante de Venta No." . $jsonDte['identificacion']['numeroControl'] .
+                     ' de Proveedor: ' . $jsonDte['emisor']['nombre'];
+
+            $correo = new EnviarCorreo($data);
+            $correo->subject($asunto);
+
+            Mail::to($sale->client->email)->send($correo);
+
+            Log::info('Correo enviado exitosamente desde FacturacionElectronicaController', [
+                'dte_id' => $dteId,
+                'email' => $sale->client->email,
+                'numero_control' => $jsonDte['identificacion']['numeroControl']
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Error enviando correo desde FacturacionElectronicaController', [
+                'dte_id' => $dteId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 }
