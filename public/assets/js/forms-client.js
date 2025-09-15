@@ -123,6 +123,13 @@ $(document).ready(function () {
                 "selected",
                 true
             );
+            // Si no hay empresa seleccionada, usar la primera y navegar
+            if ((!companyselected || companyselected == 0) && response.length > 0) {
+                var firstId = response[0].id;
+                $("#companyselected").val(firstId);
+                $("#selectcompany").val(firstId);
+                window.location.href = "client/index/" + btoa(firstId);
+            }
         },
     });
 
