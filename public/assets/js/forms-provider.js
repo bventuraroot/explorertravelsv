@@ -34,16 +34,20 @@ $(document).ready(function (){
         url: "/company/getCompanybyuser/"+iduser,
         method: "GET",
         success: function(response){
-            $('#company').append('<option value="0">Seleccione</option>');
-            $.each(response, function(index, value) {
-                $('#company').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
-                $('#companyupdate').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
-              });
-            // Auto-seleccionar la primera empresa disponible
             if (response.length > 0) {
+                // Auto-seleccionar la primera empresa disponible
                 var firstCompanyId = response[0].id;
+                $.each(response, function(index, value) {
+                    $('#company').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
+                    $('#companyupdate').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
+                });
+                // Establecer la primera empresa como seleccionada por defecto
                 $('#company').val(firstCompanyId);
                 $('#companyupdate').val(firstCompanyId);
+            } else {
+                // Si no hay empresas, mostrar mensaje pero no permitir guardar
+                $('#company').append('<option value="">No hay empresas disponibles</option>');
+                $('#companyupdate').append('<option value="">No hay empresas disponibles</option>');
             }
         }
     });
