@@ -42,8 +42,14 @@ $(document).ready(function (){
                     $('#companyupdate').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
                 });
                 // Establecer la primera empresa como seleccionada por defecto
-                $('#company').val(firstCompanyId);
-                $('#companyupdate').val(firstCompanyId);
+                $('#company').val(firstCompanyId).trigger('change');
+                $('#companyupdate').val(firstCompanyId).trigger('change');
+
+                // Forzar el valor en el campo oculto
+                $('#company').attr('value', firstCompanyId);
+                $('#companyupdate').attr('value', firstCompanyId);
+
+                console.log('Empresa seleccionada:', firstCompanyId);
             } else {
                 // Si no hay empresas, mostrar mensaje pero no permitir guardar
                 $('#company').append('<option value="">No hay empresas disponibles</option>');
@@ -52,6 +58,16 @@ $(document).ready(function (){
         }
     });
     getpaises();
+
+    // Asegurar que el valor de empresa se mantenga al enviar el formulario
+    $('#addProviderForm').on('submit', function() {
+        var companyValue = $('#company').val();
+        if (companyValue && companyValue !== '') {
+            console.log('Enviando empresa:', companyValue);
+        } else {
+            console.log('Error: No hay empresa seleccionada');
+        }
+    });
 });
 
 function nitDuiMask(inputField) {
