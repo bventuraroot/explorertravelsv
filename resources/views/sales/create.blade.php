@@ -159,6 +159,23 @@
                                     aria-label="Seleccionar opcion">
                                 </select>
                                 <input type="hidden" name="typecontribuyenteclient" id="typecontribuyenteclient">
+                                <!-- Información del cliente (replicado de RomaCopies) -->
+                                <div id="client-info" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <strong>Nombre:</strong> <span id="client-name">-</span><br>
+                                                <strong>Tipo:</strong> <span id="client-type">-</span><br>
+                                                <strong>Contribuyente:</strong> <span id="client-contribuyente">-</span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong>NIT/DUI:</strong> <span id="client-nit">-</span><br>
+                                                <strong>Dirección:</strong> <span id="client-address">-</span><br>
+                                                <strong>Teléfono:</strong> <span id="client-phone">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-sm-4">
                                 <label class="form-label" for="fpago">Forma de pago</label>
@@ -212,6 +229,14 @@
                                 <input type="hidden" id="ventasexentas" value="0" name="ventasexentas">
                                 <input type="hidden" id="ventatotal" value="0" name="ventatotal">
                                 <input type="hidden" id="ventatotallhidden" value="0" name="ventatotallhidden">
+                                <!-- Campos extra (alineados a RomaCopies) -->
+                                <input type="hidden" id="marca" name="marca">
+                                <input type="hidden" id="reserva" name="reserva" value="">
+                                <input type="hidden" id="ruta" name="ruta" value="">
+                                <input type="hidden" id="destino" name="destino" value="0">
+                                <input type="hidden" id="linea" name="linea" value="0">
+                                <input type="hidden" id="Canal" name="Canal" value="">
+                                <input type="hidden" id="fee" name="fee" value="0.00">
                             </div>
                             <div class="col-sm-1">
                                 <label class="form-label" for="cantidad">Cantidad</label>
@@ -225,23 +250,34 @@
                                     <option value="nosujeta">No Sujeta</option>
                                 </select>
                             </div>
+                            @if(request('typedocument')==3)
                             <div class="col-sm-2">
+                                <label class="form-label" for="precioConIva">Precio de Venta</label>
+                                <input type="number" id="precioConIva" name="precioConIva" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="calculateFromPriceWithIva && calculateFromPriceWithIva();">
+                            </div>
+                            @endif
+                            <div class="col-sm-2">
+                                @if(request('typedocument')==3)
+                                <label class="form-label" for="precio">Precio Unitario sin IVA</label>
+                                <input type="number" id="precio" readonly name="precio" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                @else
                                 <label class="form-label" for="precio">Precio Unitario</label>
-                                <input type="number" id="precio" name="precio" step="0.01" min="0" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
+                                <input type="number" id="precio" name="precio" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                @endif
                             </div>
                             @if(request('typedocument')==6 || request('typedocument')==3)
                             <div class="col-sm-2">
                                 <label class="form-label" for="fee">Fee</label>
-                                <input type="number" id="fee" name="fee" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
+                                <input type="number" id="fee" name="fee" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
                             @endif
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete13">Iva 13%</label>
-                                <input type="number" id="ivarete13" name="ivarete13" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
+                                <input type="number" id="ivarete13" @if(request('typedocument')==3) readonly @endif name="ivarete13" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete">Iva Percibido</label>
-                                <input type="number" id="ivarete" name="ivarete" step="0.01" max="10000" placeholder="0.00" class="form-control" onchange="totalamount();">
+                                <input type="number" id="ivarete" @if(request('typedocument')==3) readonly @endif name="ivarete" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
 
                             @if(request('typedocument')==8)
@@ -252,7 +288,7 @@
                             @endif
                             <div class="col-sm-2">
                                 <label class="form-label" for="total">Total</label>
-                                <input type="number" id="total" name="total" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                                <input type="number" id="total" @if(request('typedocument')==3) readonly @endif name="total" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control">
                             </div>
 
                         </div>
@@ -290,6 +326,66 @@
                                     <option value="Flyers">Flyers</option>
                                 </select>
                             </div>
+                        </div>
+                        <!-- Detalles del producto (replicado de RomaCopies) -->
+                        <div class="row g-3 col-12" style="margin-bottom: 3%; display: none;" id="add-information-products">
+                            <div class="mb-4 col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0 card-title">Detalles del Producto</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="text-center col-md-4">
+                                                <img id="product-image" src="{{ asset('assets/img/products/default.png') }}" alt="Imagen del producto" class="mb-3 img-fluid" style="max-height: 200px;">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="table-responsive">
+                                                    <table class="table table-borderless">
+                                                        <tbody>
+                                                            <tr>
+                                                                <th style="width: 35%">Nombre:</th>
+                                                                <td id="product-name">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Marca:</th>
+                                                                <td id="product-marca">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Proveedor:</th>
+                                                                <td id="product-provider">-</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Precio:</th>
+                                                                <td id="product-price">$ 0.00</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Vista previa editable de descripción -->
+                        <div class="col-sm-4" style="margin-top: 3%;">
+                            <label class="form-label" for="product-description-edit">
+                                <i class="ti ti-eye me-1"></i>Descripción del Producto (Preview)
+                            </label>
+                            <div class="input-group">
+                                <textarea id="product-description-edit" name="product-description-edit"
+                                          class="form-control" rows="2"
+                                          placeholder="Selecciona un producto para ver la descripción por defecto..."></textarea>
+                                <button type="button" class="btn btn-outline-secondary"
+                                        onclick="restoreDefaultDescription && restoreDefaultDescription()"
+                                        title="Restaurar descripción por defecto">
+                                    <i class="ti ti-refresh"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="ti ti-info-circle me-1"></i>Esta descripción aparecerá en la factura. Puedes editarla antes de agregar el producto.
+                            </small>
                         </div>
                         <div class="col-sm-4" style="margin-bottom: 5%">
                             <button type="button" class="btn btn-primary" onclick="agregarp()">

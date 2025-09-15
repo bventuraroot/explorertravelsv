@@ -227,11 +227,6 @@
             <div class="gap-3 pb-2 d-flex justify-content-between align-items-center row gap-md-0">
                 <div class="col-md-4 companies"></div>
                 <div class="col-md-8 text-end">
-                    <button type="button" class="btn btn-outline-warning me-2" onclick="loadDraftInvoices()">
-                        <i class="ti ti-file-invoice me-1"></i>
-                        Borradores de Factura
-                        <span class="badge bg-warning ms-1" id="draft-count">0</span>
-                    </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectDocumentModal">
                         <i class="ti ti-plus me-1"></i>
                         Nueva Venta
@@ -294,43 +289,7 @@
             </form>
         </div>
 
-        <!-- Sección de Borradores de Factura Pendientes -->
-        <div class="card-body" id="draft-invoices-section" style="display: none;">
-            <div class="alert alert-info">
-                <h6 class="alert-heading">
-                    <i class="ti ti-info-circle me-2"></i>
-                    Borradores de Factura Pendientes (desde Preventas)
-                </h6>
-                <p class="mb-0">Estos son borradores de factura creados desde el módulo de preventas que están listos para ser completados.</p>
-            </div>
 
-            <div class="table-responsive">
-                <table class="table table-sm table-hover draft-table" id="draft-invoices-table" data-exclude-datatables="true">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Ver</th>
-                            <th>ID</th>
-                            <th>Cliente</th>
-                            <th>Empresa</th>
-                            <th>Tipo Doc.</th>
-                            <th>Total</th>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="draft-invoices-body">
-                        <tr>
-                            <td colspan="9" class="text-center text-muted">
-                                <i class="ti ti-loader fs-1"></i>
-                                <br>
-                                Cargando borradores...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
         <div class="card-datatable">
             <div class="table-responsive" style="overflow-x: auto; max-width: 100%;">

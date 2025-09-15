@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 use App\Mail\EnviarCorreo;
 use App\Models\Correlativo;
 use Illuminate\Http\JsonResponse;
@@ -59,8 +60,17 @@ class SaleController extends Controller
 
         // Obtener los clientes filtrados
         $sales = $sales->get();
+
+        // Obtener tipos de documento para el filtro
+        $tiposDocumento = DB::table('typedocuments')->get();
+
+        // Obtener clientes para el filtro
+        $clientes = DB::table('clients')->get();
+
         return view('sales.index', array(
-            "sales" => $sales
+            "sales" => $sales,
+            "tiposDocumento" => $tiposDocumento,
+            "clientes" => $clientes
         ));
     }
 
@@ -458,6 +468,31 @@ class SaleController extends Controller
     WHERE a.id = $salesave->client_id";
             $cliente = DB::select(DB::raw($querycliente));
 
+            // Validaciones previas a encolar DTE (alineadas a RomaCopies y requisitos de Explorer)
+            $erroresValidacion = [];
+            if (empty($emisor) || empty($emisor[0]->nit) || empty($emisor[0]->clavePrivadaMH)) {
+                $erroresValidacion[] = 'Datos del emisor incompletos (NIT/clave privada MH)';
+            }
+            if (empty($cliente)) {
+                $erroresValidacion[] = 'Datos del cliente no encontrados';
+            }
+            if ($salesave->client_id === null) {
+                $erroresValidacion[] = 'Factura sin cliente asociado';
+            }
+            if (empty($detalle)) {
+                $erroresValidacion[] = 'Factura sin detalle de productos';
+            }
+            if ($totalPagar <= 0) {
+                $erroresValidacion[] = 'Total a pagar debe ser mayor a 0';
+            }
+            if (!empty($erroresValidacion)) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'VALIDATION_ERROR',
+                    'message' => implode('; ', $erroresValidacion)
+                ], 422);
+            }
+
             $comprobante = [
                 "emisor"    => $emisor,
                 "documento" => $documento,
@@ -468,7 +503,7 @@ class SaleController extends Controller
 
             // Verificar si la emisión de DTE está habilitada para esta empresa
             if (!Config::isDteEmissionEnabled($idempresa)) {
-                \Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
+                Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
 
                 // Solo guardar la venta sin crear DTE
                 $salesave = Sale::find(base64_decode($corr));

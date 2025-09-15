@@ -147,57 +147,74 @@ class DteService
 
     private function obtenerComprobante(Dte $dte): array
     {
-        $sale = Sale::with(['client', 'company', 'details.product'])->find($dte->sale_id);
+        $sale = Sale::find($dte->sale_id);
+        if (!$sale) return [];
+
+        // Priorizar el comprobante ya construido y guardado por el controlador (como en RomaCopies)
+        if (!empty($sale->json)) {
+            $comprobante = json_decode($sale->json, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($comprobante)) {
+                return $comprobante;
+            }
+        }
+
+        // Fallback mínimo en caso de no existir json guardado
+        $sale = Sale::with(['client', 'company', 'details'])->find($dte->sale_id);
         if (!$sale) return [];
         return [
-            'encabezado' => [
-                'empresa' => $sale->company,
-                'cliente' => $sale->client,
-                'documento' => $sale
+            'emisor' => [$sale->company],
+            'cliente' => [$sale->client],
+            'documento' => [
+                (object) [
+                    'versionJson' => $dte->versionJson,
+                    'ambiente' => $dte->ambiente_id,
+                    'tipodocumento' => $dte->tipoDte,
+                    'actual' => $sale->nu_doc ?? null
+                ]
             ],
             'detalle' => $sale->details->map(function($detail){
                 return [
-                    'producto' => $detail->product,
+                    'id_producto' => $detail->product_id,
+                    'descripcion' => $detail->description ?? '',
                     'cantidad' => $detail->amountp,
-                    'precio' => $detail->pricesale,
-                    'total' => $detail->pricesale * $detail->amountp
+                    'precio_unitario' => $detail->priceunit,
+                    'no_sujetas' => $detail->nosujeta,
+                    'exentas' => $detail->exempt,
+                    'gravadas' => $detail->pricesale,
+                    'iva' => $detail->detained13,
+                    'no_imponible' => 0,
+                    'tipo_item' => 1,
+                    'uniMedida' => 59
                 ];
-            })->toArray()
+            })->toArray(),
+            'totales' => []
         ];
     }
 
     private function generarDteJson(Dte $dte, array $comprobante): array
     {
-        return [
-            'identificacion' => [
-                'version' => $dte->versionJson,
-                'ambiente' => $dte->ambiente_id,
-                'tipoDte' => $dte->tipoDte,
-                'numeroControl' => $dte->id_doc,
-                'codigoGeneracion' => $dte->codigoGeneracion
-            ],
-            'emisor' => $comprobante['encabezado']['empresa'],
-            'receptor' => $comprobante['encabezado']['cliente'],
-            'documento' => $comprobante['encabezado']['documento'],
-            'detalle' => $comprobante['detalle']
-        ];
+        try {
+            $codTransaccion = $dte->codTransaction ?? '01';
+            // Usar el generador oficial como en RomaCopies
+            $dteJson = \convertir_json($comprobante, $codTransaccion);
+            return is_array($dteJson) ? $dteJson : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     private function firmarDte(Dte $dte, array $dteJson): array
     {
         try {
             $empresa = Company::find($dte->company_id);
-            // Obtener URL del firmador desde ambientes asociados al config de la empresa (como RomaCopies)
-            $ambiente = DB::table('config as c')
-                ->leftJoin('ambientes as a', 'c.ambiente', '=', 'a.id')
-                ->where('c.company_id', $empresa->id)
-                ->select('a.url_firmador')
-                ->first();
+            // Obtener configuración y URL del firmador desde ambientes asociados al config de la empresa (como RomaCopies)
+            $config = DB::table('config')->where('company_id', $empresa->id)->first();
+            $ambiente = DB::table('ambientes')->where('id', $config->ambiente ?? null)->select('url_firmador')->first();
 
             $datosFirma = [
                 'nit' => $empresa->nit ?? '',
                 'activo' => true,
-                'passwordPri' => $empresa->passwordPri ?? '',
+                'passwordPri' => $config->passPrivateKey ?? '',
                 'dteJson' => $dteJson
             ];
             $firmadorUrl = $ambiente->url_firmador ?? null;

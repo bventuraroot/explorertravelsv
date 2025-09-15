@@ -367,6 +367,20 @@ $(function () {
                 let company=$('#selectcompany').val();
                 indexclient(company);
               });
+
+              // Preseleccionar la empresa por defecto sin disparar el cambio
+              var defaultCompany = $('#companyselected').val();
+              if (defaultCompany && defaultCompany !== '0') {
+                $('#selectcompany').val(defaultCompany);
+              }
+
+              // Aplicar select2 al select creado dinámicamente (si está disponible)
+              if ($.fn.select2) {
+                $('#selectcompany').select2({
+                  placeholder: 'Seleccionar empresa',
+                  dropdownParent: $('#selectcompany').parent()
+                });
+              }
           });
       }
     });

@@ -55,6 +55,33 @@ $(function () {
                         "</option>"
                 );
             });
+
+            // Auto seleccionar empresa y avanzar a cliente si solo hay una (comportamiento RomaCopies)
+            if (Array.isArray(response) && response.length === 1) {
+                var autoCompanyId = response[0].id;
+                $("#company").val(autoCompanyId).trigger('change');
+                // Habilitar siguiente paso y precargar clientes
+                aviablenext(autoCompanyId);
+                if (typeof getclientbycompanyurl === 'function') {
+                    getclientbycompanyurl(autoCompanyId);
+                }
+                // Crear correlativo inmediatamente y avanzar al paso de cliente
+                if (typeof createcorrsale === 'function') {
+                    // Asegurar que typedocument esté disponible
+                    var typedocument = $("#typedocument").val();
+                    if (!typedocument || typedocument === '') {
+                        // intentar leer de la URL como en RomaCopies
+                        var urlParams = new URLSearchParams(window.location.search);
+                        typedocument = urlParams.get('typedocument') || $("input[name=typedocument]:checked").val();
+                    }
+                    // createcorrsale usa #company, #iduser y #typedocument internamente
+                    createcorrsale();
+                }
+                // Avanzar al siguiente paso del wizard
+                setTimeout(function(){
+                    $("#step1").trigger('click');
+                }, 200);
+            }
         },
     });
 
@@ -222,6 +249,7 @@ function agregarp() {
     var acuenta = ($("#acuenta").val()==""?'SIN VALOR DEFINIDO':$("#acuenta").val());
     var fpago = $("#fpago").val();
     var productname = $("#productname").val();
+    var marca = $("#marca").length ? $("#marca").val() : '';
     var price = parseFloat($("#precio").val());
     var ivarete13 = parseFloat($("#ivarete13").val());
     var rentarete = parseFloat($("#rentarete").val())||0.00;
@@ -287,11 +315,14 @@ function agregarp() {
     ($.isNumeric(renta10temp)? parseFloat(renta10temp): 0) -
     ($.isNumeric(ivarete)? ivarete: 0));
 
-    //descripcion factura
-    if(productid==10){
+    //descripcion factura con preferencia al preview
+    var customDescriptionField = $("#product-description-edit");
+    if (customDescriptionField.length && customDescriptionField.val().trim() !== "") {
+        descriptionbyproduct = customDescriptionField.val().trim();
+    } else if(productid==10){
         descriptionbyproduct = productname;
     }else {
-        descriptionbyproduct =  productname + " " + reserva + " " + ruta;
+        descriptionbyproduct =  productname + (marca? (" " + marca) : (" " + reserva + " " + ruta));
     }
 
     //enviar a temp factura
@@ -494,43 +525,34 @@ function totalamount() {
     totalamount = parseFloat(valor * cantidad);
     totaamountsinivi = parseFloat(totalamount/1.13);
 
-    // Cálculo de IVA retenido
-    if (typedoc === '6' || typedoc === '8') {
+    // IVA 13% (solo CCF)
+    if (typedoc === '3') {
+        totalvalor = parseFloat(totalamount * iva);
+        totalfee = parseFloat((fee * cantidad) * iva);
+        ivarete13 = parseFloat(totalvalor + totalfee);
+        $("#ivarete13").val(ivarete13.toFixed(8));
+    } else {
         $("#ivarete13").val(0);
         ivarete13 = 0.00;
-    } else {
-        totalvalor = parseFloat(valor * iva);
-        totalfee = parseFloat(fee * iva);
-        ivarete13 = parseFloat(totalvalor + totalfee);
-        $("#ivarete13").val(ivarete13.toFixed(2));
     }
 
-    // Cálculo de retención
-    retencionamount = parseFloat(valor * retencion);
-    $("#ivarete").val(retencionamount.toFixed(2));
+    // IVA Percibido 1% sobre total por cantidad
+    retencionamount = parseFloat(totalamount * retencion);
+    $("#ivarete").val(retencionamount.toFixed(8));
 
-    // Cálculo de renta retenida
+    // Renta 10% (sujeto excluido)
     if (typedoc === '8') {
-        renta = parseFloat(valor * 0.10);
-        $("#rentarete").val(renta.toFixed(2));
+        renta = parseFloat(totalamount * 0.10);
+        $("#rentarete").val(renta.toFixed(8));
     } else {
         renta = 0.00;
     }
 
-    // Depuración: Verificar tipos de datos
-    //console.log("fee:", typeof fee, fee);
-    //console.log("fee2:", typeof fee2, fee2);
-    //console.log("iva:", typeof iva, iva);
-    //console.log("ivarete13:", typeof ivarete13, ivarete13);
-    //console.log("retencionamount:", typeof retencionamount, retencionamount);
-    //console.log("renta:", typeof renta, renta);
+    // Total general: precio + fee*cantidad + IVA - retenciones
+    totalfee = parseFloat(fee * cantidad);
+    var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
 
-    // Cálculo del total asegurando que todo es número
-
-
-    var totalFinal = totalamount + fee + ivarete13 + retencionamount + renta;
-
-    $("#total").val(totalFinal.toFixed(2)); // Aplicar `.toFixed(2)` solo después de la suma final
+    $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
 }
 
 
@@ -557,14 +579,27 @@ function searchproduct(idpro) {
 
                 if(typedoc=='6' || typedoc=='8'){
                     pricevalue = parseFloat(value.price);
+                }else if(typedoc=='3'){
+                    // Crédito Fiscal: precio unitario SIN IVA
+                    pricevalue = parseFloat(value.price/1.13);
+                    // Llenar también el campo de precio con IVA si existe
+                    if($("#precioConIva").length){
+                        $("#precioConIva").val(parseFloat(value.price).toFixed(8));
+                    }
                 }else{
                     pricevalue = parseFloat(value.price/iva_entre);
                 }
-                $("#precio").val(pricevalue.toFixed(2));
+                $("#precio").val((typedoc==='3'? pricevalue.toFixed(8) : pricevalue.toFixed(2)));
                 $("#productname").val(value.productname);
+                if($("#marca").length){ $("#marca").val(value.marcaname); }
                 $("#productid").val(value.id);
                 $("#productdescription").val(value.description);
                 $("#productunitario").val(value.id);
+                // Pre-llenar el campo de descripción personalizada con la descripción por defecto
+                if($("#product-description-edit").length){
+                    var defaultDescription = value.productname + (value.marcaname? (" " + value.marcaname) : "");
+                    $("#product-description-edit").val(defaultDescription);
+                }
                 //validar si es gran contribuyente el cliente vs la empresa
 
                 if (typecontricompany == "GRA") {
@@ -581,17 +616,17 @@ function searchproduct(idpro) {
                 if(typecontriclient==""){
                     retencion = 0.0;
                 }
-                if(typedoc=='6' || typedoc=='8'){
-                    $("#ivarete13").val(0);
+                if(typedoc=='3'){
+                    $("#ivarete13").val(parseFloat(pricevalue * iva).toFixed(8));
                 }else{
-                    $("#ivarete13").val(parseFloat(pricevalue.toFixed(2) * iva).toFixed(2));
+                    $("#ivarete13").val(0);
                 }
                 $("#ivarete").val(
-                    parseFloat(pricevalue.toFixed(2) * retencion).toFixed(2)
+                    parseFloat(pricevalue * retencion).toFixed(8)
                 );
                 if(typedoc=='8'){
                     $("#rentarete").val(
-                        parseFloat(pricevalue.toFixed(2) * 0.10).toFixed(2)
+                        parseFloat(pricevalue * 0.10).toFixed(8)
                     );
                 }
             });
@@ -740,13 +775,65 @@ function getclientbycompanyurl(idcompany) {
 }
 
 function valtrypecontri(idcliente) {
-    //traer el tipo de contribuyente
+    // Limpiar/ocultar panel antes de cargar
+    if ($("#client-info").length) { $("#client-info").hide(); }
+
+    if (!idcliente || idcliente === '0') {
+        return;
+    }
+
+    // Obtener información completa del cliente y validar CCF si aplica
     $.ajax({
         url: "/client/gettypecontri/" + btoa(idcliente),
         method: "GET",
         success: function (response) {
             $("#typecontribuyenteclient").val(response.tipoContribuyente);
+
+            // Validar si se puede crear crédito fiscal
+            var typedocument = $("#typedocument").val();
+            if (typedocument === '3') { // Crédito Fiscal
+                var tpersona = response.tpersona;
+                var contribuyente = response.contribuyente;
+                // Solo permitir: Naturales contribuyentes (contribuyente='1') y Jurídicos
+                if (tpersona === 'N' && contribuyente !== '1') {
+                    Swal.fire({
+                        title: "No se puede crear Crédito Fiscal",
+                        text: "Solo se permiten personas naturales contribuyentes y personas jurídicas.",
+                        icon: "warning",
+                        confirmButtonText: "Entendido"
+                    });
+                    $("#client").val('').trigger('change');
+                    return;
+                }
+            }
+
+            // Mostrar panel de información del cliente si está disponible en la vista
+            if ($("#client-info").length) {
+                var clientName = '';
+                if (response.tpersona === 'J') {
+                    clientName = (response.name_contribuyente || response.comercial_name || 'N/A');
+                } else {
+                    clientName = [response.firstname, response.secondname, response.firstlastname, response.secondlastname]
+                        .filter(Boolean)
+                        .join(' ')
+                        .trim();
+                }
+                var clientType = (response.tpersona === 'J') ? 'Persona Jurídica' : 'Persona Natural';
+                var isContrib = (response.tpersona === 'J') ? 'Sí (Jurídico)' : (response.contribuyente === '1' ? 'Sí (Natural Contribuyente)' : 'No (Natural No Contribuyente)');
+
+                $("#client-name").text(clientName || 'N/A');
+                $("#client-type").text(clientType);
+                $("#client-contribuyente").text(isContrib);
+                $("#client-nit").text(response.nit || response.dui || 'N/A');
+                $("#client-address").text(response.address || 'N/A');
+                $("#client-phone").text(response.phone || 'N/A');
+
+                $("#client-info").show();
+            }
         },
+        error: function () {
+            // opcional: feedback
+        }
     });
 }
 function createcorrsale() {
