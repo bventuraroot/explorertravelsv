@@ -39,6 +39,12 @@ $(document).ready(function (){
                 $('#company').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
                 $('#companyupdate').append('<option value="'+value.id+'">'+value.name.toUpperCase()+'</option>');
               });
+            // Auto-seleccionar la primera empresa disponible
+            if (response.length > 0) {
+                var firstCompanyId = response[0].id;
+                $('#company').val(firstCompanyId);
+                $('#companyupdate').val(firstCompanyId);
+            }
         }
     });
     getpaises();
