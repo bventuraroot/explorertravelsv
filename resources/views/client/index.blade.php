@@ -83,7 +83,7 @@ $configData = Helper::appClasses();
                     <td>{{ $client->name_contribuyente }} ( {{ $client->comercial_name }} )</td>
                     @break
                     @case('n')
-                    <td>{{ $client->firstname }} {{ $client->secondname }}</td>
+                    <td>{{ $client->firstname }} {{ $client->secondname }} {{ $client->firstlastname }} {{ $client->secondlastname }}</td>
                     @break
                     @default
                     @endswitch

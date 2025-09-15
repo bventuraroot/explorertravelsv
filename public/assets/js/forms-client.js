@@ -14,6 +14,114 @@ $(document).ready(function () {
     $("#tel1edit").inputmask("9999-9999");
     $("#tel2edit").inputmask("9999-9999");
 
+    // === Validaciones avanzadas (tomadas de RomaCopies) ===
+    function validateRequiredFields() {
+        try {
+            var tpersona = $("#tpersona").val();
+
+            if (!tpersona || tpersona === "0" || tpersona === "") {
+                $("#btnsavenewclient").prop("disabled", true);
+                return;
+            }
+
+            var email = $("#email").val() || "";
+            var tel1 = $("#tel1").val() || "";
+            var country = $("#country").val() || "";
+            var departament = $("#departament").val() || "";
+            var municipio = $("#municipio").val() || "";
+            var address = $("#address").val() || "";
+
+            if (!email || !tel1 || !country || !departament || !municipio || !address) {
+                $("#btnsavenewclient").prop("disabled", true);
+                return;
+            }
+
+            if (tpersona === "N") {
+                var firstname = $("#firstname").val() || "";
+                var firstlastname = $("#firstlastname").val() || "";
+                var extranjero = $("#extranjero").is(":checked");
+
+                if (!firstname || !firstlastname) {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    return;
+                }
+
+                if (extranjero) {
+                    var pasaporte = $("#pasaporte").val() || "";
+                    if (!pasaporte) {
+                        $("#btnsavenewclient").prop("disabled", true);
+                        return;
+                    }
+                } else {
+                    var nit = $("#nit").val() || "";
+                    if (!nit) {
+                        $("#btnsavenewclient").prop("disabled", true);
+                        return;
+                    }
+                }
+
+                var contribuyente = $("#contribuyente").is(":checked");
+                if (contribuyente) {
+                    var ncr = $("#ncr").val() || "";
+                    var tipocontribuyente = $("#tipocontribuyente").val() || "";
+                    var acteconomica = $("#acteconomica").val() || "";
+                    if (!ncr || !tipocontribuyente || acteconomica === "0") {
+                        $("#btnsavenewclient").prop("disabled", true);
+                        return;
+                    }
+                }
+            } else if (tpersona === "J") {
+                var comercial_name = $("#comercial_name").val() || "";
+                var name_contribuyente = $("#name_contribuyente").val() || "";
+                if (!comercial_name || !name_contribuyente) {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    return;
+                }
+                var ncrJ = $("#ncr").val() || "";
+                var tipocontribuyenteJ = $("#tipocontribuyente").val() || "";
+                var acteconomicaJ = $("#acteconomica").val() || "";
+                if (!ncrJ || !tipocontribuyenteJ || acteconomicaJ === "0") {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    return;
+                }
+            }
+
+            validateClientExists();
+        } catch (e) {
+            $("#btnsavenewclient").prop("disabled", true);
+        }
+    }
+
+    function validateClientExists() {
+        var key = "";
+        var tpersona = $("#tpersona").val();
+        var extranjero = $("#extranjero").is(":checked");
+        if (extranjero) {
+            key = $("#pasaporte").val();
+            tpersona = "E";
+        } else if (tpersona == "N") {
+            key = $("#nit").val();
+        } else if (tpersona == "J") {
+            key = $("#ncr").val();
+        }
+        if (!key || key.trim() === "") {
+            $("#btnsavenewclient").prop("disabled", true);
+            return;
+        }
+        $.ajax({
+            url: "/client/keyclient/" + btoa(key) + "/" + btoa(tpersona),
+            method: "GET",
+            success: function (response) {
+                if (response && response.val === true) {
+                    $("#btnsavenewclient").prop("disabled", true);
+                } else {
+                    $("#btnsavenewclient").prop("disabled", false);
+                }
+            },
+            error: function(){ $("#btnsavenewclient").prop("disabled", false); }
+        });
+    }
+
     $("#nit").change(function () {
         var key;
         var tpersona = $("#tpersona").val();
@@ -135,8 +243,17 @@ $(document).ready(function () {
 
     if ($("#companyselected").val() == 0) {
         $("button.add-new").attr("disabled", true);
+    } else {
+        $("button.add-new").attr("disabled", false);
     }
     getpaises();
+    // Disparadores para validación avanzada
+    $("#tpersona, #email, #tel1, #country, #departament, #municipio, #address, #firstname, #firstlastname, #comercial_name, #name_contribuyente, #nit, #ncr, #pasaporte, #tipocontribuyente, #acteconomica").on('input change', function(){
+        validateRequiredFields();
+    });
+    $("#contribuyente, #extranjero").on('change', function(){
+        validateRequiredFields();
+    });
 });
 
 function getpaises(selected = "", type = "") {

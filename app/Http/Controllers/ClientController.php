@@ -33,10 +33,10 @@ class ClientController extends Controller
 
     $company_selected = ($company != "0") ? base64_decode($company) : $company_user;
 
-    // Consultar el rol del usuario (asumiendo que el rol de admin tiene role_id = 1)
+    // Consultar el rol del usuario (admin=1 y contabilidad=2 como en RomaCopies)
     $rolQuery = "SELECT a.role_id FROM model_has_roles a WHERE a.model_id = ?";
     $rolResult = DB::select($rolQuery, [$id_user]);
-    $isAdmin = !empty($rolResult) && $rolResult[0]->role_id == 1;
+    $isAdmin = !empty($rolResult) && ($rolResult[0]->role_id == 1 || $rolResult[0]->role_id == 2);
 
     // Construcción de la consulta
     $clientsQuery = Client::join('addresses', 'clients.address_id', '=', 'addresses.id')
