@@ -149,7 +149,7 @@
                 <input type="text" id="tel2" class="form-control" placeholder="xxxx-xxxx"
                     aria-label="xxxx-xxxx" name="tel2" />
             </div>
-            <div class="mb-3 col-8" style="display: none;">
+            <div class="mb-3 col-8">
                 <label for="company" class="form-label">Empresa</label>
                 <select class="select2company form-select" id="company" name="company"
                     aria-label="Seleccionar opcion">
@@ -233,7 +233,7 @@
                     aria-label="xxxx-xxxx" name="tel2update" />
                     <input type="hidden" name="phone_idupdate" id="phone_idupdate">
             </div>
-            <div class="mb-3 col-8" style="display: none;">
+            <div class="mb-3 col-8">
                 <label for="companyupdate" class="form-label">Empresa</label>
                 <select class="select2companyedit form-select" id="companyupdate" name="companyupdate"
                     aria-label="Seleccionar opcion">
