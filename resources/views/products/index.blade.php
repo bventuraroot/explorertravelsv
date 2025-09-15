@@ -1,10 +1,12 @@
 @php
     $configData = Helper::appClasses();
+    use Milon\Barcode\DNS1D;
 @endphp
 
 @extends('layouts/layoutMaster')
 
 @section('vendor-style')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-bs5/datatables.bootstrap5.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css') }}">
@@ -12,10 +14,43 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/formvalidation/dist/css/formValidation.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/flatpickr/flatpickr.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css') }}" />
-    <link rel="stylesheet"
-        href="{{ asset('assets/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/jquery-timepicker/jquery-timepicker.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/pickr/pickr-themes.css') }}" />
+    <style>
+        .is-invalid {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
+
+        .form-label .text-danger {
+            font-weight: bold;
+        }
+
+        .alert {
+            margin-bottom: 1rem;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+    </style>
 @endsection
 
 @section('vendor-script')
@@ -38,6 +73,280 @@
 @section('page-script')
     <script src="{{ asset('assets/js/app-product-list.js') }}"></script>
     <script src="{{ asset('assets/js/forms-product.js') }}"></script>
+    <script src="{{ asset('assets/js/product-validation.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            var codeInput = $('#code');
+            var codeInputEdit = $('#codeedit');
+            var barcodeDiv = $('#barcode');
+            var barcodeDivEdit = $('#barcodeedit');
+
+            if (!codeInput.length || !barcodeDiv.length) {
+                return;
+            }
+
+            codeInput.on('input', function() {
+                var code = $(this).val();
+                if (!code) {
+                    barcodeDiv.html('');
+                    return;
+                }
+                var url = '{{ url("barcode") }}/' + code;
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    success: function(data) {
+                        if (data.error) {
+                            barcodeDiv.html('<div class="alert alert-danger">Error al generar el código de barras</div>');
+                        } else {
+                            barcodeDiv.html(data.html);
+                        }
+                    },
+                    error: function() {
+                        barcodeDiv.html('<div class="alert alert-danger">Error al generar el código de barras</div>');
+                    }
+                });
+            });
+
+            codeInputEdit.on('input', function() {
+                var code = $(this).val();
+                if (!code) {
+                    barcodeDivEdit.html('');
+                    return;
+                }
+                var url = '{{ url("barcode") }}/' + code;
+                $.ajax({
+                    url: url,
+                    method: 'GET',
+                    success: function(data) {
+                        if (data.error) {
+                            barcodeDivEdit.html('<div class="alert alert-danger">Error al generar el código de barras</div>');
+                        } else {
+                            barcodeDivEdit.html(data.html);
+                        }
+                    },
+                    error: function() {
+                        barcodeDivEdit.html('<div class="alert alert-danger">Error al generar el código de barras</div>');
+                    }
+                });
+            });
+
+            $('#name').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+            $('#nameedit').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+            $('#codeedit').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                }
+            });
+
+            // Validación del formulario de crear producto
+            $('#addproductForm').on('submit', function(e) {
+                var isValid = true;
+                var errorMessages = [];
+
+                // Validar código
+                var code = $('#code').val().trim();
+                if (!code) {
+                    errorMessages.push('El código del producto es obligatorio');
+                    $('#code').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#code').removeClass('is-invalid');
+                }
+
+                // Validar nombre
+                var name = $('#name').val().trim();
+                if (!name) {
+                    errorMessages.push('El nombre del producto es obligatorio');
+                    $('#name').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#name').removeClass('is-invalid');
+                }
+
+                // Validar descripción
+                var description = $('#description').val().trim();
+                if (!description) {
+                    errorMessages.push('La descripción del producto es obligatoria');
+                    $('#description').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#description').removeClass('is-invalid');
+                }
+
+                // Validar clasificación fiscal
+                var cfiscal = $('#cfiscal').val();
+                if (!cfiscal || cfiscal === 'Seleccione') {
+                    errorMessages.push('Debe seleccionar una clasificación fiscal');
+                    $('#cfiscal').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#cfiscal').removeClass('is-invalid');
+                }
+
+                // Validar tipo
+                var type = $('#type').val();
+                if (!type || type === 'Seleccione') {
+                    errorMessages.push('Debe seleccionar un tipo');
+                    $('#type').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#type').removeClass('is-invalid');
+                }
+
+                // Validar precio
+                var price = $('#price').val().trim();
+                if (!price) {
+                    errorMessages.push('El precio es obligatorio');
+                    $('#price').addClass('is-invalid');
+                    isValid = false;
+                } else if (isNaN(price) || parseFloat(price) < 0) {
+                    errorMessages.push('El precio debe ser un número válido mayor o igual a 0');
+                    $('#price').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#price').removeClass('is-invalid');
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de validación',
+                        html: errorMessages.join('<br>'),
+                        confirmButtonText: 'Entendido'
+                    });
+                    return false;
+                }
+            });
+
+            // Validación del formulario de editar producto
+            $('#editproductForm').on('submit', function(e) {
+                var isValid = true;
+                var errorMessages = [];
+
+                // Validar código
+                var code = $('#codeedit').val().trim();
+                if (!code) {
+                    errorMessages.push('El código del producto es obligatorio');
+                    $('#codeedit').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#codeedit').removeClass('is-invalid');
+                }
+
+                // Validar nombre
+                var name = $('#nameedit').val().trim();
+                if (!name) {
+                    errorMessages.push('El nombre del producto es obligatorio');
+                    $('#nameedit').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#nameedit').removeClass('is-invalid');
+                }
+
+                // Validar descripción
+                var description = $('#descriptionedit').val().trim();
+                if (!description) {
+                    errorMessages.push('La descripción del producto es obligatoria');
+                    $('#descriptionedit').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#descriptionedit').removeClass('is-invalid');
+                }
+
+                // Validar clasificación fiscal
+                var cfiscal = $('#cfiscaledit').val();
+                if (!cfiscal || cfiscal === 'Seleccione') {
+                    errorMessages.push('Debe seleccionar una clasificación fiscal');
+                    $('#cfiscaledit').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#cfiscaledit').removeClass('is-invalid');
+                }
+
+                // Validar tipo
+                var type = $('#typeedit').val();
+                if (!type || type === 'Seleccione') {
+                    errorMessages.push('Debe seleccionar un tipo');
+                    $('#typeedit').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#typeedit').removeClass('is-invalid');
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de validación',
+                        html: errorMessages.join('<br>'),
+                        confirmButtonText: 'Entendido'
+                    });
+                    return false;
+                }
+            });
+
+            // Manejar errores de permisos en el formulario de edición
+            $('#editproductForm').off('submit').on('submit', function(e) {
+                e.preventDefault();
+
+                var form = $(this);
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'PATCH',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Producto actualizado',
+                            text: 'Producto actualizado exitosamente',
+                            icon: 'success',
+                            confirmButtonText: 'Ok'
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                location.reload();
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 403) {
+                            Swal.fire({
+                                title: 'Sin permisos',
+                                text: 'No tienes permisos para editar productos',
+                                icon: 'error',
+                                confirmButtonText: 'Entendido'
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al actualizar el producto',
+                                icon: 'error',
+                                confirmButtonText: 'Entendido'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Limpiar clases de error cuando el usuario empiece a escribir
+            $('input, textarea, select').on('input change', function() {
+                $(this).removeClass('is-invalid');
+            });
+        });
+
+    </script>
 @endsection
 
 @section('title', 'Productos')
@@ -79,18 +388,34 @@
                                 <td>{{ $product->nameprovider }}</td>
                                 <td>{{ $product->cfiscal }}</td>
                                 <td>{{ $product->type }}</td>
-                                <td>{{ $product->state }}</td>
+                                <td>
+                                    @if($product->state == 1)
+                                        <span class="badge bg-label-success">Activo</span>
+                                    @else
+                                        <span class="badge bg-label-danger">Inactivo</span>
+                                    @endif
+                                </td>
                                 <td>{{ $product->description }}</td>
                                 <td><div class="d-flex align-items-center">
-                                    <a href="javascript: editproduct({{ $product->id }});" class="dropdown-item"><i
-                                        class="ti ti-edit ti-sm me-2"></i>Editar</a>
-                                    <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
-                                        data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
-                                    <div class="m-0 dropdown-menu dropdown-menu-end">
-                                        <a href="javascript:deleteproduct({{ $product->id }});" class="dropdown-item"><i
-                                                class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
-
-                                    </div>
+                                    @if(!$isVentas)
+                                        <a href="javascript: editproduct({{ $product->id }});" class="dropdown-item"><i
+                                            class="ti ti-edit ti-sm me-2"></i>Editar</a>
+                                        <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
+                                            data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
+                                        <div class="m-0 dropdown-menu dropdown-menu-end">
+                                            @if($product->state == 1)
+                                                <a href="javascript:toggleState({{ $product->id }}, 0);" class="dropdown-item"><i
+                                                    class="ti ti-toggle-left ti-sm me-2"></i>Desactivar</a>
+                                            @else
+                                                <a href="javascript:toggleState({{ $product->id }}, 1);" class="dropdown-item"><i
+                                                    class="ti ti-toggle-right ti-sm me-2"></i>Activar</a>
+                                            @endif
+                                            <a href="javascript:deleteproduct({{ $product->id }});" class="dropdown-item"><i
+                                                    class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
+                                        </div>
+                                    @else
+                                        <span class="text-muted">Solo lectura</span>
+                                    @endif
                                 </div></td>
                             </tr>
                             @empty
@@ -100,7 +425,9 @@
                                     <td></td>
                                     <td></td>
                                     <td></td>
+                                    <td></td>
                                     <td>No hay datos</td>
+                                    <td></td>
                                     <td></td>
                                     <td></td>
                                     <td></td>
@@ -122,17 +449,45 @@
           <div class="mb-4 text-center">
             <h3 class="mb-2">Crear nuevo producto</h3>
           </div>
+
+          @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+          @endif
           <form id="addproductForm" class="row" action="{{Route('product.store')}}" method="POST" enctype="multipart/form-data">
             @csrf @method('POST')
             <input type="hidden" name="iduser" id="iduser" value="{{Auth::user()->id}}">
-            <div class="mb-3 col-12">
-              <label class="form-label" for="name">Nombre Producto</label>
-              <input type="text" id="name" name="name" class="form-control" placeholder="Nombre del producto" autofocus required/>
+            <div class="mb-3 col-6">
+                <label class="form-label" for="code">Código <span class="text-danger">*</span></label>
+                <input type="text" id="code" name="code" class="form-control @error('code') is-invalid @enderror" placeholder="Código del producto" autofocus required value="{{ old('code') }}"/>
+                <div class="invalid-feedback">El código del producto es obligatorio</div>
+                @error('code')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="mb-3 col-6">
+                <div id="barcode" style="max-width: 200px; margin: 0 auto;"></div>
             </div>
             <div class="mb-3 col-12">
-                <label class="form-label" for="description">Descripcion</label>
-                <!--<input type="text" id="description" style="height: 130%" class="form-control" placeholder="Descripcion" aria-label="Descripcion" name="description" />-->
-                <textarea id="description" class="form-control" aria-label="Descripcion" name="description" rows="3" cols="46"></textarea>
+              <label class="form-label" for="name">Nombre Producto <span class="text-danger">*</span></label>
+              <input type="text" id="name" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="Nombre del producto" required value="{{ old('name') }}"/>
+              <div class="invalid-feedback">El nombre del producto es obligatorio</div>
+              @error('name')
+                  <div class="invalid-feedback d-block">{{ $message }}</div>
+              @enderror
+            </div>
+            <div class="mb-3 col-12">
+                <label class="form-label" for="description">Descripción <span class="text-danger">*</span></label>
+                <textarea id="description" class="form-control @error('description') is-invalid @enderror" aria-label="Descripción" name="description" rows="3" cols="46" placeholder="Descripción del producto" required>{{ old('description') }}</textarea>
+                <div class="invalid-feedback">La descripción del producto es obligatoria</div>
+                @error('description')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
             <div class="mb-3 col-12">
                 <label for="provider" class="form-label">Proveedor</label>
@@ -141,30 +496,45 @@
                 </select>
             </div>
             <div class="mb-3 col-6">
-                <label for="cfiscal" class="form-label">Clasificación Fiscal</label>
-                <select class="select2cfiscal form-select" id="cfiscal" name="cfiscal"
-                    aria-label="Seleccionar opcion">
-                    <option selected>Seleccione</option>
-                    <option value="gravado">Gravado</option>
-                    <option value="exento">Exento</option>
+                <label for="cfiscal" class="form-label">Clasificación Fiscal <span class="text-danger">*</span></label>
+                <select class="select2cfiscal form-select @error('cfiscal') is-invalid @enderror" id="cfiscal" name="cfiscal"
+                    aria-label="Seleccionar opcion" required>
+                    <option value="">Seleccione</option>
+                    <option value="gravado" {{ old('cfiscal') == 'gravado' ? 'selected' : '' }}>Gravado</option>
+                    <option value="exento" {{ old('cfiscal') == 'exento' ? 'selected' : '' }}>Exento</option>
                 </select>
+                <div class="invalid-feedback">Debe seleccionar una clasificación fiscal</div>
+                @error('cfiscal')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
             <div class="mb-3 col-6">
-                <label for="type" class="form-label">Tipo</label>
-                <select class="select2type form-select" id="type" name="type" aria-label="Seleccionar opcion">
-                    <option selected>Seleccione</option>
-                    <option value="directo">Directo</option>
-                    <option value="tercero">Tercero</option>
+                <label for="type" class="form-label">Tipo <span class="text-danger">*</span></label>
+                <select class="select2type form-select @error('type') is-invalid @enderror" id="type" name="type" aria-label="Seleccionar opcion" required>
+                    <option value="">Seleccione</option>
+                    <option value="directo" {{ old('type') == 'directo' ? 'selected' : '' }}>Directo</option>
+                    <option value="tercero" {{ old('type') == 'tercero' ? 'selected' : '' }}>Tercero</option>
                 </select>
+                <div class="invalid-feedback">Debe seleccionar un tipo</div>
+                @error('type')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
             <div class="mb-3 col-6">
-                <label class="form-label" for="price">Precio</label>
-                <input type="text" id="price" class="form-control" placeholder="$"
-                    aria-label="Precio $" name="price" />
+                <label class="form-label" for="price">Precio <span class="text-danger">*</span></label>
+                <input type="number" id="price" class="form-control @error('price') is-invalid @enderror" placeholder="0.00" step="0.01" min="0"
+                    aria-label="Precio $" name="price" required value="{{ old('price') }}"/>
+                <div class="invalid-feedback">El precio es obligatorio y debe ser un número válido</div>
+                @error('price')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
-            <div class="mb-3 col-12">
-                <label for="image" class="form-label">Imagen</label>
-                <input class="form-control" type="file" id="image" name="image">
+                        <div class="mb-3 col-12">
+                <x-simple-image-upload
+                    name="image"
+                    label="Imagen del Producto"
+                    :required="false"
+                />
             </div>
             <div class="text-center col-12 demo-vertical-spacing">
               <button type="submit" class="btn btn-primary me-sm-3 me-1">Crear</button>
@@ -185,18 +555,37 @@
           <div class="mb-4 text-center">
             <h3 class="mb-2">Editar producto</h3>
           </div>
-          <form id="addproductForm" class="row" action="{{Route('product.update')}}" method="POST" enctype="multipart/form-data">
+
+          @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+          @endif
+          <form id="editproductForm" class="row" action="{{Route('product.update')}}" method="POST" enctype="multipart/form-data">
             @csrf @method('PATCH')
             <input type="hidden" name="iduser" id="iduser" value="{{Auth::user()->id}}">
             <input type="hidden" name="idedit" id="idedit">
-            <div class="mb-3 col-12">
-              <label class="form-label" for="nameedit">Nombre Producto</label>
-              <input type="text" id="nameedit" name="nameedit" class="form-control" placeholder="Nombre del producto" autofocus required/>
+            <div class="mb-3 col-6">
+                <label class="form-label" for="codeedit">Código <span class="text-danger">*</span></label>
+                <input type="text" id="codeedit" name="codeedit" class="form-control" placeholder="Código del producto" autofocus required/>
+                <div class="invalid-feedback">El código del producto es obligatorio</div>
+            </div>
+            <div class="mb-3 col-6">
+                <div id="barcodeedit" style="max-width: 200px; margin: 0 auto;"></div>
             </div>
             <div class="mb-3 col-12">
-                <label class="form-label" for="descriptionedit">Descripcion</label>
-                <!--<input type="text" id="descriptionedit" class="form-control" placeholder="Descripcion" aria-label="Descripcion" name="descriptionedit" />-->
-                <textarea id="descriptionedit" class="form-control" aria-label="Descripcion" name="descriptionedit" rows="3" cols="46"></textarea>
+              <label class="form-label" for="nameedit">Nombre Producto <span class="text-danger">*</span></label>
+              <input type="text" id="nameedit" name="nameedit" class="form-control" placeholder="Nombre del producto" autofocus required/>
+              <div class="invalid-feedback">El nombre del producto es obligatorio</div>
+            </div>
+            <div class="mb-3 col-12">
+                <label class="form-label" for="descriptionedit">Descripción <span class="text-danger">*</span></label>
+                <textarea id="descriptionedit" class="form-control" aria-label="Descripción" name="descriptionedit" rows="3" cols="46" placeholder="Descripción del producto" required></textarea>
+                <div class="invalid-feedback">La descripción del producto es obligatoria</div>
             </div>
             <div class="mb-3 col-12">
                 <label for="provideredit" class="form-label">Proveedor</label>
@@ -205,32 +594,41 @@
                 </select>
             </div>
             <div class="mb-3 col-6">
-                <label for="cfiscaledit" class="form-label">Clasificación Fiscal</label>
+                <label for="cfiscaledit" class="form-label">Clasificación Fiscal <span class="text-danger">*</span></label>
                 <select class="select2cfiscaledit form-select" id="cfiscaledit" name="cfiscaledit"
-                    aria-label="Seleccionar opcion">
-                    <option selected>Seleccione</option>
+                    aria-label="Seleccionar opcion" required>
+                    <option value="">Seleccione</option>
                     <option value="gravado">Gravado</option>
                     <option value="exento">Exento</option>
                 </select>
+                <div class="invalid-feedback">Debe seleccionar una clasificación fiscal</div>
             </div>
             <div class="mb-3 col-6">
-                <label for="typeedit" class="form-label">Tipo</label>
+                <label for="typeedit" class="form-label">Tipo <span class="text-danger">*</span></label>
                 <select class="select2typeedit form-select" id="typeedit" name="typeedit"
-                    aria-label="Seleccionar opcion">
-                    <option selected>Seleccione</option>
+                    aria-label="Seleccionar opcion" required>
+                    <option value="">Seleccione</option>
                     <option value="directo">Directo</option>
                     <option value="tercero">Tercero</option>
                 </select>
+                <div class="invalid-feedback">Debe seleccionar un tipo</div>
             </div>
             <div class="mb-3 col-6">
                 <label class="form-label" for="priceedit">Precio</label>
-                <input type="text" id="priceedit" class="form-control" placeholder="$" aria-label="Precio $" name="priceedit" disabled/>
+                <input type="text" id="priceedit" class="form-control" placeholder="$" aria-label="Precio $" name="priceedit"/>
             </div>
             <div class="mb-3 col-6" id="imageview">
             </div>
+            <!-- Preview de imagen actual para edición -->
             <div class="mb-3 col-12">
-                <label for="imageedit" class="form-label">Imagen</label>
-                <input class="form-control" type="file" id="image" name="image">
+                <div id="current-image-imageedit"></div>
+            </div>
+            <div class="mb-3 col-12">
+                <x-simple-image-upload
+                    name="imageedit"
+                    label="Imagen del Producto"
+                    :required="false"
+                />
             </div>
             <div class="text-center col-12 demo-vertical-spacing">
               <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar</button>
