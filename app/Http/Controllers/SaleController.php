@@ -425,7 +425,7 @@ class SaleController extends Controller
             $querycliente = "SELECT
         a.id idcliente,
         IF(a.nit = '00000000-0', NULL, a.nit) as nit,
-        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
+        IF(a.ncr = 'N/A' or a.ncr = '0' or a.ncr is null, NULL, CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED)) AS ncr,
         CASE
             WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
             WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
