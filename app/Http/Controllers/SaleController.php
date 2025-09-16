@@ -505,14 +505,13 @@ class SaleController extends Controller
                         if ($respuesta_hacienda["codEstado"] == "03") {
                             // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
                             $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
-                            dd($dtecreate);
                             // REGISTRAR ERROR EN LA TABLA dte_errors
-                            $this->registrarErrorDte($dtecreate, 'hacienda', 'HACIENDA_REJECTED', $respuesta_hacienda["descripcionMsg"] ?? 'Documento rechazado por Hacienda', [
+                            $error = $this->registrarErrorDte($dtecreate, 'hacienda', 'HACIENDA_REJECTED', $respuesta_hacienda["descripcionMsg"] ?? 'Documento rechazado por Hacienda', [
                                 'codigoMsg' => $respuesta_hacienda["codigoMsg"] ?? null,
                                 'observacionesMsg' => $respuesta_hacienda["observacionesMsg"] ?? null,
                                 'sale_id' => base64_decode($corr)
                             ]);
-
+                            dd($error);
                             return json_encode($respuesta_hacienda);
                         }
                         $comprobante["json"] = $respuesta_hacienda;
