@@ -167,32 +167,42 @@ class DteAdminController extends Controller
     {
         $filtros = $request->only(['tipo', 'empresa_id', 'resuelto']);
 
-        $query = DteError::with(['dte.company', 'resueltoPor'])
-            ->whereNotNull('id')
-            ->where('id', '!=', '');
+        // Consulta simplificada para debug
+        $query = DteError::with(['dte.company', 'resueltoPor']);
 
-        if (isset($filtros['tipo']) && $filtros['tipo']) {
+        // Aplicar filtros solo si se especifican
+        if (isset($filtros['tipo']) && $filtros['tipo'] && $filtros['tipo'] !== 'todos') {
             $query->porTipo($filtros['tipo']);
         }
 
-        if (isset($filtros['empresa_id']) && $filtros['empresa_id']) {
+        if (isset($filtros['empresa_id']) && $filtros['empresa_id'] && $filtros['empresa_id'] !== 'todas') {
             $query->whereHas('dte', function($q) use ($filtros) {
                 $q->where('company_id', $filtros['empresa_id']);
             });
         }
 
-        if (isset($filtros['resuelto'])) {
+        if (isset($filtros['resuelto']) && $filtros['resuelto'] !== 'todos') {
             if ($filtros['resuelto'] === '1') {
                 $query->where('resuelto', true);
-            } else {
+            } elseif ($filtros['resuelto'] === '0') {
                 $query->noResueltos();
             }
         } else {
-            $query->noResueltos(); // Por defecto mostrar solo no resueltos
+            // Por defecto mostrar solo no resueltos
+            $query->noResueltos();
         }
 
         $errores = $query->orderBy('created_at', 'desc')->paginate(20);
         $empresas = Company::select('id', 'name')->orderBy('name')->get();
+
+        // Debug: Log de información
+        \Log::info('DTE Errores Debug', [
+            'filtros' => $filtros,
+            'total_errores' => $errores->total(),
+            'errores_count' => $errores->count(),
+            'query_sql' => $query->toSql(),
+            'query_bindings' => $query->getBindings()
+        ]);
 
         // Calcular estadísticas
         $estadisticas = [

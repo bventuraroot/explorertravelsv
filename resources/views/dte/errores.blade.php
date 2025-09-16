@@ -189,6 +189,17 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Debug: Mostrar información de errores --}}
+                            @if($errores->count() == 0)
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No se encontraron errores con los filtros aplicados
+                                        <br>
+                                        <small>Total de errores en la consulta: {{ $errores->total() }}</small>
+                                    </td>
+                                </tr>
+                            @endif
                             @foreach($errores as $error)
                             <tr class="{{ $error->resuelto ? 'table-success' : '' }}">
                                 <td>{{ $error->id ?? 'N/A' }}</td>
