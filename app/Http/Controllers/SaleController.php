@@ -1872,7 +1872,7 @@ class SaleController extends Controller
                 $codigo,
                 $descripcion,
                 $detalles,
-                [], // stack_trace vacío por ahora
+                debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5),
                 $jsonCompleto
             );
         } catch (\Exception $e) {
