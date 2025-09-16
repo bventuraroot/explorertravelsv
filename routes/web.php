@@ -213,7 +213,7 @@ Route::group(['prefix' => 'config', 'as' => 'config.'], function(){
 
     Route::get('index', [ConfigController::class, 'index'])->name('index');
     Route::post('store', [ConfigController::class, 'store'])->name('store');
-    Route::get('update', [ConfigController::class, 'update'])->name('update');
+    Route::post('update', [ConfigController::class, 'update'])->name('update');
     Route::get('getconfigid/{id}', [ConfigController::class, 'getconfigid'])->name('getconfigid');
     Route::get('destroy/{id}', [ConfigController::class, 'destroy'])->name('destroy');
 });
