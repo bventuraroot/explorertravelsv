@@ -501,8 +501,9 @@ class SaleController extends Controller
                     $contingencia = 1;
                     if ($contingencia) {
                         $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
-                        dd($respuesta_hacienda["codEstado"]);
+                        //dd($respuesta_hacienda["codEstado"]);
                         if ($respuesta_hacienda["codEstado"] == "03") {
+                            dd("entro aqui");
                             // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
                             $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
 
