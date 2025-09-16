@@ -399,6 +399,9 @@
                                 <td>{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
                                 <td>{{ $sale->document_name }}</td>
                                 <td>
+                                    @if($sale->typesale == 2)
+                                        <span class="badge bg-warning">BORRADOR</span>
+                                    @else
                                     @switch($sale->state)
                                         @case(0)
                                             <span class="badge bg-danger">ANULADO</span>
@@ -418,6 +421,7 @@
 
                                         @default
                                     @endswitch
+                                    @endif
                                 </td>
                                 <td>
                                     @switch($sale->tpersona)

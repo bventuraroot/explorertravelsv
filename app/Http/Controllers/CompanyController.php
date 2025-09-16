@@ -46,6 +46,12 @@ class CompanyController extends Controller
         ->select('companies.id', 'companies.name', 'companies.tipoContribuyente')
         ->where('permission_company.user_id', '=', $idUser)
         ->get();
+
+        // Si no hay empresas asignadas al usuario, devolver todas las empresas disponibles
+        if ($Company->isEmpty()) {
+            $Company = Company::select('companies.id', 'companies.name', 'companies.tipoContribuyente')->get();
+        }
+
         return response()->json($Company);
     }
 

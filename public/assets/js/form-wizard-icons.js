@@ -7,6 +7,10 @@ $( document ).ready(function() {
     var operation = $('#operation').val();
     var valdraft = $('#valdraft').val();
     var valcorr = $('#valcorr').val();
+    // Mostrar inmediatamente el correlativo (ID de venta) si viene en la URL
+    if (valcorr && $('#corr').length) {
+        $('#corr').val(valcorr);
+    }
     if (operation == 'delete') {
         var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
         stepper.to(3);
@@ -66,7 +70,9 @@ $(function () {
                     getclientbycompanyurl(autoCompanyId);
                 }
                 // Crear correlativo inmediatamente y avanzar al paso de cliente
-                if (typeof createcorrsale === 'function') {
+                // Evitar bucle si ya venimos con un borrador/correlativo en URL o ya fue creado
+                var hasValCorr = $("#valcorr").val();
+                if (!hasValCorr && typeof createcorrsale === 'function' && !window.__creatingCorr) {
                     // Asegurar que typedocument esté disponible
                     var typedocument = $("#typedocument").val();
                     if (!typedocument || typedocument === '') {
@@ -75,12 +81,16 @@ $(function () {
                         typedocument = urlParams.get('typedocument') || $("input[name=typedocument]:checked").val();
                     }
                     // createcorrsale usa #company, #iduser y #typedocument internamente
+                    window.__creatingCorr = true;
                     createcorrsale();
                 }
-                // Avanzar al siguiente paso del wizard
-                setTimeout(function(){
-                    $("#step1").trigger('click');
-                }, 200);
+                // Avanzar al siguiente paso del wizard únicamente si ya hay correlativo (borrador)
+                // Si acabamos de crear correlativo, el redirect hará el resto
+                if (hasValCorr) {
+                    setTimeout(function(){
+                        $("#step1").trigger('click');
+                    }, 200);
+                }
             }
         },
     });
@@ -840,7 +850,9 @@ function createcorrsale() {
     //crear correlativo temp de factura
     let salida = false;
     var valicorr = $("#corr").val();
-    if (valicorr == "") {
+    var valdraftcorr = $("#valcorr").val();
+    // Si ya existe correlativo en campo local o viene en la URL como borrador, no crear de nuevo
+    if (valicorr == "" && (typeof valdraftcorr === 'undefined' || valdraftcorr === "")) {
         var idcompany = $("#company").val();
         var iduser = $("#iduser").val();
         var typedocument = $("#typedocument").val();
@@ -853,12 +865,17 @@ function createcorrsale() {
                     //recargar la pagina para retomar si una factura quedo en modo borrador
                     //$("#corr").val(response);
                     //salida = true;
+                    window.__creatingCorr = false;
                     window.location.href =
                         "create?corr=" + response.sale_id + "&draft=true&typedocument=" + typedocument;
                 } else {
                     Swal.fire("Hay un problema, favor verificar"+response);
+                    window.__creatingCorr = false;
                 }
             },
+            error: function(){
+                window.__creatingCorr = false;
+            }
         });
     } else {
         salida = true;

@@ -181,16 +181,16 @@
                                 <label class="form-label" for="fpago">Forma de pago</label>
                                 <select class="select2" id="fpago" name="fpago" onchange="valfpago(this.value)">
                                     <option value="0">Seleccione</option>
-                                    <option value="1">Contado</option>
-                                    <option value="2">A crédito</option>
+                                    <option selected value="1">Contado</option>
+                                    <!--<option value="2">A crédito</option>-->
                                     <option value="3">Tarjeta</option>
                                 </select>
                             </div>
-                            <div class="col-sm-8">
+                            <!--<div class="col-sm-8">
                                 <label class="form-label" for="acuenta">Venta a cuenta de</label>
                                 <input type="text" id="acuenta" name="acuenta" class="form-control"
                                     placeholder="" />
-                            </div>
+                            </div>-->
                             <div class="col-sm-3" style="display: none;" id="isfcredito">
                                 <label class="form-label" for="datefcredito">Fecha</label>
                                 <input type="date" id="datefcredito" name="datefcredito" class="form-control"

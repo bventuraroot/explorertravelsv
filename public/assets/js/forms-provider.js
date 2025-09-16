@@ -30,10 +30,14 @@ $(document).ready(function (){
     });
     //Get companies avaibles
     var iduser = $('#iduser').val();
+    console.log('ID Usuario:', iduser);
+    console.log('URL:', "/company/getCompanybyuser/"+iduser);
+
     $.ajax({
         url: "/company/getCompanybyuser/"+iduser,
         method: "GET",
         success: function(response){
+            console.log('Respuesta de empresas:', response);
             if (response.length > 0) {
                 // Auto-seleccionar la primera empresa disponible
                 var firstCompanyId = response[0].id;
@@ -54,7 +58,15 @@ $(document).ready(function (){
                 // Si no hay empresas, mostrar mensaje pero no permitir guardar
                 $('#company').append('<option value="">No hay empresas disponibles</option>');
                 $('#companyupdate').append('<option value="">No hay empresas disponibles</option>');
+                console.log('No hay empresas disponibles para el usuario');
             }
+        },
+        error: function(xhr, status, error) {
+            console.log('Error al cargar empresas:', error);
+            console.log('Status:', status);
+            console.log('Response:', xhr.responseText);
+            $('#company').append('<option value="">Error al cargar empresas</option>');
+            $('#companyupdate').append('<option value="">Error al cargar empresas</option>');
         }
     });
     getpaises();
