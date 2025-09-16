@@ -1091,7 +1091,7 @@ function creardocuments() {
                         url: "createdocument/" + btoa(corr) + '/' + totalamount,
                         method: "GET",
                         success: function (response) {
-                            console.log(response);
+                            //console.log(response);
                             if (response.res == 1) {
                                 resolve(response); // Resuelve la promesa si la solicitud es exitosa
                             } else if (response.res == 0) {
