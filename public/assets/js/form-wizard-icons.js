@@ -1091,13 +1091,62 @@ function creardocuments() {
                         url: "createdocument/" + btoa(corr) + '/' + totalamount,
                         method: "GET",
                         success: function (response) {
-                            //console.log(response);
+                            console.log('Respuesta del servidor:', response);
+
                             if (response.res == 1) {
                                 resolve(response); // Resuelve la promesa si la solicitud es exitosa
                             } else if (response.res == 0) {
                                 reject("Algo salió mal"); // Rechaza la promesa si hay un problema
+                            } else if (typeof response === 'string') {
+                                // Respuesta de error de Hacienda (JSON string)
+                                try {
+                                    const errorData = JSON.parse(response);
+                                    if (errorData.codEstado === "03") {
+                                        reject({
+                                            type: 'hacienda_rejected',
+                                            message: errorData.descripcionMsg || 'Documento rechazado por Hacienda',
+                                            codigo: errorData.codigoMsg,
+                                            observaciones: errorData.observacionesMsg,
+                                            data: errorData
+                                        });
+                                    } else {
+                                        reject({
+                                            type: 'hacienda_error',
+                                            message: errorData.descripcionMsg || 'Error en Hacienda',
+                                            data: errorData
+                                        });
+                                    }
+                                } catch (e) {
+                                    reject({
+                                        type: 'parse_error',
+                                        message: 'Error al procesar respuesta de Hacienda',
+                                        rawResponse: response
+                                    });
+                                }
+                            } else if (response.error) {
+                                // Error del servidor
+                                reject({
+                                    type: 'server_error',
+                                    message: response.message || 'Error del servidor',
+                                    error: response.error
+                                });
+                            } else {
+                                reject({
+                                    type: 'unknown_error',
+                                    message: 'Error desconocido',
+                                    response: response
+                                });
                             }
                         },
+                        error: function (xhr, status, error) {
+                            console.error('Error AJAX:', xhr, status, error);
+                            reject({
+                                type: 'ajax_error',
+                                message: 'Error de conexión: ' + error,
+                                status: xhr.status,
+                                response: xhr.responseText
+                            });
+                        }
                     });
                 });
             },
@@ -1116,11 +1165,115 @@ function creardocuments() {
             }
         })
         .catch((error) => {
-            swalWithBootstrapButtons.fire(
-                "Problemas!",
-                "Algo sucedió y el documento no fue creado, favor comunicarse con el administrador.",
-                "success"
-            );
+            console.error('Error en creación de documento:', error);
+
+            let title = "Error";
+            let message = "Algo sucedió y el documento no fue creado.";
+            let icon = "error";
+            let showCancelButton = false;
+            let confirmButtonText = "Entendido";
+            let cancelButtonText = null;
+
+            // Manejar diferentes tipos de errores
+            if (typeof error === 'object' && error.type) {
+                switch (error.type) {
+                    case 'hacienda_rejected':
+                        title = "Documento Rechazado por Hacienda";
+                        message = `
+                            <div class="text-left">
+                                <p><strong>Motivo:</strong> ${error.message}</p>
+                                ${error.codigo ? `<p><strong>Código:</strong> ${error.codigo}</p>` : ''}
+                                ${error.observaciones ? `<p><strong>Observaciones:</strong> ${error.observaciones}</p>` : ''}
+                                <hr>
+                                <p class="text-muted small">La venta se ha guardado como borrador. Puedes corregir los datos y reintentar.</p>
+                            </div>
+                        `;
+                        icon = "warning";
+                        showCancelButton = true;
+                        confirmButtonText = "Reintentar";
+                        cancelButtonText = "Ver Borradores";
+                        break;
+
+                    case 'hacienda_error':
+                        title = "Error en Hacienda";
+                        message = `
+                            <div class="text-left">
+                                <p><strong>Error:</strong> ${error.message}</p>
+                                <hr>
+                                <p class="text-muted small">La venta se ha guardado como borrador. Intenta nuevamente más tarde.</p>
+                            </div>
+                        `;
+                        icon = "error";
+                        break;
+
+                    case 'server_error':
+                        title = "Error del Servidor";
+                        message = `
+                            <div class="text-left">
+                                <p><strong>Error:</strong> ${error.message}</p>
+                                <hr>
+                                <p class="text-muted small">Comunícate con el administrador si el problema persiste.</p>
+                            </div>
+                        `;
+                        icon = "error";
+                        break;
+
+                    case 'ajax_error':
+                        title = "Error de Conexión";
+                        message = `
+                            <div class="text-left">
+                                <p><strong>Error:</strong> ${error.message}</p>
+                                <p><strong>Estado:</strong> ${error.status}</p>
+                                <hr>
+                                <p class="text-muted small">Verifica tu conexión a internet e intenta nuevamente.</p>
+                            </div>
+                        `;
+                        icon = "error";
+                        break;
+
+                    default:
+                        title = "Error Desconocido";
+                        message = `
+                            <div class="text-left">
+                                <p><strong>Error:</strong> ${error.message || 'Error desconocido'}</p>
+                                <hr>
+                                <p class="text-muted small">Comunícate con el administrador.</p>
+                            </div>
+                        `;
+                        icon = "error";
+                        break;
+                }
+            } else if (typeof error === 'string') {
+                // Error simple (compatibilidad con código anterior)
+                title = "Error";
+                message = error;
+                icon = "error";
+            }
+
+            // Mostrar el SweetAlert con la configuración apropiada
+            const swalConfig = {
+                title: title,
+                html: message,
+                icon: icon,
+                showCancelButton: showCancelButton,
+                confirmButtonText: confirmButtonText,
+                cancelButtonText: cancelButtonText,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            };
+
+            swalWithBootstrapButtons.fire(swalConfig).then((result) => {
+                if (result.isConfirmed && error.type === 'hacienda_rejected') {
+                    // Reintentar la creación del documento
+                    console.log('Reintentando creación de documento...');
+                    // Aquí podrías llamar nuevamente a la función de creación
+                    // o recargar la página para que el usuario corrija los datos
+                    window.location.reload();
+                } else if (result.dismiss === Swal.DismissReason.cancel && error.type === 'hacienda_rejected') {
+                    // Ir a ver borradores
+                    window.location.href = "index";
+                }
+            });
         });
 }
 
