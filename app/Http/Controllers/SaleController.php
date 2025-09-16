@@ -1321,6 +1321,7 @@ class SaleController extends Controller
         $comprobante_electronico = [];
         //return $comprobante_electronico;
         $comprobante_electronico = convertir_json($comprobante, $codTransaccion);
+        dd($comprobante_electronico);
         //return $comprobante_electronico;
         if ($codTransaccion == "02" || $codTransaccion == "05") {
             $tipo_documento = $comprobante["documento"][0]["tipodocumento"];
