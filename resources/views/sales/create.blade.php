@@ -692,7 +692,7 @@
                             <button class="btn btn-label-secondary btn-prev"> <i class="ti ti-arrow-left me-sm-1"></i>
                                 <span class="align-middle d-sm-inline-block d-none">Previous</span>
                             </button>
-                            <button class="btn btn-success btn-submit">Crear</button>
+                            <button class="btn btn-success btn-submit">Presentar Hacienda</button>
                         </div>
                     </div>
                 </form>

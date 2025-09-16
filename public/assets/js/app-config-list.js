@@ -327,14 +327,18 @@ $(function () {
             console.log(response);
             $.each(response, function(index, value) {
                     $('#versionedit').val(value.version);
-                    $("#companyedit option[value="+ value.company_id +"]").attr("selected",true);
+                    $("#companyedit").val(value.company_id).trigger('change');
                     $('#typemodeledit').val(value.typeModel);
                     $('#typetransmissionedit').val(value.typeTransmission);
                     $('#typecontingenciaedit').val(value.typeContingencia);
-                    $("#versionjsonedit option[value="+ value.versionJson +"]").attr("selected",true);
+                    $("#versionjsonedit").val(value.versionJson).trigger('change');
+                    // Sincronizar ambiente y switch de emisión DTE
+                    $("#ambienteedit").val(value.ambiente).trigger('change');
                     $('#passprivatekeyedit').val(value.passPrivateKey);
                     $('#passpublickeyedit').val(value.passkeyPublic);
                     $('#passmhedit').val(value.passMH);
+                    $("#dte_emission_enabled_edit").prop('checked', !!value.dte_emission_enabled);
+                    $("#dte_emission_notes_edit").val(value.dte_emission_notes || '');
               });
               $("#updateConfigModal").modal("show");
         }

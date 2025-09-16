@@ -351,6 +351,9 @@
                                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="retomarsale({{ $sale->id }}, {{ $sale->typedocument_id}})">
                                                 <i class="ti ti-pencil me-1"></i>Retomar Borrador
                                             </button>
+                                            <a class="btn btn-success btn-sm ms-1" href="{{ route('sale.create') }}?corr={{ $sale->id }}&draft=true&typedocument={{ $sale->typedocument_id }}">
+                                                <i class="ti ti-send me-1"></i> Presentar Hacienda
+                                            </a>
                                             @if ($sale->state != 0)
                                             <div class="btn-group ms-1">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">

@@ -267,23 +267,14 @@ class SaleController extends Controller
             $amount = substr($amount, 1);
             $salesave = Sale::find(base64_decode($corr));
             $salesave->totalamount = $amount;
-            $salesave->typesale = 1;
-            //dd($amount);
-            //buscar el correlativo actual de forma segura
+            $salesave->typesale = 1; // finalizar venta como en RomaCopies
+            //buscar el correlativo actual
             $newCorr = Correlativo::join('typedocuments as tdoc', 'tdoc.type', '=', 'docs.id_tipo_doc')
                 ->where('tdoc.id', '=', $salesave->typedocument_id)
                 ->where('docs.id_empresa', '=', $salesave->company_id)
-                ->select('docs.*')
-                ->first();
-
-            if (!$newCorr) {
-                throw new \Exception('No hay correlativo configurado para este documento y empresa');
-            }
-            if (!(new Correlativo($newCorr->toArray()))->estaDisponible()) {
-                throw new \Exception('Correlativo no disponible o agotado');
-            }
-
-            $salesave->nu_doc = $newCorr->actual;
+                ->select('docs.actual', 'docs.id')
+                ->get();
+            $salesave->nu_doc = $newCorr[0]->actual;
             $salesave->save();
 
             $idempresa = $salesave->company_id;
@@ -317,18 +308,18 @@ class SaleController extends Controller
                 "totalNoSuj" => (float)$detailsbd[0]->nosujeta,
                 "totalExenta" => (float)$detailsbd[0]->exentas,
                 "totalGravada" => (float)$detailsbd[0]->gravadas,
-                "subTotalVentas" => round((float)($detailsbd[0]->subtotalventas), 2),
+                "subTotalVentas" => round((float)($detailsbd[0]->subtotalventas), 8),
                 "descuNoSuj" => $detailsbd[0]->descnosujeta,
                 "descuExenta" => $detailsbd[0]->descexenta,
                 "descuGravada" => $detailsbd[0]->desgravada,
                 "porcentajeDescuento" => 0.00,
                 "totalDescu" => $detailsbd[0]->totaldesc,
                 "tributos" =>  null,
-                "subTotal" => round((float)($detailsbd[0]->subtotal), 2),
+                "subTotal" => round((float)($detailsbd[0]->subtotal), 8),
                 "ivaPerci1" => 0.00,
                 "ivaRete1" => 0.00,
-                "reteRenta" => round((float)$detailsbd[0]->rentarete, 2),
-                "montoTotalOperacion" => round((float)($detailsbd[0]->subtotal), 2),
+                "reteRenta" => round((float)$detailsbd[0]->rentarete, 8),
+                "montoTotalOperacion" => round((float)($detailsbd[0]->subtotal), 8),
                 //(float)$encabezado["montoTotalOperacion"],
                 "totalNoGravado" => (float)0,
                 "totalPagar" => (float)$totalPagar,
@@ -376,6 +367,7 @@ class SaleController extends Controller
             $queryproducto = "SELECT
         c.id id_producto,
         CASE
+        WHEN b.description IS NOT NULL AND b.description != '' THEN b.description
         WHEN c.id = 9 THEN CONCAT(c.name, ' ', b.reserva, ' ', b.ruta)
         ELSE c.name
         END AS descripcion,
@@ -402,7 +394,7 @@ class SaleController extends Controller
             //data del emisor
             $queryemisor = "SELECT
         a.nit,
-        a.ncr,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         a.name nombre,
         c.code codActividad,
         c.name descActividad,
@@ -432,17 +424,17 @@ class SaleController extends Controller
 
             $querycliente = "SELECT
         a.id idcliente,
-        a.nit,
-        a.ncr,
+        IF(a.nit = '00000000-0', NULL, a.nit) as nit,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         CASE
-            WHEN a.tpersona = 'N' THEN CONCAT(a.firstname, ' ', a.secondname, ' ' , a.firstlastname, ' ', a.secondlastname)
-            WHEN a.tpersona = 'J' THEN CONCAT(a.name_contribuyente)
+            WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
+            WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
         END AS nombre,
-        b.code codActividad,
-        b.name descActividad,
+        IF(b.code = 0, NULL, b.code) AS codActividad,
+        IF(b.code = 0, NULL, b.name) AS descActividad,
         CASE
-            WHEN a.tpersona = 'N' THEN CONCAT(a.firstname, ' ', a.secondname, ' ' , a.firstlastname, ' ', a.secondlastname)
-            WHEN a.tpersona = 'J' THEN CONCAT(a.comercial_name)
+            WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
+            WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
         END AS nombreComercial,
         a.email correo,
         f.code departamento,
@@ -452,9 +444,9 @@ class SaleController extends Controller
         1 id_tipo_contribuyente,
         a.tipoContribuyente id_clasificacion_tributaria,
         0 siempre_retiene,
-        36 tipoDocumento,
+        '36' tipoDocumento,
         a.nit numDocumento,
-        36 tipoDocumentoCliente,
+        '36'tipoDocumentoCliente,
         d.code codPais,
         d.name nombrePais,
         0 siempre_retiene_renta
@@ -502,60 +494,80 @@ class SaleController extends Controller
             ];
 
             // Verificar si la emisión de DTE está habilitada para esta empresa
-            if (!Config::isDteEmissionEnabled($idempresa)) {
+            if (Config::isDteEmissionEnabled($idempresa)) {
+                $contingencia = 1; // mismo criterio simplificado
+                if ($contingencia) {
+                    $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
+                    if ($respuesta_hacienda["codEstado"] == "03") {
+                        // Rechazado: devolver respuesta como RomaCopies
+                        DB::rollBack();
+                        return json_encode($respuesta_hacienda);
+                    }
+                    $comprobante["json"] = $respuesta_hacienda;
+                }
+
+                // Crear DTE con respuesta
+                $dtecreate = new Dte();
+                $dtecreate->versionJson = $documento[0]->versionJson;
+                $dtecreate->ambiente_id = $documento[0]->ambiente;
+                $dtecreate->tipoDte = $documento[0]->tipodocumento;
+                $dtecreate->tipoModelo = $documento[0]->tipogeneracion;
+                $dtecreate->tipoTransmision = 1;
+                $dtecreate->tipoContingencia = "null";
+                $dtecreate->idContingencia = "null";
+                $dtecreate->nameTable = 'Sales';
+                $dtecreate->company_id = $idempresa;
+                $dtecreate->company_name = $emisor[0]->nombreComercial;
+                $dtecreate->id_doc = $respuesta_hacienda["identificacion"]["numeroControl"] ?? null;
+                $dtecreate->codTransaction = "01";
+                $dtecreate->desTransaction = "Emision";
+                $dtecreate->type_document = $documento[0]->tipodocumento;
+                $dtecreate->id_doc_Ref1 = "null";
+                $dtecreate->id_doc_Ref2 = "null";
+                $dtecreate->type_invalidacion = "null";
+                $dtecreate->codEstado = $respuesta_hacienda["codEstado"] ?? "02";
+                $dtecreate->Estado = $respuesta_hacienda["estado"] ?? "Enviado";
+                $dtecreate->codigoGeneracion = $respuesta_hacienda["codigoGeneracion"] ?? null;
+                $dtecreate->selloRecibido = $respuesta_hacienda["selloRecibido"] ?? null;
+                $dtecreate->fhRecibido = $respuesta_hacienda["fhRecibido"] ?? null;
+                $dtecreate->estadoHacienda = $respuesta_hacienda["estadoHacienda"] ?? null;
+                $dtecreate->json = json_encode($comprobante);
+                $dtecreate->nSends = $respuesta_hacienda["nuEnvios"] ?? 1;
+                $dtecreate->codeMessage = $respuesta_hacienda["codigoMsg"] ?? null;
+                $dtecreate->claMessage = $respuesta_hacienda["clasificaMsg"] ?? null;
+                $dtecreate->descriptionMessage = $respuesta_hacienda["descripcionMsg"] ?? null;
+                $dtecreate->detailsMessage = $respuesta_hacienda["observacionesMsg"] ?? null;
+                $dtecreate->sale_id = base64_decode($corr);
+                $dtecreate->created_by = $documento[0]->NombreUsuario;
+                $dtecreate->save();
+
+                // Envío automático de correo con DTE adjunto (PDF + JSON)
+                try {
+                    //$this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
+                } catch (\Throwable $mailEx) {
+                    Log::warning('Fallo envío de correo automático con DTE', [
+                        'sale_id' => base64_decode($corr),
+                        'error' => $mailEx->getMessage()
+                    ]);
+                }
+            } else {
                 Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
 
-                // Solo guardar la venta sin crear DTE
-                $salesave = Sale::find(base64_decode($corr));
-                $salesave->json = json_encode($comprobante);
-                $salesave->save();
-
-                // Actualizar correlativo
-                $updateCorr = Correlativo::find($newCorr->id);
-                $updateCorr->incrementarCorrelativo();
-
-                DB::commit();
-                return response()->json(array(
-                    "res" => "1",
-                    "message" => "Venta guardada correctamente. DTE deshabilitado para esta empresa."
-                ));
+                // Envío automático de correo sin DTE (solo PDF local)
+                try {
+                    //$this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), null);
+                } catch (\Throwable $mailEx) {
+                    Log::warning('Fallo envío de correo automático sin DTE', [
+                        'sale_id' => base64_decode($corr),
+                        'error' => $mailEx->getMessage()
+                    ]);
+                }
             }
 
-            // Crear DTE en cola para emisión (portado de RomaCopies)
-            $dtecreate = new Dte();
-            $dtecreate->versionJson = $documento[0]->versionJson;
-            $dtecreate->ambiente_id = $documento[0]->ambiente;
-            $dtecreate->tipoDte = $documento[0]->tipodocumento;
-            $dtecreate->tipoModelo = $documento[0]->tipogeneracion;
-            $dtecreate->tipoTransmision = 1;
-            $dtecreate->tipoContingencia = null;
-            $dtecreate->idContingencia = null;
-            $dtecreate->nameTable = 'Sales';
-            $dtecreate->company_id = $idempresa;
-            $dtecreate->company_name = $emisor[0]->nombreComercial;
-            $dtecreate->id_doc = null; // se asignará tras envío
-            $dtecreate->codTransaction = "01";
-            $dtecreate->desTransaction = "Emision";
-            $dtecreate->type_document = $documento[0]->tipodocumento;
-            $dtecreate->id_doc_Ref1 = null;
-            $dtecreate->id_doc_Ref2 = null;
-            $dtecreate->type_invalidacion = null;
-            $dtecreate->codEstado = "01"; // En cola
-            $dtecreate->Estado = "En cola";
-            $dtecreate->codigoGeneracion = null;
-            $dtecreate->selloRecibido = null;
-            $dtecreate->fhRecibido = null;
-            $dtecreate->estadoHacienda = null;
-            $dtecreate->json = json_encode($comprobante);
-            $dtecreate->nSends = 0;
-            $dtecreate->sale_id = base64_decode($corr);
-            $dtecreate->created_by = $documento[0]->NombreUsuario;
-            $dtecreate->save();
-
-            //update correlativo con validación de agotamiento
-            $updateCorr = Correlativo::find($newCorr->id);
-            $updateCorr->incrementarCorrelativo();
-            //if ($dtecreate) $exit = 1;
+            // update correlativo como en RomaCopies
+            $updateCorr = Correlativo::find($newCorr[0]->id);
+            $updateCorr->actual = ($updateCorr->actual + 1);
+            $updateCorr->save();
             $salesave = Sale::find(base64_decode($corr));
             $salesave->json = json_encode($comprobante);
             $salesave->save();
@@ -1727,6 +1739,68 @@ class SaleController extends Controller
         //$pdf = $this->genera_pdf($id);
         $pdf = $this->genera_pdflocal($id);
         return $pdf->stream('comprobante.pdf');
+    }
+
+    /**
+     * Enviar correo automático al cliente con el comprobante.
+     * - Si hay DTE, adjunta PDF oficial y JSON enviado
+     * - Si no hay DTE, adjunta PDF local
+     */
+    private function enviarCorreoAutomaticoVenta(int $saleId, ?Dte $dte = null): void
+    {
+        // Obtener venta y correo del cliente
+        $venta = Sale::join('clients', 'clients.id', '=', 'sales.client_id')
+            ->join('companies', 'companies.id', '=', 'sales.company_id')
+            ->select('sales.*', 'clients.email as client_email', 'clients.tpersona', 'clients.firstname', 'clients.secondname', 'clients.firstlastname', 'clients.secondlastname', 'clients.comercial_name', 'clients.name_contribuyente', 'companies.name as company_name')
+            ->where('sales.id', $saleId)
+            ->first();
+
+        if (!$venta || empty($venta->client_email)) {
+            return; // sin correo, no se envía
+        }
+
+        // Construir nombre del cliente
+        $nombreCliente = $venta->tpersona === 'N'
+            ? trim(($venta->firstname ?: '') . ' ' . ($venta->secondname ?: '') . ' ' . ($venta->firstlastname ?: '') . ' ' . ($venta->secondlastname ?: ''))
+            : ($venta->comercial_name ?: $venta->name_contribuyente ?: 'Cliente');
+
+        $numero = $venta->nu_doc ?: ('#' . $venta->id);
+        $email = $venta->client_email;
+
+        if ($dte && $dte->json) {
+            // Armar PDF oficial y JSON
+            $pdf = $this->genera_pdf($saleId);
+            $jsonRoot = json_decode($dte->json);
+            $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
+            $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
+
+            $dataCorreo = [
+                'nombre' => $nombreCliente,
+                'numero' => $numero,
+                'json' => $jsonEnviado ?: $jsonRoot
+            ];
+
+            $correo = new EnviarCorreo($dataCorreo);
+            $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
+            $correo->subject($asunto);
+            $correo->attachData($pdf->output(), ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.pdf');
+            $correo->attachData($jsonPretty, ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.json');
+            Mail::to($email)->send($correo);
+            return;
+        }
+
+        // Sin DTE: PDF local
+        $pdf = $this->genera_pdflocal($saleId);
+        $dataCorreo = [
+            'nombre' => $nombreCliente,
+            'numero' => $numero,
+            'json' => null
+        ];
+        $correo = new EnviarCorreo($dataCorreo);
+        $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
+        $correo->subject($asunto);
+        $correo->attachData($pdf->output(), 'venta_' . $saleId . '.pdf');
+        Mail::to($email)->send($correo);
     }
 
     public function destinos()
