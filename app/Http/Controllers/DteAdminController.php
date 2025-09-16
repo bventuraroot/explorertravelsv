@@ -167,7 +167,9 @@ class DteAdminController extends Controller
     {
         $filtros = $request->only(['tipo', 'empresa_id', 'resuelto']);
 
-        $query = DteError::with(['dte.company', 'resueltoPor']);
+        $query = DteError::with(['dte.company', 'resueltoPor'])
+            ->whereNotNull('id')
+            ->where('id', '!=', '');
 
         if (isset($filtros['tipo']) && $filtros['tipo']) {
             $query->porTipo($filtros['tipo']);
