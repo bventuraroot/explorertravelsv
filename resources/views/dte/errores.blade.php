@@ -193,7 +193,7 @@
                             <tr class="{{ $error->resuelto ? 'table-success' : '' }}">
                                 <td>{{ $error->id ?? 'N/A' }}</td>
                                 <td>
-                                    <a href="{{ route('dte.show', ['id' => $error->dte_id]) }}" class="text-primary">
+                                    <a href="{{ route('dte.show', $error->dte_id) }}" class="text-primary">
                                         {{ $error->dte_id }}
                                     </a>
                                 </td>
@@ -237,16 +237,12 @@
                                 <td>{{ $error->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        @if($error->id)
-                                            <a href="{{ route('dte.error-show', ['id' => $error->id]) }}"
-                                               class="btn btn-sm btn-outline-primary"
-                                               title="Ver Error">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
-                                        @if(!$error->resuelto && $error->id)
+                                        <a href="{{ route('dte.error-show', $error->id) }}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Ver Error">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if(!$error->resuelto)
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-success"
                                                     onclick="resolverError({{ $error->id }})"

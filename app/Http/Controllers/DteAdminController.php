@@ -182,12 +182,12 @@ class DteAdminController extends Controller
         if (isset($filtros['resuelto'])) {
             if ($filtros['resuelto'] === '1') {
                 $query->where('resuelto', true);
-            } elseif ($filtros['resuelto'] === '0') {
+            } else {
                 $query->noResueltos();
             }
-            // Si es 'todos' o cualquier otro valor, no aplicar filtro
+        } else {
+            $query->noResueltos(); // Por defecto mostrar solo no resueltos
         }
-        // Comentado temporalmente para debug: $query->noResueltos();
 
         $errores = $query->orderBy('created_at', 'desc')->paginate(20);
         $empresas = Company::select('id', 'name')->orderBy('name')->get();
