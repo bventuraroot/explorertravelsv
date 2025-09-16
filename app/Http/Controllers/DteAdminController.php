@@ -21,8 +21,13 @@ class DteAdminController extends Controller
     public function __construct(DteService $dteService)
     {
         $this->dteService = $dteService;
-        $this->middleware('auth');
-        $this->middleware('permission:dte.dashboard');
+
+        // Middleware de permisos
+        $this->middleware('permission:dte.dashboard')->only(['dashboard', 'estadisticas']);
+        $this->middleware('permission:dte.procesar')->only(['procesarCola', 'procesarReintentos']);
+        $this->middleware('permission:dte.errores')->only(['errores', 'resolverError']);
+        $this->middleware('permission:dte.contingencias')->only(['contingencias', 'crearContingencia']);
+        $this->middleware('permission:dte.reintentar')->only(['reintentarDte']);
     }
 
     /**
@@ -45,12 +50,11 @@ class DteAdminController extends Controller
             ->get();
 
         // Obtener contingencias activas
-        $contingenciasActivas = Contingencia::with(['company'])
+        $contingenciasActivas = Contingencia::with(['empresa', 'creador'])
             ->when($empresaId, function($query) use ($empresaId) {
-                return $query->where('company_id', $empresaId);
+                return $query->where('empresa_id', $empresaId);
             })
-            ->where('activa', true)
-            ->where('fecha_fin', '>=', now())
+            ->activas()
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
@@ -131,91 +135,104 @@ class DteAdminController extends Controller
     {
         try {
             $dte = Dte::findOrFail($dteId);
-            $resultado = $this->dteService->procesarDte($dte);
+            $resultado = $this->dteService->reintentarDte($dte);
 
-            return response()->json([
-                'success' => $resultado['exitoso'],
-                'message' => $resultado['exitoso'] ?
-                    'DTE procesado exitosamente' :
-                    'Error al procesar DTE: ' . $resultado['error'],
-                'data' => $resultado
-            ]);
+            if ($resultado['exitoso']) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'DTE procesado exitosamente'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error reintentando DTE: ' . $resultado['error']
+                ], 400);
+            }
 
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al reintentar DTE: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Gestión de errores DTE
+     * Mostrar lista de errores
      */
     public function errores(Request $request): View
     {
         $filtros = $request->only(['tipo', 'empresa_id', 'resuelto']);
 
-        $query = DteError::with(['dte.company'])
-            ->orderBy('created_at', 'desc');
+        $query = DteError::with(['dte.company', 'resueltoPor']);
 
-        // Aplicar filtros
-        if (!empty($filtros['tipo'])) {
-            $query->where('tipo_error', $filtros['tipo']);
+        if (isset($filtros['tipo']) && $filtros['tipo']) {
+            $query->porTipo($filtros['tipo']);
         }
 
-        if (!empty($filtros['empresa_id'])) {
+        if (isset($filtros['empresa_id']) && $filtros['empresa_id']) {
             $query->whereHas('dte', function($q) use ($filtros) {
                 $q->where('company_id', $filtros['empresa_id']);
             });
         }
 
-        if (isset($filtros['resuelto']) && $filtros['resuelto'] !== '') {
-            $query->where('resuelto', (bool)$filtros['resuelto']);
+        if (isset($filtros['resuelto'])) {
+            if ($filtros['resuelto'] === '1') {
+                $query->where('resuelto', true);
+            } else {
+                $query->noResueltos();
+            }
+        } else {
+            $query->noResueltos(); // Por defecto mostrar solo no resueltos
         }
 
-        $errores = $query->paginate(20);
+        $errores = $query->orderBy('created_at', 'desc')->paginate(20);
+        $empresas = Company::select('id', 'name')->orderBy('name')->get();
 
-        // Estadísticas
+        // Calcular estadísticas
         $estadisticas = [
             'total' => DteError::count(),
             'no_resueltos' => DteError::where('resuelto', false)->count(),
             'resueltos' => DteError::where('resuelto', true)->count(),
-            'criticos' => DteError::whereIn('tipo_error', ['sistema', 'hacienda'])->where('resuelto', false)->count(),
+            'criticos' => DteError::whereIn('tipo_error', ['autenticacion', 'firma', 'hacienda'])
+                ->where('resuelto', false)->count()
         ];
 
-        $empresas = Company::select('id', 'name')->orderBy('name')->get();
-
-        return view('dte.errores', compact('errores', 'estadisticas', 'empresas', 'filtros'));
+        return view('dte.errores', compact('errores', 'empresas', 'filtros', 'estadisticas'));
     }
 
     /**
-     * Resolver error específico
+     * Resolver error manualmente
      */
     public function resolverError(Request $request, int $errorId): JsonResponse
     {
-        try {
-            $error = DteError::findOrFail($errorId);
-            $solucion = $request->input('solucion');
+        $request->validate([
+            'solucion' => 'required|string|max:500'
+        ]);
 
-            if (empty($solucion)) {
+        try {
+            $resuelto = $this->dteService->resolverError(
+                $errorId,
+                $request->solucion,
+                auth()->id()
+            );
+
+            if ($resuelto) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Error resuelto correctamente'
+                ]);
+            } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La solución es requerida'
+                    'message' => 'No se pudo resolver el error'
                 ], 400);
             }
-
-            $error->marcarResuelto($solucion, auth()->id());
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Error resuelto exitosamente'
-            ]);
 
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al resolver: ' . $e->getMessage()
+                'message' => 'Error resolviendo: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -390,15 +407,6 @@ class DteAdminController extends Controller
         }
     }
 
-    /**
-     * Mostrar detalles de DTE
-     */
-    public function showDte(int $id): View
-    {
-        $dte = Dte::with(['company', 'errors'])->findOrFail($id);
-
-        return view('dte.show', compact('dte'));
-    }
 
     /**
      * Obtener DTEs para contingencia
@@ -429,5 +437,43 @@ class DteAdminController extends Controller
             });
 
         return response()->json($dtes);
+    }
+
+    /**
+     * Mostrar detalles de un DTE
+     */
+    public function showDte(int $id): View
+    {
+        $dte = Dte::with(['company', 'sale.client', 'errors.resueltoPor'])
+            ->findOrFail($id);
+
+        return view('dte.show', compact('dte'));
+    }
+
+    /**
+     * Mostrar detalles de un error DTE
+     */
+    public function showError(int $id): View
+    {
+        $error = DteError::with(['dte.company', 'dte.sale.client', 'resueltoPor'])
+            ->findOrFail($id);
+
+        return view('dte.error-show', compact('error'));
+    }
+
+    /**
+     * Obtener estadísticas en tiempo real
+     */
+    public function estadisticasTiempoReal(): JsonResponse
+    {
+        $empresaId = auth()->user()->company_id ?? null;
+        $estadisticas = $this->dteService->obtenerEstadisticas($empresaId);
+        $erroresCriticos = $this->dteService->obtenerErroresCriticos();
+
+        return response()->json([
+            'estadisticas' => $estadisticas,
+            'errores_criticos' => $erroresCriticos['total'],
+            'timestamp' => now()->toISOString()
+        ]);
     }
 }

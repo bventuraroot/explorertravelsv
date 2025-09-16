@@ -304,6 +304,7 @@ Route::middleware('auth')->group(function () {
         // Gestión de errores
         Route::get('errores', [DteAdminController::class, 'errores'])->name('errores');
         Route::post('errores/{errorId}/resolver', [DteAdminController::class, 'resolverError'])->name('resolver-error');
+        Route::get('error-show/{id}', [DteAdminController::class, 'showError'])->name('error-show');
 
         // Gestión de contingencias
         Route::get('contingencias', [DteAdminController::class, 'contingencias'])->name('contingencias');

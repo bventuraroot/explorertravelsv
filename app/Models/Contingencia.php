@@ -76,4 +76,37 @@ class Contingencia extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    /**
+     * Alias para la relación company
+     */
+    public function empresa(): BelongsTo
+    {
+        return $this->company();
+    }
+
+    /**
+     * Relación con el usuario que la aprobó
+     */
+    public function aprobador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'aprobado_por');
+    }
+
+    /**
+     * Scope para contingencias activas
+     */
+    public function scopeActivas($query)
+    {
+        return $query->where('activa', true)
+                    ->where('fecha_fin', '>=', now());
+    }
+
+    /**
+     * Scope para filtrar por empresa
+     */
+    public function scopePorEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
 }

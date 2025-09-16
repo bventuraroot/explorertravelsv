@@ -295,6 +295,17 @@ class DteService
         return $this->procesarDte($dte);
     }
 
+    public function resolverError(int $errorId, string $solucion, int $userId): bool
+    {
+        try {
+            $error = DteError::findOrFail($errorId);
+            return $error->marcarResuelto($solucion, $userId);
+        } catch (Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error resolviendo error DTE: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function procesarReintentosAutomaticos(): array
     {
         $resultados = ['procesados' => 0, 'exitosos' => 0, 'errores' => 0];

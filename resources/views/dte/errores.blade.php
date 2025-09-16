@@ -18,233 +18,255 @@
 @endsection
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold py-3 mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Gestión de Errores DTE
-                </h4>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('dte.dashboard') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>
-                        Volver al Dashboard
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+<h4 class="py-3 mb-4">
+    <span class="text-muted fw-light">DTE /</span> Gestión de Errores
+</h4>
 
-    <!-- Estadísticas -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title text-muted">Total Errores</h6>
-                            <h3 class="mb-0">{{ $estadisticas['total'] ?? 0 }}</h3>
-                        </div>
-                        <div class="avatar avatar-md bg-secondary rounded">
-                            <i class="fas fa-exclamation-triangle text-white"></i>
+<!-- Estadísticas -->
+<div class="row">
+    <div class="mb-4 col-lg-3 col-md-6 col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="card-info">
+                        <p class="card-text">Total Errores</p>
+                        <div class="mb-2 d-flex align-items-end">
+                            <h4 class="mb-0 card-title">{{ $estadisticas['total'] ?? 0 }}</h4>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title text-muted">No Resueltos</h6>
-                            <h3 class="mb-0 text-warning">{{ $estadisticas['no_resueltos'] ?? 0 }}</h3>
-                        </div>
-                        <div class="avatar avatar-md bg-warning rounded">
-                            <i class="fas fa-clock text-white"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title text-muted">Resueltos</h6>
-                            <h3 class="mb-0 text-success">{{ $estadisticas['resueltos'] ?? 0 }}</h3>
-                        </div>
-                        <div class="avatar avatar-md bg-success rounded">
-                            <i class="fas fa-check text-white"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title text-muted">Críticos</h6>
-                            <h3 class="mb-0 text-danger">{{ $estadisticas['criticos'] ?? 0 }}</h3>
-                        </div>
-                        <div class="avatar avatar-md bg-danger rounded">
-                            <i class="fas fa-exclamation-circle text-white"></i>
-                        </div>
+                    <div class="card-icon">
+                        <span class="p-2 rounded badge bg-label-primary">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Filtros y Acciones -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Filtros y Acciones</h5>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-primary" onclick="exportarErrores()">
-                            <i class="fas fa-download me-1"></i> Exportar
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="procesarReintentos()">
-                            <i class="fas fa-redo me-1"></i> Procesar Reintentos
-                        </button>
+    <div class="mb-4 col-lg-3 col-md-6 col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="card-info">
+                        <p class="card-text">No Resueltos</p>
+                        <div class="mb-2 d-flex align-items-end">
+                            <h4 class="mb-0 card-title">{{ $estadisticas['no_resueltos'] ?? 0 }}</h4>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <form id="filtrosForm" method="GET" action="{{ route('dte.errores') }}" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="tipo" class="form-label">Tipo de Error</label>
-                            <select class="form-select" id="tipo" name="tipo">
-                                <option value="">Todos los tipos</option>
-                                <option value="validacion" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'validacion' ? 'selected' : '' }}>Validación</option>
-                                <option value="hacienda" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'hacienda' ? 'selected' : '' }}>Hacienda</option>
-                                <option value="sistema" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'sistema' ? 'selected' : '' }}>Sistema</option>
-                                <option value="autenticacion" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'autenticacion' ? 'selected' : '' }}>Autenticación</option>
-                                <option value="firma" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'firma' ? 'selected' : '' }}>Firma</option>
-                                <option value="datos" {{ isset($filtros['tipo']) && $filtros['tipo'] == 'datos' ? 'selected' : '' }}>Datos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="empresa" class="form-label">Empresa</label>
-                            <select class="form-select" id="empresa" name="empresa_id">
-                                <option value="">Todas las empresas</option>
-                                @foreach($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}" {{ isset($filtros['empresa_id']) && $filtros['empresa_id'] == $empresa->id ? 'selected' : '' }}>
-                                        {{ $empresa->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="resuelto" class="form-label">Estado</label>
-                            <select class="form-select" id="resuelto" name="resuelto">
-                                <option value="">Todos los estados</option>
-                                <option value="0" {{ isset($filtros['resuelto']) && $filtros['resuelto'] === '0' ? 'selected' : '' }}>No resueltos</option>
-                                <option value="1" {{ isset($filtros['resuelto']) && $filtros['resuelto'] === '1' ? 'selected' : '' }}>Resueltos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-filter me-1"></i> Filtrar
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
-                                    <i class="fas fa-times me-1"></i> Limpiar
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                    <div class="card-icon">
+                        <span class="p-2 rounded badge bg-label-warning">
+                            <i class="fas fa-clock"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Tabla de Errores -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Lista de Errores DTE</h5>
+    <div class="mb-4 col-lg-3 col-md-6 col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="card-info">
+                        <p class="card-text">Resueltos</p>
+                        <div class="mb-2 d-flex align-items-end">
+                            <h4 class="mb-0 card-title">{{ $estadisticas['resueltos'] ?? 0 }}</h4>
+                        </div>
+                    </div>
+                    <div class="card-icon">
+                        <span class="p-2 rounded badge bg-label-success">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="erroresTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>DTE ID</th>
-                                    <th>Tipo</th>
-                                    <th>Empresa</th>
-                                    <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Intentos</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($errores as $error)
-                                <tr class="{{ $error->resuelto ? 'table-success' : '' }}">
-                                    <td>{{ $error->id }}</td>
-                                    <td>
-                                        <a href="{{ route('dte.show', $error->dte_id) }}" class="text-primary">
-                                            {{ $error->dte_id }}
+            </div>
+        </div>
+    </div>
+    <div class="mb-4 col-lg-3 col-md-6 col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="card-info">
+                        <p class="card-text">Críticos</p>
+                        <div class="mb-2 d-flex align-items-end">
+                            <h4 class="mb-0 card-title">{{ $estadisticas['criticos'] ?? 0 }}</h4>
+                        </div>
+                    </div>
+                    <div class="card-icon">
+                        <span class="p-2 rounded badge bg-label-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y Acciones -->
+<div class="mb-4 row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 card-title">Filtros y Acciones</h5>
+                <div class="gap-2 d-flex">
+                    <button type="button" class="btn btn-primary" onclick="exportarErrores()">
+                        <i class="fas fa-download me-1"></i> Exportar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="procesarReintentos()">
+                        <i class="fas fa-redo me-1"></i> Procesar Reintentos
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="filtrosForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo de Error</label>
+                        <select class="form-select" id="tipo" name="tipo">
+                            <option value="">Todos los tipos</option>
+                            <option value="validacion">Validación</option>
+                            <option value="hacienda">Hacienda</option>
+                            <option value="sistema">Sistema</option>
+                            <option value="autenticacion">Autenticación</option>
+                            <option value="firma">Firma</option>
+                            <option value="datos">Datos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="empresa" class="form-label">Empresa</label>
+                        <select class="form-select" id="empresa" name="empresa_id">
+                            <option value="">Todas las empresas</option>
+                            @foreach($empresas as $empresa)
+                                <option value="{{ $empresa->id }}">{{ $empresa->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="resuelto" class="form-label">Estado</label>
+                        <select class="form-select" id="resuelto" name="resuelto">
+                            <option value="">Todos los estados</option>
+                            <option value="0">No resueltos</option>
+                            <option value="1">Resueltos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="gap-2 d-flex">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="limpiarFiltros()">
+                                <i class="fas fa-times me-1"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Errores -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0 card-title">Lista de Errores DTE</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="erroresTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>DTE ID</th>
+                                <th>Tipo</th>
+                                <th>Empresa</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Intentos</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($errores as $error)
+                            <tr class="{{ $error->resuelto ? 'table-success' : '' }}">
+                                <td>{{ $error->id }}</td>
+                                <td>
+                                    <a href="{{ route('dte.show', $error->dte_id) }}" class="text-primary">
+                                        {{ $error->dte_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    @php
+                                        $badgeClass = match($error->tipo_error) {
+                                            'hacienda' => 'bg-warning',
+                                            'sistema' => 'bg-secondary',
+                                            'validacion' => 'bg-info',
+                                            'autenticacion', 'firma' => 'bg-danger',
+                                            default => 'bg-secondary'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ ucfirst($error->tipo_error) }}
+                                    </span>
+                                </td>
+                                <td>{{ $error->dte->company->name ?? 'N/A' }}</td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 300px;"
+                                          title="{{ $error->descripcion }}">
+                                        {{ Str::limit($error->descripcion, 80) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($error->resuelto)
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i> Resuelto
+                                        </span>
+                                    @else
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i> Pendiente
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ $error->intentos_realizados }}/{{ $error->max_intentos }}
+                                    </span>
+                                </td>
+                                <td>{{ $error->created_at->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('dte.error-show', $error->id) }}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Ver DTE">
+                                            <i class="fas fa-eye"></i>
                                         </a>
-                                    </td>
-                                    <td>{!! $error->tipo_badge !!}</td>
-                                    <td>{{ $error->dte->company->name ?? 'N/A' }}</td>
-                                    <td>
-                                        <span class="text-truncate d-inline-block" style="max-width: 300px;"
-                                              title="{{ $error->descripcion }}">
-                                            {{ Str::limit($error->descripcion, 80) }}
-                                        </span>
-                                    </td>
-                                    <td>{!! $error->estado_badge !!}</td>
-                                    <td>
-                                        <span class="badge bg-info">
-                                            {{ $error->intentos_realizados }}/{{ $error->max_intentos }}
-                                        </span>
-                                    </td>
-                                    <td>{{ $error->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{{ route('dte.show', $error->dte_id) }}"
-                                               class="btn btn-sm btn-outline-primary"
-                                               title="Ver DTE">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            @if(!$error->resuelto)
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-success"
-                                                        onclick="resolverError({{ $error->id }})"
-                                                        title="Marcar como resuelto">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-warning"
-                                                        onclick="reintentarDte({{ $error->dte_id }})"
-                                                        title="Reintentar DTE">
-                                                    <i class="fas fa-redo"></i>
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                                        @if(!$error->resuelto)
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    onclick="resolverError({{ $error->id }})"
+                                                    title="Marcar como resuelto">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-warning"
+                                                    onclick="reintentarDte({{ $error->dte_id }})"
+                                                    title="Reintentar DTE">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
-                    <!-- Paginación -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $errores->appends($filtros)->links() }}
-                    </div>
+                <!-- Paginación -->
+                <div class="mt-4 d-flex justify-content-center">
+                    {{ $errores->links() }}
                 </div>
             </div>
         </div>

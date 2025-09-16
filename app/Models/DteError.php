@@ -70,6 +70,14 @@ class DteError extends Model
     }
 
     /**
+     * Alias para la relación resolvedBy
+     */
+    public function resueltoPor(): BelongsTo
+    {
+        return $this->resolvedBy();
+    }
+
+    /**
      * Scope para errores no resueltos
      */
     public function scopeNoResueltos($query)
@@ -99,12 +107,13 @@ class DteError extends Model
     }
 
     /**
-     * Scope para errores por tipo
+     * Scope para filtrar por tipo de error
      */
     public function scopePorTipo($query, $tipo)
     {
         return $query->where('tipo_error', $tipo);
     }
+
 
     /**
      * Verificar si el error puede reintentarse
