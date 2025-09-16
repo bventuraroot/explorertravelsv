@@ -394,11 +394,7 @@ class SaleController extends Controller
             //data del emisor
             $queryemisor = "SELECT
         a.nit,
-        CASE
-            WHEN REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') REGEXP '^[0-9]+$'
-            THEN CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED)
-            ELSE NULL
-        END AS ncr,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         a.name nombre,
         c.code codActividad,
         c.name descActividad,
@@ -429,11 +425,7 @@ class SaleController extends Controller
             $querycliente = "SELECT
         a.id idcliente,
         IF(a.nit = '00000000-0', NULL, a.nit) as nit,
-        CASE
-            WHEN REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') REGEXP '^[0-9]+$'
-            THEN CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED)
-            ELSE NULL
-        END AS ncr,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         CASE
             WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
             WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
