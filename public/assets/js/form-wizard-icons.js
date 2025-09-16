@@ -580,7 +580,9 @@ function totalamount() {
 
 
 function searchproduct(idpro) {
-    if(idpro==9){
+    // Mostrar campos adicionales para productos de viajes/tickets
+    // Se puede modificar esta lógica según las necesidades del negocio
+    if(idpro==16 || idpro==1 || idpro==2 || idpro==3){
         $("#add-information-tickets").css("display", "");
     }else{
         $("#add-information-tickets").css("display", "none");
