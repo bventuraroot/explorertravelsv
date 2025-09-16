@@ -361,10 +361,14 @@ $(document).ready(function() {
                                     </td>
                                     <td>{{ $dte->created_at->format('d/m/Y H:i') }}</td>
                                     <td>
-                                        <a href="{{ route('dte-dashboard.show', ['id' => $dte->id]) }}"
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                        @if($dte->id)
+                                            <a href="{{ route('dte-dashboard.show', ['id' => $dte->id]) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach

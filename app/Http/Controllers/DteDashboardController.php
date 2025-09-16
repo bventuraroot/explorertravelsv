@@ -120,7 +120,9 @@ class DteDashboardController extends Controller
             $query->where('company_id', $empresaId);
         }
 
-        return $query->get()->map(function($dte) {
+        return $query->get()->filter(function($dte) {
+            return $dte->id !== null && $dte->id !== '';
+        })->map(function($dte) {
             $dte->estado_color = $this->obtenerColorEstado($dte->codEstado);
             $dte->estado_texto = $this->obtenerTextoEstado($dte->codEstado);
             return $dte;

@@ -47,7 +47,10 @@ class DteAdminController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->filter(function($dte) {
+                return $dte->id !== null && $dte->id !== '';
+            });
 
         // Obtener contingencias activas
         $contingenciasActivas = Contingencia::with(['empresa', 'creador'])
