@@ -19,25 +19,22 @@ class DteError extends Model
         'codigo_error',
         'descripcion',
         'detalles',
-        'stack_trace',
-        'json_completo',
-        'intentos_realizados',
-        'max_intentos',
-        'proximo_reintento',
+        'trace',
         'resuelto',
-        'resuelto_por',
-        'resuelto_en',
-        'solucion_aplicada'
+        'solucion',
+        'resolved_by',
+        'resolved_at',
+        'intentos_realizados',
+        'max_intentos'
     ];
 
     protected $casts = [
         'detalles' => 'array',
-        'stack_trace' => 'array',
+        'trace' => 'array',
         'intentos_realizados' => 'integer',
         'max_intentos' => 'integer',
-        'proximo_reintento' => 'datetime',
         'resuelto' => 'boolean',
-        'resuelto_en' => 'datetime',
+        'resolved_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
@@ -67,9 +64,9 @@ class DteError extends Model
     /**
      * Relación con el usuario que resolvió el error
      */
-    public function resueltoPor(): BelongsTo
+    public function resolvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resuelto_por');
+        return $this->belongsTo(User::class, 'resolved_by');
     }
 
     /**
@@ -98,11 +95,7 @@ class DteError extends Model
     public function scopeReintentables($query)
     {
         return $query->where('resuelto', false)
-                    ->where('intentos_realizados', '<', 'max_intentos')
-                    ->where(function($q) {
-                        $q->whereNull('proximo_reintento')
-                          ->orWhere('proximo_reintento', '<=', now());
-                    });
+                    ->where('intentos_realizados', '<', 'max_intentos');
     }
 
     /**
@@ -119,8 +112,7 @@ class DteError extends Model
     public function puedeReintentar(): bool
     {
         return !$this->resuelto &&
-               $this->intentos_realizados < $this->max_intentos &&
-               (!$this->proximo_reintento || $this->proximo_reintento <= now());
+               $this->intentos_realizados < $this->max_intentos;
     }
 
     /**
@@ -187,12 +179,7 @@ class DteError extends Model
     public function getEstadoResolucionAttribute(): string
     {
         if ($this->resuelto) {
-            return match($this->solucion_aplicada) {
-                self::RESUELTO_MANUAL => 'Resuelto Manualmente',
-                self::RESUELTO_AUTOMATICO => 'Resuelto Automáticamente',
-                self::RESUELTO_CONTINGENCIA => 'Resuelto por Contingencia',
-                default => 'Resuelto'
-            };
+            return 'Resuelto';
         }
 
         if ($this->necesitaIntervencionManual()) {
@@ -253,21 +240,11 @@ class DteError extends Model
      */
     public function getTiempoRestanteReintentoAttribute(): ?string
     {
-        if (!$this->proximo_reintento || $this->resuelto) {
+        if ($this->resuelto) {
             return null;
         }
 
-        $diff = now()->diff($this->proximo_reintento);
-
-        if ($diff->invert) {
-            return 'Listo para reintento';
-        }
-
-        if ($diff->h > 0) {
-            return $diff->h . 'h ' . $diff->i . 'm';
-        }
-
-        return $diff->i . ' minuto(s)';
+        return 'Listo para reintento';
     }
 
     /**
@@ -276,10 +253,6 @@ class DteError extends Model
     public function incrementarIntentos(): void
     {
         $this->increment('intentos_realizados');
-
-        // Calcular próximo reintento con backoff exponencial
-        $minutos = pow(2, $this->intentos_realizados) * 5; // 5, 10, 20, 40, 80 minutos
-        $this->proximo_reintento = now()->addMinutes($minutos);
         $this->save();
     }
 
@@ -290,9 +263,9 @@ class DteError extends Model
     {
         return $this->update([
             'resuelto' => true,
-            'resuelto_por' => $userId,
-            'resuelto_en' => now(),
-            'solucion_aplicada' => $solucion
+            'resolved_by' => $userId,
+            'resolved_at' => now(),
+            'solucion' => $solucion
         ]);
     }
 
@@ -328,17 +301,11 @@ class DteError extends Model
             'codigo_error' => $codigo,
             'descripcion' => $descripcion,
             'detalles' => $detalles,
-            'json_completo' => $jsonCompleto,
+            'trace' => $stackTrace,
             'intentos_realizados' => 0,
             'max_intentos' => self::getMaxIntentosPorTipo($tipo),
-            'proximo_reintento' => now()->addMinutes(5),
             'resuelto' => false
         ];
-
-        // Solo agregar stack_trace si la columna existe
-        if (!empty($stackTrace)) {
-            $data['stack_trace'] = $stackTrace;
-        }
 
         return self::create($data);
     }

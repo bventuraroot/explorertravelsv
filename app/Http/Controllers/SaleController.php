@@ -1876,10 +1876,10 @@ class SaleController extends Controller
                 $jsonCompleto
             );
         } catch (\Exception $e) {
-            dd($e);
-            Log::error('Error registrando error DTE', [
-                'dte_id' => $dte->id,
-                'error' => $e->getMessage()
+            Log::error('❌ Error registrando error DTE', [
+                'dte_id' => $dte ? $dte->id : 'null',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }
