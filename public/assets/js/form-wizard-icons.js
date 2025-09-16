@@ -167,9 +167,9 @@ $(function () {
         if (!state || state.id==0) {
           return state && state.text ? state.text : '';
         }
-        var imageFile = (state.title && state.title !== 'undefined' && state.title !== 'null') ? state.title : 'default.png';
-        var src = '../assets/img/products/' + imageFile;
-        var $state = $('<span><img onerror="this.onerror=null;this.src=\'../assets/img/products/default.png\';" src="'+ src +'" class="imagen-producto-select2" /> ' + state.text + '</span>');
+        var imageFile = (state.title && state.title !== 'undefined' && state.title !== 'null') ? state.title : '';
+        var src = imageFile ? ('/assets/img/products/' + imageFile) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        var $state = $('<span><img onerror="this.onerror=null;this.src=\'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=\';" src="'+ src +'" class="imagen-producto-select2" /> ' + state.text + '</span>');
         return $state;
       };
     var selectdpsearch = $(".select2psearch");
@@ -336,46 +336,59 @@ function agregarp() {
     }
 
     //enviar a temp factura
+    // Validar corr y client antes de enviar para evitar 500 en backend
+    if(!corrid || corrid==="" || !$.isNumeric(parseFloat(corrid))){
+        Swal.fire("El correlativo no es válido. Refresca el borrador e inténtalo de nuevo.");
+        return;
+    }
+    if(!clientid || clientid==="0"){
+        Swal.fire("Selecciona un cliente antes de agregar productos.");
+        return;
+    }
+
+    // Normalizar datos para evitar 'undefined' / 'NaN' en la URL
+    function nz(v, def){ return (v===undefined || v===null || v==="" || (typeof v === 'number' && isNaN(v))) ? def : v; }
+    productid = nz(productid, 0);
+    cantidad = nz(cantidad, 1);
+    price = nz(price, 0.00);
+    pricenosujeta = nz(pricenosujeta, 0.00);
+    priceexenta = nz(priceexenta, 0.00);
+    pricegravada = nz(pricegravada, 0.00);
+    ivarete13 = nz(ivarete13, 0.00);
+    rentarete = nz(rentarete, 0.00);
+    ivarete = nz(ivarete, 0.00);
+    acuenta = nz(acuenta, 'SIN VALOR DEFINIDO');
+    fpago = nz(fpago, 0);
+    fee = nz(fee, 0.00);
+    reserva = nz(reserva, 'null');
+    ruta = nz(ruta, 'null');
+    destino = nz(destino, 0);
+    linea = nz(linea, 0);
+    canal = nz(canal, 'null');
+
+    // Armar URL absoluta y codificada para evitar caracteres inválidos
+    var url =
+        "/sale/savefactemp/" + encodeURIComponent(corrid) +
+        "/" + encodeURIComponent(clientid) +
+        "/" + encodeURIComponent(productid) +
+        "/" + encodeURIComponent(cantidad) +
+        "/" + encodeURIComponent(price) +
+        "/" + encodeURIComponent(pricenosujeta) +
+        "/" + encodeURIComponent(priceexenta) +
+        "/" + encodeURIComponent(pricegravada) +
+        "/" + encodeURIComponent(ivarete13) +
+        "/" + encodeURIComponent(rentarete) +
+        "/" + encodeURIComponent(ivarete) +
+        "/" + encodeURIComponent(acuenta) +
+        "/" + encodeURIComponent(fpago) +
+        "/" + encodeURIComponent(fee) +
+        "/" + encodeURIComponent(reserva) +
+        "/" + encodeURIComponent(ruta) +
+        "/" + encodeURIComponent(destino) +
+        "/" + encodeURIComponent(linea) +
+        "/" + encodeURIComponent(canal);
     $.ajax({
-        url:
-            "savefactemp/" +
-            corrid +
-            "/" +
-            clientid +
-            "/" +
-            productid +
-            "/" +
-            cantidad +
-            "/" +
-            price +
-            "/" +
-            pricenosujeta +
-            "/" +
-            priceexenta +
-            "/" +
-            pricegravada +
-            "/" +
-            ivarete13 +
-            "/" +
-            rentarete +
-            "/" +
-            ivarete +
-            "/" +
-            acuenta +
-            "/" +
-            fpago +
-            "/" +
-            fee +
-            "/" +
-            reserva +
-            "/" +
-            ruta +
-            "/" +
-            destino +
-            "/" +
-            linea +
-            "/" +
-            canal,
+        url: url,
         method: "GET",
         success: function (response) {
             if (response.res == 1) {
@@ -609,6 +622,14 @@ function searchproduct(idpro) {
                 if($("#product-description-edit").length){
                     var defaultDescription = value.productname + (value.marcaname? (" " + value.marcaname) : "");
                     $("#product-description-edit").val(defaultDescription);
+                }
+                // Actualizar imagen en la vista previa (si existe el contenedor)
+                if($("#product-image").length){
+                    var imgTitle = value.image || value.title || '';
+                    var imgSrc = imgTitle ? ('/assets/img/products/' + imgTitle) : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                    $("#product-image").attr('src', imgSrc).on('error', function(){
+                        $(this).attr('src','data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=');
+                    });
                 }
                 //validar si es gran contribuyente el cliente vs la empresa
 
