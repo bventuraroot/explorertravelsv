@@ -499,8 +499,16 @@ class SaleController extends Controller
                 if ($contingencia) {
                     $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
                     if ($respuesta_hacienda["codEstado"] == "03") {
-                        // Rechazado: devolver respuesta como RomaCopies
-                        DB::rollBack();
+                        // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
+                        $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
+
+                        // REGISTRAR ERROR EN LA TABLA dte_errors
+                        $this->registrarErrorDte($dtecreate, 'hacienda', 'HACIENDA_REJECTED', $respuesta_hacienda["descripcionMsg"] ?? 'Documento rechazado por Hacienda', [
+                            'codigoMsg' => $respuesta_hacienda["codigoMsg"] ?? null,
+                            'observacionesMsg' => $respuesta_hacienda["observacionesMsg"] ?? null,
+                            'sale_id' => base64_decode($corr)
+                        ]);
+
                         return json_encode($respuesta_hacienda);
                     }
                     $comprobante["json"] = $respuesta_hacienda;
@@ -578,6 +586,16 @@ class SaleController extends Controller
             ));
         } catch (\Exception $e) {
             DB::rollBack();
+
+            // REGISTRAR ERROR EN LA TABLA dte_errors SI EXISTE UN DTE
+            if (isset($dtecreate) && $dtecreate->id) {
+                $this->registrarErrorDte($dtecreate, 'sistema', 'SYSTEM_ERROR', $e->getMessage(), [
+                    'sale_id' => base64_decode($corr),
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+
             return response()->json(['error' => 'No se pudo procesar el documento', 'message' => $e->getMessage()], 500);
         }
     }
@@ -1801,6 +1819,77 @@ class SaleController extends Controller
         $correo->subject($asunto);
         $correo->attachData($pdf->output(), 'venta_' . $saleId . '.pdf');
         Mail::to($email)->send($correo);
+    }
+
+    /**
+     * Crear DTE con estado rechazado cuando hay error
+     */
+    private function crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby)
+    {
+        $dtecreate = new Dte();
+        $dtecreate->versionJson = $documento[0]->versionJson;
+        $dtecreate->ambiente_id = $documento[0]->ambiente;
+        $dtecreate->tipoDte = $documento[0]->tipodocumento;
+        $dtecreate->tipoModelo = $documento[0]->tipogeneracion;
+        $dtecreate->tipoTransmision = 1;
+        $dtecreate->tipoContingencia = "null";
+        $dtecreate->idContingencia = "null";
+        $dtecreate->nameTable = 'Sales';
+        $dtecreate->company_id = $salesave->company_id;
+        $dtecreate->company_name = $emisor[0]->nombreComercial;
+        $dtecreate->id_doc = $respuesta_hacienda["identificacion"]["numeroControl"] ?? 'ERROR-' . time();
+        $dtecreate->codTransaction = "01";
+        $dtecreate->desTransaction = "Emision";
+        $dtecreate->type_document = $documento[0]->tipodocumento;
+        $dtecreate->id_doc_Ref1 = "null";
+        $dtecreate->id_doc_Ref2 = "null";
+        $dtecreate->type_invalidacion = "null";
+        $dtecreate->codEstado = "03"; // Rechazado
+        $dtecreate->Estado = "Rechazado";
+        $dtecreate->codigoGeneracion = null;
+        $dtecreate->selloRecibido = null;
+        $dtecreate->fhRecibido = null;
+        $dtecreate->estadoHacienda = null;
+        $dtecreate->json = json_encode($comprobante);
+        $dtecreate->nSends = 1;
+        $dtecreate->codeMessage = $respuesta_hacienda["codigoMsg"] ?? null;
+        $dtecreate->claMessage = $respuesta_hacienda["clasificaMsg"] ?? null;
+        $dtecreate->descriptionMessage = $respuesta_hacienda["descripcionMsg"] ?? null;
+        $dtecreate->detailsMessage = $respuesta_hacienda["observacionesMsg"] ?? null;
+        $dtecreate->sale_id = $salesave->id;
+        $dtecreate->created_by = $createdby;
+        $dtecreate->save();
+
+        return $dtecreate;
+    }
+
+    /**
+     * Registrar error en la tabla dte_errors
+     */
+    private function registrarErrorDte($dte, $tipo, $codigo, $descripcion, $detalles = [])
+    {
+        try {
+            // Obtener el JSON completo del DTE
+            $jsonCompleto = null;
+            if ($dte && isset($dte->json)) {
+                $jsonCompleto = $dte->json;
+            }
+
+            \App\Models\DteError::crearError(
+                $dte->id,
+                $tipo,
+                $codigo,
+                $descripcion,
+                $detalles,
+                debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5),
+                $jsonCompleto
+            );
+        } catch (\Exception $e) {
+            Log::error('Error registrando error DTE', [
+                'dte_id' => $dte->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 
     public function destinos()
