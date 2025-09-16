@@ -57,7 +57,7 @@
                                 <tr>
                                     <td><strong>DTE ID:</strong></td>
                                     <td>
-                                        <a href="{{ route('dte.show', $error->dte_id) }}" class="text-primary">
+                                        <a href="{{ route('dte.show', ['id' => $error->dte_id]) }}" class="text-primary">
                                             {{ $error->dte_id }}
                                         </a>
                                     </td>
@@ -231,7 +231,7 @@
                                 <tr>
                                     <td><strong>ID DTE:</strong></td>
                                     <td>
-                                        <a href="{{ route('dte.show', $error->dte->id) }}" class="text-primary">
+                                        <a href="{{ route('dte.show', ['id' => $error->dte->id]) }}" class="text-primary">
                                             {{ $error->dte->id }}
                                         </a>
                                     </td>
