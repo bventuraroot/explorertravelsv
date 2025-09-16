@@ -167,9 +167,7 @@ class DteAdminController extends Controller
     {
         $filtros = $request->only(['tipo', 'empresa_id', 'resuelto']);
 
-        $query = DteError::with(['dte.company', 'resueltoPor'])
-            ->whereNotNull('id')
-            ->where('id', '!=', '');
+        $query = DteError::with(['dte.company', 'resueltoPor']);
 
         if (isset($filtros['tipo']) && $filtros['tipo']) {
             $query->porTipo($filtros['tipo']);
@@ -184,12 +182,12 @@ class DteAdminController extends Controller
         if (isset($filtros['resuelto'])) {
             if ($filtros['resuelto'] === '1') {
                 $query->where('resuelto', true);
-            } else {
+            } elseif ($filtros['resuelto'] === '0') {
                 $query->noResueltos();
             }
-        } else {
-            $query->noResueltos(); // Por defecto mostrar solo no resueltos
+            // Si es 'todos' o cualquier otro valor, no aplicar filtro
         }
+        // Comentado temporalmente para debug: $query->noResueltos();
 
         $errores = $query->orderBy('created_at', 'desc')->paginate(20);
         $empresas = Company::select('id', 'name')->orderBy('name')->get();
