@@ -280,7 +280,7 @@ Route::middleware('auth')->group(function () {
         Route::post('procesar-cola', [DteDashboardController::class, 'procesarCola'])->name('procesar-cola');
         Route::post('procesar-reintentos', [DteDashboardController::class, 'procesarReintentos'])->name('procesar-reintentos');
         Route::get('estadisticas-tiempo-real', [DteDashboardController::class, 'estadisticasTiempoReal'])->name('estadisticas-tiempo-real');
-        Route::get('show/{id}', [DteDashboardController::class, 'show'])->name('show');
+        Route::get('show/{id}', [DteDashboardController::class, 'show'])->name('show'); 
     });
 
     // Administración DTE

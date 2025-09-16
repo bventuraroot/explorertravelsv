@@ -137,12 +137,12 @@ $(document).ready(function() {
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold py-3 mb-0">
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <h4 class="py-3 mb-0 fw-bold">
                     <i class="fas fa-chart-line me-2"></i>
                     Dashboard DTE
                 </h4>
-                <div class="d-flex gap-2">
+                <div class="gap-2 d-flex">
                     <select id="empresaFilter" class="form-select" style="width: 200px;">
                         <option value="">Todas las empresas</option>
                         @foreach($empresas as $empresa)
@@ -165,8 +165,8 @@ $(document).ready(function() {
     </div>
 
     <!-- Estadísticas principales -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-4">
+    <div class="mb-4 row">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -174,15 +174,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Total DTE</h6>
                             <h3 class="mb-0" id="totalDte">{{ $estadisticas['total'] }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-primary rounded">
-                            <i class="fas fa-file-invoice text-white"></i>
+                        <div class="rounded avatar avatar-md bg-primary">
+                            <i class="text-white fas fa-file-invoice"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -190,15 +190,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">En Cola</h6>
                             <h3 class="mb-0 text-warning" id="enCola">{{ $estadisticas['en_cola'] }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-warning rounded">
-                            <i class="fas fa-clock text-white"></i>
+                        <div class="rounded avatar avatar-md bg-warning">
+                            <i class="text-white fas fa-clock"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -206,15 +206,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Enviados</h6>
                             <h3 class="mb-0 text-success" id="enviados">{{ $estadisticas['enviados'] }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-success rounded">
-                            <i class="fas fa-check text-white"></i>
+                        <div class="rounded avatar avatar-md bg-success">
+                            <i class="text-white fas fa-check"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -222,8 +222,8 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Rechazados</h6>
                             <h3 class="mb-0 text-danger" id="rechazados">{{ $estadisticas['rechazados'] }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-danger rounded">
-                            <i class="fas fa-times text-white"></i>
+                        <div class="rounded avatar avatar-md bg-danger">
+                            <i class="text-white fas fa-times"></i>
                         </div>
                     </div>
                 </div>
@@ -232,8 +232,8 @@ $(document).ready(function() {
     </div>
 
     <!-- Estadísticas secundarias -->
-    <div class="row mb-4">
-        <div class="col-lg-4 col-md-6 mb-4">
+    <div class="mb-4 row">
+        <div class="mb-4 col-lg-4 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title">Porcentaje de Éxito</h6>
@@ -250,7 +250,7 @@ $(document).ready(function() {
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 mb-4">
+        <div class="mb-4 col-lg-4 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title">Errores Críticos</h6>
@@ -263,7 +263,7 @@ $(document).ready(function() {
             </div>
         </div>
 
-        <div class="col-lg-4 col-md-6 mb-4">
+        <div class="mb-4 col-lg-4 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h6 class="card-title">Última Actualización</h6>
@@ -277,11 +277,11 @@ $(document).ready(function() {
     </div>
 
     <!-- Controles de procesamiento -->
-    <div class="row mb-4">
+    <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="mb-0 card-title">
                         <i class="fas fa-cogs me-2"></i>
                         Controles de Procesamiento
                     </h5>
@@ -298,7 +298,7 @@ $(document).ready(function() {
                             </select>
                         </div>
                         <div class="col-md-8 d-flex align-items-end">
-                            <div class="d-flex gap-2">
+                            <div class="gap-2 d-flex">
                                 <button id="procesarCola" class="btn btn-primary">
                                     <i class="fas fa-play me-1"></i>
                                     Procesar Cola
@@ -324,11 +324,11 @@ $(document).ready(function() {
     </div>
 
     <!-- Últimos DTE procesados -->
-    <div class="row mb-4">
+    <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="mb-0 card-title">
                         <i class="fas fa-history me-2"></i>
                         Últimos DTE Procesados
                     </h5>
@@ -361,7 +361,7 @@ $(document).ready(function() {
                                     </td>
                                     <td>{{ $dte->created_at->format('d/m/Y H:i') }}</td>
                                     <td>
-                                        <a href="{{ route('dte.show', $dte->id) }}"
+                                        <a href="{{ route('dte-dashboard.show', $dte->id) }}"
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -382,7 +382,7 @@ $(document).ready(function() {
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="mb-0 card-title">
                         <i class="fas fa-shield-alt me-2"></i>
                         Contingencias Activas
                     </h5>
