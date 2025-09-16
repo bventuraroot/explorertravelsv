@@ -1872,11 +1872,10 @@ class SaleController extends Controller
                 $codigo,
                 $descripcion,
                 $detalles,
-                debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5),
+                [], // stack_trace vacío por ahora
                 $jsonCompleto
             );
         } catch (\Exception $e) {
-            dd($e);
             Log::error('Error registrando error DTE', [
                 'dte_id' => $dte->id,
                 'error' => $e->getMessage()

@@ -322,19 +322,25 @@ class DteError extends Model
         array $stackTrace = [],
         string $jsonCompleto = null
     ): self {
-        return self::create([
+        $data = [
             'dte_id' => $dteId,
             'tipo_error' => $tipo,
             'codigo_error' => $codigo,
             'descripcion' => $descripcion,
             'detalles' => $detalles,
-            'stack_trace' => $stackTrace,
             'json_completo' => $jsonCompleto,
             'intentos_realizados' => 0,
             'max_intentos' => self::getMaxIntentosPorTipo($tipo),
             'proximo_reintento' => now()->addMinutes(5),
             'resuelto' => false
-        ]);
+        ];
+
+        // Solo agregar stack_trace si la columna existe
+        if (!empty($stackTrace)) {
+            $data['stack_trace'] = $stackTrace;
+        }
+
+        return self::create($data);
     }
 
     /**
