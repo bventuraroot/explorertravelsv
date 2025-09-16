@@ -239,7 +239,7 @@
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('dte.error-show', $error->id) }}"
                                            class="btn btn-sm btn-outline-primary"
-                                           title="Ver DTE">
+                                           title="Ver Error">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         @if(!$error->resuelto)
@@ -336,7 +336,7 @@ function confirmarResolucion() {
     }
 
     $.ajax({
-        url: `/dte/errores/${errorIdActual}/resolver`,
+        url: `/dte-admin/errores/${errorIdActual}/resolver`,
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -382,7 +382,7 @@ function reintentarDte(dteId) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: `/dte/reintentar/${dteId}`,
+                url: `/dte-admin/reintentar/${dteId}`,
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
