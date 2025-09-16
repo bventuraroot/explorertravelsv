@@ -164,13 +164,12 @@ $(function () {
     }
 
     function formatState(state) {
-        //console.log(state);
-        if (state.id==0) {
-          return state.text;
+        if (!state || state.id==0) {
+          return state && state.text ? state.text : '';
         }
-        var $state = $(
-          '<span><img src="../assets/img/products/'+ state.title +'" class="imagen-producto-select2" /> ' + state.text + '</span>'
-        );
+        var imageFile = (state.title && state.title !== 'undefined' && state.title !== 'null') ? state.title : 'default.png';
+        var src = '../assets/img/products/' + imageFile;
+        var $state = $('<span><img onerror="this.onerror=null;this.src=\'../assets/img/products/default.png\';" src="'+ src +'" class="imagen-producto-select2" /> ' + state.text + '</span>');
         return $state;
       };
     var selectdpsearch = $(".select2psearch");
@@ -236,6 +235,7 @@ function agregarp() {
     var destino = $('#destino').val();
     var linea = $('#linea').val();
     var canal = $('#Canal').val();
+    // Respetar lógica original: siempre leer de #fee (visible u oculto)
     var fee = parseFloat($("#fee").val()) || 0.00;
     //var fee2 = parseFloat($("#fee2").val()) || 0.00;
 

@@ -337,7 +337,7 @@
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="text-center col-md-4">
-                                                <img id="product-image" src="{{ asset('assets/img/products/default.png') }}" alt="Imagen del producto" class="mb-3 img-fluid" style="max-height: 200px;">
+                                                <img id="product-image" src="" alt="Imagen del producto" class="mb-3 img-fluid" style="max-height: 200px;">
                                             </div>
                                             <div class="col-md-8">
                                                 <div class="table-responsive">

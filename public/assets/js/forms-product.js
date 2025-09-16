@@ -21,11 +21,17 @@ $(document).ready(function (){
         url: "/provider/getproviders",
         method: "GET",
         success: function(response){
-            //console.log(response);
+            // Limpiar para evitar duplicados
+            $('#provider').empty();
+            $('#provideredit').empty();
+
+            // Placeholder solo una vez
             $('#provider').append('<option value="0">Seleccione</option>');
+
             $.each(response, function(index, value) {
-                $('#provider').append('<option value="'+value.id+'">'+value.razonsocial.toUpperCase()+'</option>');
-                $('#provideredit').append('<option value="'+value.id+'">'+value.razonsocial.toUpperCase()+'</option>');
+                var option = '<option value="'+value.id+'">'+value.razonsocial.toUpperCase()+'</option>';
+                $('#provider').append(option);
+                $('#provideredit').append(option);
               });
         }
     });
@@ -113,13 +119,13 @@ $(document).ready(function (){
                         }
                     }
                     if(index=='provider_id'){
-                        $("#provideredit option[value='"+ value  +"']").attr("selected", true);
+                        $("#provideredit").val(value);
                     }
                     if(index=='cfiscal'){
-                        $("#cfiscaledit option[value='"+ value  +"']").attr("selected", true);
+                        $("#cfiscaledit").val(value);
                     }
                     if(index=='type'){
-                        $("#typeedit option[value='"+ value  +"']").attr("selected", true);
+                        $("#typeedit").val(value);
                     }
 
               });
