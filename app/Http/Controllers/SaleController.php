@@ -495,26 +495,30 @@ class SaleController extends Controller
 
             // Verificar si la emisión de DTE está habilitada para esta empresa
             if (Config::isDteEmissionEnabled($idempresa)) {
-                $contingencia = 1; // mismo criterio simplificado
-                if ($contingencia) {
-                    $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
-                    if ($respuesta_hacienda["codEstado"] == "03") {
-                        // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
-                        $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
+                $contingencia = [];
+                $respuesta_hacienda = [];
+                if ($documento[0]->tipogeneracion == 1) {
+                    $contingencia = 1;
+                    if ($contingencia) {
+                        $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
+                        if ($respuesta_hacienda["codEstado"] == "03") {
+                            // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
+                            $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
 
-                        // REGISTRAR ERROR EN LA TABLA dte_errors
-                        $this->registrarErrorDte($dtecreate, 'hacienda', 'HACIENDA_REJECTED', $respuesta_hacienda["descripcionMsg"] ?? 'Documento rechazado por Hacienda', [
-                            'codigoMsg' => $respuesta_hacienda["codigoMsg"] ?? null,
-                            'observacionesMsg' => $respuesta_hacienda["observacionesMsg"] ?? null,
-                            'sale_id' => base64_decode($corr)
-                        ]);
+                            // REGISTRAR ERROR EN LA TABLA dte_errors
+                            $this->registrarErrorDte($dtecreate, 'hacienda', 'HACIENDA_REJECTED', $respuesta_hacienda["descripcionMsg"] ?? 'Documento rechazado por Hacienda', [
+                                'codigoMsg' => $respuesta_hacienda["codigoMsg"] ?? null,
+                                'observacionesMsg' => $respuesta_hacienda["observacionesMsg"] ?? null,
+                                'sale_id' => base64_decode($corr)
+                            ]);
 
-                        return json_encode($respuesta_hacienda);
+                            return json_encode($respuesta_hacienda);
+                        }
+                        $comprobante["json"] = $respuesta_hacienda;
                     }
-                    $comprobante["json"] = $respuesta_hacienda;
                 }
-
-                // Crear DTE con respuesta
+                //dd($respuesta_hacienda);
+                //create respuesta de MH
                 $dtecreate = new Dte();
                 $dtecreate->versionJson = $documento[0]->versionJson;
                 $dtecreate->ambiente_id = $documento[0]->ambiente;
@@ -526,50 +530,37 @@ class SaleController extends Controller
                 $dtecreate->nameTable = 'Sales';
                 $dtecreate->company_id = $idempresa;
                 $dtecreate->company_name = $emisor[0]->nombreComercial;
-                $dtecreate->id_doc = $respuesta_hacienda["identificacion"]["numeroControl"] ?? null;
+                $dtecreate->id_doc = $respuesta_hacienda["identificacion"]["numeroControl"];
                 $dtecreate->codTransaction = "01";
                 $dtecreate->desTransaction = "Emision";
                 $dtecreate->type_document = $documento[0]->tipodocumento;
                 $dtecreate->id_doc_Ref1 = "null";
                 $dtecreate->id_doc_Ref2 = "null";
                 $dtecreate->type_invalidacion = "null";
-                $dtecreate->codEstado = $respuesta_hacienda["codEstado"] ?? "02";
-                $dtecreate->Estado = $respuesta_hacienda["estado"] ?? "Enviado";
-                $dtecreate->codigoGeneracion = $respuesta_hacienda["codigoGeneracion"] ?? null;
-                $dtecreate->selloRecibido = $respuesta_hacienda["selloRecibido"] ?? null;
-                $dtecreate->fhRecibido = $respuesta_hacienda["fhRecibido"] ?? null;
-                $dtecreate->estadoHacienda = $respuesta_hacienda["estadoHacienda"] ?? null;
+                $dtecreate->codEstado = $respuesta_hacienda["codEstado"];
+                $dtecreate->Estado = $respuesta_hacienda["estado"];
+                $dtecreate->codigoGeneracion = $respuesta_hacienda["codigoGeneracion"];
+                $dtecreate->selloRecibido = $respuesta_hacienda["selloRecibido"];
+                $dtecreate->fhRecibido = $respuesta_hacienda["fhRecibido"];
+                $dtecreate->estadoHacienda = $respuesta_hacienda["estadoHacienda"];
                 $dtecreate->json = json_encode($comprobante);
-                $dtecreate->nSends = $respuesta_hacienda["nuEnvios"] ?? 1;
-                $dtecreate->codeMessage = $respuesta_hacienda["codigoMsg"] ?? null;
-                $dtecreate->claMessage = $respuesta_hacienda["clasificaMsg"] ?? null;
-                $dtecreate->descriptionMessage = $respuesta_hacienda["descripcionMsg"] ?? null;
-                $dtecreate->detailsMessage = $respuesta_hacienda["observacionesMsg"] ?? null;
+                $dtecreate->nSends = $respuesta_hacienda["nuEnvios"];
+                $dtecreate->codeMessage = $respuesta_hacienda["codigoMsg"];
+                $dtecreate->claMessage = $respuesta_hacienda["clasificaMsg"];
+                $dtecreate->descriptionMessage = $respuesta_hacienda["descripcionMsg"];
+                $dtecreate->detailsMessage = $respuesta_hacienda["observacionesMsg"];
                 $dtecreate->sale_id = base64_decode($corr);
                 $dtecreate->created_by = $documento[0]->NombreUsuario;
                 $dtecreate->save();
 
-                // Envío automático de correo con DTE adjunto (PDF + JSON)
-                try {
-                    //$this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
-                } catch (\Throwable $mailEx) {
-                    Log::warning('Fallo envío de correo automático con DTE', [
-                        'sale_id' => base64_decode($corr),
-                        'error' => $mailEx->getMessage()
-                    ]);
-                }
+                // Envío automático de correo después de guardar el DTE
+                //$this->enviarCorreoAutomatico(base64_decode($corr), $dtecreate);
             } else {
+                // DTE deshabilitado - solo guardar la venta sin emisión
                 Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
 
-                // Envío automático de correo sin DTE (solo PDF local)
-                try {
-                    //$this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), null);
-                } catch (\Throwable $mailEx) {
-                    Log::warning('Fallo envío de correo automático sin DTE', [
-                        'sale_id' => base64_decode($corr),
-                        'error' => $mailEx->getMessage()
-                    ]);
-                }
+                // Envío automático de correo para ventas sin DTE
+                //$this->enviarCorreoAutomatico(base64_decode($corr), null);
             }
 
             // update correlativo como en RomaCopies
