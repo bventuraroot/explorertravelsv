@@ -204,7 +204,7 @@ class PermissionController extends Controller
                         "slug" => "firmador.test"
                     ],
                     [
-                        "url" => "/dte/dashboard",
+                        "url" => "/dte-dashboard/dashboard",
                         "name" => "Dashboard DTE",
                         "icon" => "menu-icon fa-solid fa-chart-line",
                         "slug" => "dte.dashboard"

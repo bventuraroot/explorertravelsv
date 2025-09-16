@@ -253,12 +253,6 @@ Route::middleware('auth')->group(function () {
         Route::get('por-empresa', [CorrelativoController::class, 'porEmpresa'])->name('por-empresa-api');
     });
 
-    // Administración DTE
-    Route::group(['prefix' => 'dte', 'as' => 'dte.'], function(){
-        Route::get('estadisticas', [DteAdminController::class, 'estadisticas'])->name('estadisticas');
-        Route::post('procesar-cola', [DteAdminController::class, 'procesarCola'])->name('procesar-cola');
-        Route::post('procesar-reintentos', [DteAdminController::class, 'procesarReintentos'])->name('procesar-reintentos');
-    });
 
     // Prueba de firmador (similar a RomaCopies)
     Route::group(['prefix' => 'firmador', 'as' => 'firmador.'], function(){
@@ -281,12 +275,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // Dashboard DTE
-    Route::group(['prefix' => 'dte', 'as' => 'dte.'], function(){
+    Route::group(['prefix' => 'dte-dashboard', 'as' => 'dte-dashboard.'], function(){
         Route::get('dashboard', [DteDashboardController::class, 'index'])->name('dashboard');
         Route::post('procesar-cola', [DteDashboardController::class, 'procesarCola'])->name('procesar-cola');
         Route::post('procesar-reintentos', [DteDashboardController::class, 'procesarReintentos'])->name('procesar-reintentos');
         Route::get('estadisticas-tiempo-real', [DteDashboardController::class, 'estadisticasTiempoReal'])->name('estadisticas-tiempo-real');
-        Route::get('{id}', [DteDashboardController::class, 'show'])->name('show');
+        Route::get('show/{id}', [DteDashboardController::class, 'show'])->name('show');
     });
 
     // Administración DTE
@@ -305,7 +299,7 @@ Route::middleware('auth')->group(function () {
         Route::get('errores', [DteAdminController::class, 'errores'])->name('errores');
         Route::post('errores/{errorId}/resolver', [DteAdminController::class, 'resolverError'])->name('resolver-error');
         Route::get('error-show/{id}', [DteAdminController::class, 'showError'])->name('error-show');
-        Route::get('show/{id}', [DteAdminController::class, 'showDte'])->name('show');
+        Route::get('dte-show/{id}', [DteAdminController::class, 'showDte'])->name('show');
 
         // Gestión de contingencias
         Route::get('contingencias', [DteAdminController::class, 'contingencias'])->name('contingencias');
@@ -313,8 +307,6 @@ Route::middleware('auth')->group(function () {
         Route::post('contingencias/{id}/aprobar', [DteAdminController::class, 'aprobarContingencia'])->name('aprobar-contingencia');
         Route::post('contingencias/{id}/activar', [DteAdminController::class, 'activarContingencia'])->name('activar-contingencia');
 
-        // Detalles de DTE
-        Route::get('{id}', [DteAdminController::class, 'showDte'])->name('show');
 
         // API para contingencias
         Route::get('dtes-para-contingencia', [DteAdminController::class, 'getDtesParaContingencia'])->name('dtes-para-contingencia');
