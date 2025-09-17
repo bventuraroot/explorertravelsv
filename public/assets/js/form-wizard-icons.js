@@ -549,9 +549,15 @@ function totalamount() {
 
     // IVA 13% (solo CCF)
     if (typedoc === '3') {
-        totalvalor = parseFloat(totalamount * iva);
-        totalfee = parseFloat((fee * cantidad) * iva);
-        ivarete13 = parseFloat(totalvalor + totalfee);
+        // Para Crédito Fiscal: Sumar fee al total con IVA, luego calcular IVA
+        var totalConIva = parseFloat(valor * cantidad * iva); // Total con IVA
+        var totalfeeAmount = parseFloat(fee * cantidad);
+
+        // Sumar fee al total con IVA
+        var totalConIvaYFee = totalConIva + totalfeeAmount;
+
+        // Calcular el IVA sobre el total (con IVA + fee)
+        ivarete13 = parseFloat(totalConIvaYFee * 0.13);
         $("#ivarete13").val(ivarete13.toFixed(8));
     } else {
         $("#ivarete13").val(0);
@@ -619,21 +625,29 @@ function calculateFromPriceWithIva() {
         var precioSinIva = precioConIva / iva;
         $("#precio").val(precioSinIva.toFixed(8));
 
-        // Calcular totales siguiendo la misma lógica que totalamount()
-        var totalamount = parseFloat(precioSinIva * cantidad);
+        // Para Crédito Fiscal: Sumar fee al total con IVA, luego calcular IVA
+        var totalConIva = parseFloat(precioConIva * cantidad);
         var totalfee = parseFloat(fee * cantidad);
-        var totalvalor = parseFloat(totalamount * iva);
-        var totalfeeIva = parseFloat(totalfee * iva);
-        var ivarete13 = parseFloat(totalvalor + totalfeeIva);
-        var totalFinal = totalamount + totalfee + ivarete13;
+
+        // Sumar fee al total con IVA
+        var totalConIvaYFee = totalConIva + totalfee;
+
+        // Calcular el IVA sobre el total (con IVA + fee)
+        var ivarete13 = parseFloat(totalConIvaYFee * 0.13);
+
+        // Calcular subtotal sin IVA
+        var subtotalSinIva = parseFloat(totalConIvaYFee / iva);
+
+        // Total final: subtotal + IVA
+        var totalFinal = subtotalSinIva + ivarete13;
 
         // Actualizar campos visibles
-        $("#subtotal").val(totalamount.toFixed(8));
+        $("#subtotal").val(subtotalSinIva.toFixed(8));
         $("#ivarete13").val(ivarete13.toFixed(8));
         $("#total").val(totalFinal.toFixed(8));
 
         // Actualizar campos ocultos
-        $("#sumas").val(totalamount.toFixed(8));
+        $("#sumas").val(subtotalSinIva.toFixed(8));
         $("#13iva").val(ivarete13.toFixed(8));
         $("#ventatotal").val(totalFinal.toFixed(8));
         $("#ventatotallhidden").val(totalFinal.toFixed(8));

@@ -261,7 +261,7 @@
                             @if(request('typedocument')==6 || request('typedocument')==3)
                             <div class="col-sm-2">
                                 <label class="form-label" for="fee">Fee</label>
-                                <input type="number" id="fee" name="fee" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                <input type="number" id="fee" name="fee" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount(); calculateFromPriceWithIva();" oninput="totalamount(); calculateFromPriceWithIva();">
                             </div>
                             @endif
                             <div class="col-sm-2">
