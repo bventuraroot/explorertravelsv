@@ -494,7 +494,7 @@
                         <div id="deal-type" class="content">
                           <div class="row g-3">
                             <div class="pt-4 border rounded col-12 d-flex justify-content-center">
-                              <img src="{{ asset('assets/img/illustrations/auth-register-illustration-'.$configData['style'].'.png') }}" alt="wizard-create-deal" data-app-light-img="illustrations/auth-register-illustration-light.png" data-app-dark-img="illustrations/auth-register-illustration-dark.png" width="250" class="img-fluid">
+                              <img src="{{ asset('assets/img/illustrations/auth-register-illustration-'.$configData['style'].'.png') }}" alt="wizard-create-deal" data-app-light-img="illustrations/auth-register-illustration-light.png" data-app-dark-img="illustrations/auth-register-illustration-dark.png" width="150" class="img-fluid">
                             </div>
                             <div class="pb-2 col-12">
                               <div class="row">
@@ -534,6 +534,18 @@
                                     </label>
                                   </div>
                                 </div>
+                                <div class="mb-2 col-md mb-md-0">
+                                    <div class="form-check custom-option custom-option-icon">
+                                      <label class="form-check-label custom-option-content" for="nota">
+                                        <span class="custom-option-body">
+                                          <i class="mb-2 ti ti-receipt-refund"></i>
+                                          <span class="custom-option-title">FACTURA DE EXPORTACION</span>
+                                          <small>Creación de documento para exportaciones.</small>
+                                        </span>
+                                        <input name="typedocument" class="form-check-input" type="radio" value="7" id="nota" />
+                                      </label>
+                                    </div>
+                                  </div>
                                 <div class="mt-4 col-12 d-flex justify-content-center">
                                     <button class="btn btn-success btn-submit btn-next">
                                         <span class="align-center d-sm-inline-block d-none me-sm-1">Comenzar</span>
