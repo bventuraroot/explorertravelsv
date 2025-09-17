@@ -166,6 +166,15 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
 
     });
 
+    // Rutas para notas de crédito y débito
+    Route::group(['prefix' => 'credit-notes', 'as' => 'credit-notes.'], function(){
+        Route::get('create', [SaleController::class, 'ncr'])->name('create');
+    });
+
+    Route::group(['prefix' => 'debit-notes', 'as' => 'debit-notes.'], function(){
+        Route::get('create', [SaleController::class, 'ndb'])->name('create');
+    });
+
 Route::group(['prefix' => 'purchase', 'as' => 'purchase.'], function(){
         Route::get('index', [PurchaseController::class, 'index'])->name('index');
         Route::post('store', [PurchaseController::class, 'store'])->name('store');

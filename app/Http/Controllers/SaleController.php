@@ -694,10 +694,17 @@ class SaleController extends Controller
         //
     }
 
-    public function ncr($id_sale)
+    public function ncr($id_sale = null)
     {
+        // Si no se pasa id_sale como parámetro de ruta, intentar obtenerlo de la consulta
+        if ($id_sale === null) {
+            $id_sale = request('sale_id');
+        }
 
-        $id_sale = base64_decode($id_sale);
+        // Si el id_sale viene codificado en base64, decodificarlo
+        if ($id_sale && !is_numeric($id_sale)) {
+            $id_sale = base64_decode($id_sale);
+        }
 
         $qfactura = "SELECT
                         *,
@@ -1077,8 +1084,47 @@ class SaleController extends Controller
         if ($dtecreate) $exit = 1;
         else $exit = 0;
 
+        // Si se llama desde un enlace directo (no AJAX), redirigir con mensaje
+        if (!request()->ajax() && !request()->expectsJson()) {
+            if ($exit == 1) {
+                return redirect()->route('sale.index')->with('success', 'Nota de crédito creada exitosamente');
+            } else {
+                return redirect()->route('sale.index')->with('error', 'Error al crear la nota de crédito');
+            }
+        }
+
+        // Si se llama desde AJAX, retornar JSON
         return response()->json(array(
             "res" => $exit
+        ));
+    }
+
+    /**
+     * Crear nota de débito
+     *
+     * @param  int|null  $id_sale
+     * @return \Illuminate\Http\Response
+     */
+    public function ndb($id_sale = null)
+    {
+        // Si no se pasa id_sale como parámetro de ruta, intentar obtenerlo de la consulta
+        if ($id_sale === null) {
+            $id_sale = request('sale_id');
+        }
+
+        // Si el id_sale viene codificado en base64, decodificarlo
+        if ($id_sale && !is_numeric($id_sale)) {
+            $id_sale = base64_decode($id_sale);
+        }
+
+        // Por ahora, redirigir con un mensaje informativo ya que las notas de débito no están implementadas
+        if (!request()->ajax() && !request()->expectsJson()) {
+            return redirect()->route('sale.index')->with('info', 'La funcionalidad de notas de débito está en desarrollo');
+        }
+
+        return response()->json(array(
+            "res" => 0,
+            "message" => "La funcionalidad de notas de débito está en desarrollo"
         ));
     }
 
