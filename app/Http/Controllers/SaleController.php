@@ -38,7 +38,14 @@ class SaleController extends Controller
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftjoin('dte', function($join) {
+                $join->on('dte.sale_id', '=', 'sales.id')
+                     ->where(function($query) {
+                         $query->whereNull('dte.estadoHacienda')
+                               ->orWhere('dte.estadoHacienda', '!=', '03') // Excluir DTE con error (código 03)
+                               ->orWhere('dte.estadoHacienda', '!=', 'ERROR'); // Excluir DTE con estado ERROR
+                     });
+            })
             ->select(
                 'sales.*',
                 'typedocuments.description AS document_name',
@@ -53,11 +60,7 @@ class SaleController extends Controller
                 'dte.id_doc',
                 'dte.company_name',
                 DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'))
-            ->where(function($query) {
-                $query->whereNull('dte.estadoHacienda')
-                      ->orWhere('dte.estadoHacienda', '!=', '03') // Excluir DTE con error (código 03)
-                      ->orWhere('dte.estadoHacienda', '!=', 'ERROR'); // Excluir DTE con estado ERROR
-            });
+            ->distinct();
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
