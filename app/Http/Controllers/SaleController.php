@@ -59,22 +59,21 @@ class SaleController extends Controller
                 'clients.email as mailClient',
                 'companies.name AS company_name'
             )
+            // Solo ventas con DTE en estado "Enviado" (sin duplicados)
+            ->whereExists(function($q){
+                $q->select(DB::raw(1))
+                  ->from('dte')
+                  ->whereColumn('dte.sale_id', 'sales.id')
+                  ->where('dte.Estado', 'Enviado');
+            })
             ->distinct();
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
         }
 
-        // Obtener las ventas sin duplicados
+        // Obtener las ventas filtradas (solo con DTE "Enviado")
         $sales = $sales->get();
-
-        // Mostrar SOLO ventas con DTE en estado "Enviado"
-        $sales = $sales->filter(function($sale) {
-            return DB::table('dte')
-                ->where('sale_id', $sale->id)
-                ->where('Estado', 'Enviado')
-                ->exists();
-        });
 
         // Obtener tipos de documento para el filtro
         $tiposDocumento = DB::table('typedocuments')->get();
