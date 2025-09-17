@@ -1388,7 +1388,7 @@ function creardocuments() {
             reverseButtons: true,
             showLoaderOnConfirm: true, // Agrega un ícono de espera en el botón de confirmación
             preConfirm: () => {
-                return new Promise((resolve) => {
+                return new Promise((resolve, reject) => {
                     var corr = $('#valcorr').val();
                     var totalamount = $('#ventatotallhidden').val();
                     totalamount = 0 + totalamount;
