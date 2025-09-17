@@ -55,8 +55,10 @@ class SaleController extends Controller
                 'dte.company_name',
                 DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale')
             )
-            ->whereOr('dte.Estado', '<>', 'Rechazado')
-            ->distinct();
+            ->where(function($query) {
+                $query->whereNull('dte.Estado')
+                      ->orWhere('dte.Estado', '<>', 'Rechazado');
+            });
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
@@ -405,7 +407,7 @@ class SaleController extends Controller
         ELSE c.name
         END AS descripcion,
         b.amountp cantidad,
-        SUM(b.priceunit+b.fee) precio_unitario,
+        (b.priceunit+b.fee) precio_unitario,
         0 descuento,
         0 no_imponible,
         (b.pricesale+b.nosujeta+b.exempt) subtotal,
