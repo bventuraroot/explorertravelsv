@@ -607,6 +607,39 @@ function updateProductDescription() {
     }
 }
 
+// Función para calcular desde precio con IVA (Crédito Fiscal)
+function calculateFromPriceWithIva() {
+    var precioConIva = parseFloat($("#precioConIva").val()) || 0;
+    var cantidad = parseFloat($("#cantidad").val()) || 1;
+    var fee = parseFloat($("#fee").val()) || 0;
+    var iva = parseFloat($("#iva").val()) || 1.13; // IVA 13%
+
+    if (precioConIva > 0) {
+        // Calcular precio unitario sin IVA
+        var precioSinIva = precioConIva / iva;
+        $("#precio").val(precioSinIva.toFixed(8));
+
+        // Calcular totales siguiendo la misma lógica que totalamount()
+        var totalamount = parseFloat(precioSinIva * cantidad);
+        var totalfee = parseFloat(fee * cantidad);
+        var totalvalor = parseFloat(totalamount * iva);
+        var totalfeeIva = parseFloat(totalfee * iva);
+        var ivarete13 = parseFloat(totalvalor + totalfeeIva);
+        var totalFinal = totalamount + totalfee + ivarete13;
+
+        // Actualizar campos visibles
+        $("#subtotal").val(totalamount.toFixed(8));
+        $("#ivarete13").val(ivarete13.toFixed(8));
+        $("#total").val(totalFinal.toFixed(8));
+
+        // Actualizar campos ocultos
+        $("#sumas").val(totalamount.toFixed(8));
+        $("#13iva").val(ivarete13.toFixed(8));
+        $("#ventatotal").val(totalFinal.toFixed(8));
+        $("#ventatotallhidden").val(totalFinal.toFixed(8));
+    }
+}
+
 function searchproduct(idpro) {
     // Mostrar campos adicionales para productos de viajes/tickets
     // Se puede modificar esta lógica según las necesidades del negocio

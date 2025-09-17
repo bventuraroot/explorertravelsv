@@ -246,7 +246,7 @@
                             @if(request('typedocument')==3)
                             <div class="col-sm-2">
                                 <label class="form-label" for="precioConIva">Precio de Venta</label>
-                                <input type="number" id="precioConIva" name="precioConIva" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="calculateFromPriceWithIva && calculateFromPriceWithIva();">
+                                <input type="number" id="precioConIva" name="precioConIva" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="calculateFromPriceWithIva();" oninput="calculateFromPriceWithIva();">
                             </div>
                             @endif
                             <div class="col-sm-2">
