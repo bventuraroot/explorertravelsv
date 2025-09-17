@@ -70,7 +70,17 @@ class SaleController extends Controller
 
         // Filtrar ventas que tienen DTE con errores
         $sales = $sales->filter(function($sale) {
-            // Verificar si la venta tiene DTE con errores
+            // Verificar si la venta tiene DTE
+            $hasDte = DB::table('dte')
+                ->where('sale_id', $sale->id)
+                ->exists();
+
+            // Si no tiene DTE, mostrarla
+            if (!$hasDte) {
+                return true;
+            }
+
+            // Si tiene DTE, verificar si tiene errores
             $dteWithErrors = DB::table('dte')
                 ->where('sale_id', $sale->id)
                 ->where(function($query) {
@@ -80,6 +90,7 @@ class SaleController extends Controller
                 ->exists();
 
             // Solo incluir ventas que NO tienen DTE con errores
+            // (incluye ventas sin DTE y ventas con DTE exitosos)
             return !$dteWithErrors;
         });
 

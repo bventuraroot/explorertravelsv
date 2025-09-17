@@ -304,6 +304,10 @@
                             <i class="fas fa-copy me-1"></i>
                             Copiar JSON
                         </button>
+                        <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="selectJson()">
+                            <i class="fas fa-mouse-pointer me-1"></i>
+                            Seleccionar Todo
+                        </button>
                     </div>
                     <div id="jsonContainer" style="display: none;">
                         <pre class="p-3 rounded bg-light" style="max-height: 500px; overflow-y: auto;"><code id="jsonContent">{{ json_encode($error->dte->json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
@@ -398,33 +402,124 @@ function toggleJsonView() {
 }
 
 function copyJson() {
-    const jsonContent = document.getElementById('jsonContent').textContent;
+    const jsonElement = document.getElementById('jsonContent');
 
-    navigator.clipboard.writeText(jsonContent).then(function() {
+    if (!jsonElement) {
         Swal.fire({
-            icon: 'success',
-            title: '¡Copiado!',
-            text: 'JSON copiado al portapapeles',
-            timer: 1500,
-            showConfirmButton: false
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo encontrar el contenido JSON'
         });
-    }).catch(function(err) {
-        // Fallback para navegadores que no soportan clipboard API
+        return;
+    }
+
+    const jsonContent = jsonElement.textContent || jsonElement.innerText;
+
+    if (!jsonContent) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'El contenido JSON está vacío'
+        });
+        return;
+    }
+
+    // Intentar usar la API moderna del portapapeles
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(jsonContent).then(function() {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Copiado!',
+                text: 'JSON copiado al portapapeles',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }).catch(function(err) {
+            console.error('Error al copiar con clipboard API:', err);
+            // Fallback al método tradicional
+            fallbackCopy(jsonContent);
+        });
+    } else {
+        // Usar método tradicional
+        fallbackCopy(jsonContent);
+    }
+}
+
+function fallbackCopy(text) {
+    try {
         const textArea = document.createElement('textarea');
-        textArea.value = jsonContent;
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
         document.body.appendChild(textArea);
+        textArea.focus();
         textArea.select();
-        document.execCommand('copy');
+
+        const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
 
+        if (successful) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Copiado!',
+                text: 'JSON copiado al portapapeles',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            throw new Error('execCommand falló');
+        }
+    } catch (err) {
+        console.error('Error al copiar:', err);
         Swal.fire({
-            icon: 'success',
-            title: '¡Copiado!',
-            text: 'JSON copiado al portapapeles',
-            timer: 1500,
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo copiar el JSON. Intenta seleccionar el texto manualmente.'
+        });
+    }
+}
+
+function selectJson() {
+    const jsonElement = document.getElementById('jsonContent');
+
+    if (!jsonElement) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo encontrar el contenido JSON'
+        });
+        return;
+    }
+
+    // Asegurar que el contenedor esté visible
+    const container = document.getElementById('jsonContainer');
+    if (container.style.display === 'none') {
+        toggleJsonView();
+    }
+
+    // Seleccionar el texto
+    if (window.getSelection) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(jsonElement);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        Swal.fire({
+            icon: 'info',
+            title: 'Texto seleccionado',
+            text: 'Todo el JSON ha sido seleccionado. Usa Ctrl+C para copiarlo.',
+            timer: 2000,
             showConfirmButton: false
         });
-    });
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No soportado',
+            text: 'Tu navegador no soporta la selección automática de texto.'
+        });
+    }
 }
 
 function resolverError(errorId) {
