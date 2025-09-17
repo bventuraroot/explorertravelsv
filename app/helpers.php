@@ -409,8 +409,6 @@ if (!function_exists('crf')) {
                 "codTributo"        => null,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-
-
                 "precioUni"         => (float)($item->precio_unitario),
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => (float)($item->no_sujetas),

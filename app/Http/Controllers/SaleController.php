@@ -405,7 +405,7 @@ class SaleController extends Controller
         ELSE c.name
         END AS descripcion,
         b.amountp cantidad,
-        b.priceunit precio_unitario,
+        SUM(b.priceunit+b.fee) precio_unitario,
         0 descuento,
         0 no_imponible,
         (b.pricesale+b.nosujeta+b.exempt) subtotal,
