@@ -229,14 +229,7 @@
                                 <input type="hidden" id="ventasexentas" value="0" name="ventasexentas">
                                 <input type="hidden" id="ventatotal" value="0" name="ventatotal">
                                 <input type="hidden" id="ventatotallhidden" value="0" name="ventatotallhidden">
-                                <!-- Campos extra (alineados a RomaCopies) -->
-                                <input type="hidden" id="marca" name="marca">
-                                <input type="hidden" id="reserva" name="reserva" value="">
-                                <input type="hidden" id="ruta" name="ruta" value="">
-                                <input type="hidden" id="destino" name="destino" value="0">
-                                <input type="hidden" id="linea" name="linea" value="0">
-                                <input type="hidden" id="Canal" name="Canal" value="">
-                                <input type="hidden" id="fee" name="fee" value="0.00">
+                                
                             </div>
                             <div class="col-sm-1">
                                 <label class="form-label" for="cantidad">Cantidad</label>
