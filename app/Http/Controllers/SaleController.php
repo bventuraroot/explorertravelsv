@@ -55,7 +55,7 @@ class SaleController extends Controller
                 'dte.company_name',
                 DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale')
             )
-            ->where('dte.Estado', 'Enviado');
+            ->whereOr('dte.Estado', '<>', 'Rechazado');
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
