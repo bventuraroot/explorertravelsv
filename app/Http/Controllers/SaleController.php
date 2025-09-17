@@ -41,7 +41,7 @@ class SaleController extends Controller
             ->join('companies', 'companies.id', '=', 'sales.company_id')
             ->select(
                 'sales.id',
-                'sales.corr',
+                'sales.id AS corr',
                 'sales.date',
                 'sales.typesale',
                 'sales.state',
