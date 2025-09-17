@@ -248,10 +248,6 @@
                                 <label class="form-label" for="precioConIva">Precio de Venta (Con IVA)</label>
                                 <input type="number" id="precioConIva" name="precioConIva" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="calculateFromPriceWithIva();" oninput="calculateFromPriceWithIva();">
                             </div>
-                            <div class="col-sm-2">
-                                <label class="form-label" for="precioSinIva">Precio Sin IVA</label>
-                                <input type="number" readonly id="precioSinIva" name="precioSinIva" step="0.00000001" placeholder="0.00000000" class="form-control">
-                            </div>
                             @endif
                             <div class="col-sm-2">
                                 @if(request('typedocument')==3)

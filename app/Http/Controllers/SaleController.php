@@ -116,6 +116,17 @@ class SaleController extends Controller
             //iva al fee
             $feesiniva = round($fee / 1.13, 2);
             $ivafee = round($fee - $feesiniva, 2);
+
+            // Debug para Crédito Fiscal
+            if ($sale->typedocument_id == '3') {
+                \Log::info("=== CONTROLADOR CCF ===");
+                \Log::info("Precio recibido (sin IVA): " . $price);
+                \Log::info("Precio gravada recibido (subtotal sin IVA): " . $pricegravada);
+                \Log::info("IVA 13% recibido: " . $ivarete13);
+                \Log::info("Fee recibido (con IVA): " . $fee);
+                \Log::info("Fee sin IVA calculado: " . $feesiniva);
+                \Log::info("IVA del fee calculado: " . $ivafee);
+            }
             $saledetails = new Salesdetail();
             $saledetails->sale_id = $idsale;
             $saledetails->product_id = $productid;
@@ -137,6 +148,17 @@ class SaleController extends Controller
             $saledetails->linea = $linea;
             $saledetails->canal = $canal;
             $saledetails->user_id = $id_user;
+
+            // Debug de valores guardados en BD para CCF
+            if ($sale->typedocument_id == '3') {
+                \Log::info("=== GUARDANDO EN BD ===");
+                \Log::info("priceunit: " . $saledetails->priceunit);
+                \Log::info("pricesale: " . $saledetails->pricesale);
+                \Log::info("detained13: " . $saledetails->detained13);
+                \Log::info("fee: " . $saledetails->fee);
+                \Log::info("feeiva: " . $saledetails->feeiva);
+            }
+
             $saledetails->save();
             DB::commit();
             return response()->json(array(

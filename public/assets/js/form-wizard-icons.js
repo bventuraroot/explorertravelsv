@@ -290,13 +290,21 @@ function agregarp() {
     var totaltempgravado = 0;
     var priceunitariofee = 0;
     if (type == "gravada") {
-        pricegravada = parseFloat((price * cantidad)+fee);
-        totaltempgravado = parseFloat(pricegravada);
-        if(typedoc==6 || typedoc==7 || typedoc==8){
+        if(typedoc==3){
+            // Para Crédito Fiscal: pricegravada es el subtotal sin IVA
+            var subtotalProducto = parseFloat(price * cantidad);
+            var feeConIva = parseFloat(fee);
+            var feeSinIva = feeConIva / 1.13;
+            var subtotalFee = parseFloat(feeSinIva * cantidad);
+            pricegravada = subtotalProducto + subtotalFee; // Subtotal sin IVA
+            iva13temp = parseFloat(pricegravada * 0.13).toFixed(8);
+            console.log("Preview CCF - Precio:", price, "Fee con IVA:", fee, "Fee sin IVA:", feeSinIva, "Subtotal:", pricegravada, "IVA:", iva13temp);
+        } else {
+            // Para otros documentos: lógica normal
+            pricegravada = parseFloat((price * cantidad)+fee);
             iva13temp = 0.00;
-        }else if(typedoc==3){
-            iva13temp = parseFloat(pricegravada * 0.13).toFixed(2);
         }
+        totaltempgravado = parseFloat(pricegravada);
 
         //iva13temp = parseFloat(ivarete13 * cantidad).toFixed(2);
     } else if (type == "exenta") {
@@ -364,6 +372,14 @@ function agregarp() {
     destino = nz(destino, 0);
     linea = nz(linea, 0);
     canal = nz(canal, 'null');
+
+    // Debug: Verificar valores que se envían al controlador
+    console.log("=== ENVIANDO A CONTROLADOR ===");
+    console.log("Tipo documento:", typedoc);
+    console.log("Precio (sin IVA):", price);
+    console.log("Fee (con IVA):", fee);
+    console.log("Precio gravada:", pricegravada);
+    console.log("IVA 13%:", ivarete13);
 
     // Armar URL absoluta y codificada para evitar caracteres inválidos
     var url =
@@ -656,7 +672,6 @@ function calculateFromPriceWithIva() {
         // 1. Calcular precio unitario sin IVA (precio con IVA / 1.13)
         var precioSinIva = precioConIva / 1.13;
         $("#precio").val(precioSinIva.toFixed(8));
-        $("#precioSinIva").val(precioSinIva.toFixed(8));
 
         // 2. Calcular fee sin IVA (fee con IVA / 1.13)
         var feeSinIva = feeConIva / 1.13;
@@ -717,10 +732,6 @@ function searchproduct(idpro) {
                     // Llenar también el campo de precio con IVA si existe
                     if($("#precioConIva").length){
                         $("#precioConIva").val(parseFloat(value.price).toFixed(8));
-                    }
-                    // Llenar campo precio sin IVA si existe
-                    if($("#precioSinIva").length){
-                        $("#precioSinIva").val(pricevalue.toFixed(8));
                     }
                 }else{
                     pricevalue = parseFloat(value.price/iva_entre);
@@ -1080,6 +1091,11 @@ function draftdocument(corr, draft) {
                     }
                     $("#acuenta").val(value.acuenta);
                     var details = agregarfacdetails(corr);
+
+                    // Llenar campos específicos de Crédito Fiscal si es necesario
+                    if(value.typedocument_id == '3') {
+                        fillCreditFiscalFieldsFromDraft();
+                    }
                 });
             },
             failure: function (response) {
@@ -1094,7 +1110,36 @@ function draftdocument(corr, draft) {
 
 function CheckNullUndefined(value) {
     return typeof value == 'string' && !value.trim() || typeof value == 'undefined' || value === null;
-  }
+}
+
+// Función para llenar campos específicos de Crédito Fiscal desde borrador
+function fillCreditFiscalFieldsFromDraft() {
+    // Obtener el precio unitario sin IVA del campo precio
+    var precioSinIva = parseFloat($("#precio").val()) || 0;
+    var feeSinIva = parseFloat($("#fee").val()) || 0; // En BD se guarda sin IVA
+
+    if (precioSinIva > 0) {
+        // Calcular precio con IVA (precio sin IVA * 1.13)
+        var precioConIva = precioSinIva * 1.13;
+        $("#precioConIva").val(precioConIva.toFixed(8));
+
+        console.log("Borrador CCF - Precio sin IVA:", precioSinIva, "Precio con IVA:", precioConIva);
+    }
+
+    if (feeSinIva > 0) {
+        // El fee en BD se guarda sin IVA, calcular fee con IVA para el campo
+        var feeConIva = feeSinIva * 1.13;
+        $("#fee").val(feeConIva.toFixed(8)); // Mostrar fee con IVA en el campo
+        $("#feeSinIva").val(feeSinIva.toFixed(8)); // Mostrar fee sin IVA en readonly
+
+        console.log("Borrador CCF - Fee sin IVA (BD):", feeSinIva, "Fee con IVA (campo):", feeConIva);
+    }
+
+    // Ejecutar cálculos después de llenar los campos
+    setTimeout(function() {
+        calculateFromPriceWithIva();
+    }, 100);
+}
 
 function getinfodoc(){
     var corr = $('#valcorr').val();
