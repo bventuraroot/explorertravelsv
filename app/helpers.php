@@ -43,7 +43,7 @@ if (!function_exists('codigoQR')) {
     function codigoQR($ambiente, $codigo, $fecha)
     {
         $url = 'https://webapp.dtes.mh.gob.sv/consultaPublica?ambiente=' . $ambiente . '&codGen=' . $codigo . '&fechaEmi=' . date('Y-m-d', strtotime($fecha));
-        return (string)QrCode::size(100)->generate($url);
+        return (string)QrCode::size(100)->format('png')->generate($url);
 
     }
 }

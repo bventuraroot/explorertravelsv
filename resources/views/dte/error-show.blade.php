@@ -283,6 +283,37 @@
     </div>
     @endif
 
+    <!-- JSON del DTE asociado -->
+    @if($error->dte && $error->dte->json)
+    <div class="mb-4 row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0 card-title">
+                        <i class="fas fa-code me-2"></i>
+                        JSON del DTE Asociado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleJsonView()">
+                            <i class="fas fa-eye me-1"></i>
+                            <span id="toggleText">Mostrar JSON</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="copyJson()">
+                            <i class="fas fa-copy me-1"></i>
+                            Copiar JSON
+                        </button>
+                    </div>
+                    <div id="jsonContainer" style="display: none;">
+                        <pre class="p-3 rounded bg-light" style="max-height: 500px; overflow-y: auto;"><code id="jsonContent">{{ json_encode($error->dte->json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Información de resolución -->
     @if($error->resuelto)
     <div class="mb-4 row">
@@ -352,6 +383,49 @@
 @section('page-script')
 <script>
 let errorIdActual = {{ $error->id }};
+
+function toggleJsonView() {
+    const container = document.getElementById('jsonContainer');
+    const toggleText = document.getElementById('toggleText');
+
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggleText.textContent = 'Ocultar JSON';
+    } else {
+        container.style.display = 'none';
+        toggleText.textContent = 'Mostrar JSON';
+    }
+}
+
+function copyJson() {
+    const jsonContent = document.getElementById('jsonContent').textContent;
+
+    navigator.clipboard.writeText(jsonContent).then(function() {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Copiado!',
+            text: 'JSON copiado al portapapeles',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    }).catch(function(err) {
+        // Fallback para navegadores que no soportan clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = jsonContent;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Copiado!',
+            text: 'JSON copiado al portapapeles',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    });
+}
 
 function resolverError(errorId) {
     errorIdActual = errorId;

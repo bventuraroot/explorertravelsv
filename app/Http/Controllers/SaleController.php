@@ -35,39 +35,53 @@ class SaleController extends Controller
         $rolResult = DB::select($rolQuery, [$id_user]);
         $isAdmin = !empty($rolResult) && $rolResult[0]->role_id == 1;
 
+        // Primero obtener las ventas sin duplicados
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->leftjoin('dte', function($join) {
-                $join->on('dte.sale_id', '=', 'sales.id')
-                     ->where(function($query) {
-                         $query->whereNull('dte.estadoHacienda')
-                               ->orWhere('dte.estadoHacienda', '!=', '03') // Excluir DTE con error (código 03)
-                               ->orWhere('dte.estadoHacienda', '!=', 'ERROR'); // Excluir DTE con estado ERROR
-                     });
-            })
             ->select(
-                'sales.*',
+                'sales.id',
+                'sales.corr',
+                'sales.date',
+                'sales.typesale',
+                'sales.state',
+                'sales.totalamount',
+                'sales.waytopay',
+                'sales.user_id',
+                'sales.client_id',
+                'sales.company_id',
+                'sales.typedocument_id',
                 'typedocuments.description AS document_name',
                 'clients.firstname',
                 'clients.firstlastname',
                 'clients.name_contribuyente as nameClient',
                 'clients.tpersona',
                 'clients.email as mailClient',
-                'companies.name AS company_name',
-                'dte.tipoDte',
-                'dte.estadoHacienda',
-                'dte.id_doc',
-                'dte.company_name',
-                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'))
+                'companies.name AS company_name'
+            )
             ->distinct();
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
         }
 
-        // Obtener los clientes filtrados
+        // Obtener las ventas sin duplicados
         $sales = $sales->get();
+
+        // Filtrar ventas que tienen DTE con errores
+        $sales = $sales->filter(function($sale) {
+            // Verificar si la venta tiene DTE con errores
+            $dteWithErrors = DB::table('dte')
+                ->where('sale_id', $sale->id)
+                ->where(function($query) {
+                    $query->where('estadoHacienda', '03')
+                          ->orWhere('estadoHacienda', 'ERROR');
+                })
+                ->exists();
+
+            // Solo incluir ventas que NO tienen DTE con errores
+            return !$dteWithErrors;
+        });
 
         // Obtener tipos de documento para el filtro
         $tiposDocumento = DB::table('typedocuments')->get();
@@ -1811,13 +1825,13 @@ class SaleController extends Controller
         @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
-        //$data["PaisE"] = $factura[0]['PaisE'];
-        //$data["DepartamentoE"] = $factura[0]['DepartamentoE'];
-        //$data["MunicipioE"] = $factura[0]['MunicipioE'];
-        //$data["PaisR"] = $factura[0]['PaisR'];
-        //$data["DepartamentoR"] = $factura[0]['DepartamentoR'];
-        //$data["MunicipioR"] = $factura[0]['MunicipioR'];
-        //$data["qr"] = $qr;
+        $data["PaisE"] = $factura[0]['PaisE'];
+        $data["DepartamentoE"] = $factura[0]['DepartamentoE'];
+        $data["MunicipioE"] = $factura[0]['MunicipioE'];
+        $data["PaisR"] = $factura[0]['PaisR'];
+        $data["DepartamentoR"] = $factura[0]['DepartamentoR'];
+        $data["MunicipioR"] = $factura[0]['MunicipioR'];
+        $data["qr"] = $qr;
         $tamaño = "Letter";
         $orientacion = "Portrait";
         $pdf = app('dompdf.wrapper');
