@@ -35,38 +35,27 @@ class SaleController extends Controller
         $rolResult = DB::select($rolQuery, [$id_user]);
         $isAdmin = !empty($rolResult) && $rolResult[0]->role_id == 1;
 
-        // Primero obtener las ventas sin duplicados
+        // Consulta original (puede mostrar duplicados si hay múltiples DTE asociados)
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
+            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
             ->select(
-                'sales.id',
-                'sales.id AS corr',
-                'sales.date',
-                'sales.typesale',
-                'sales.state',
-                'sales.totalamount',
-                'sales.waytopay',
-                'sales.user_id',
-                'sales.client_id',
-                'sales.company_id',
-                'sales.typedocument_id',
+                'sales.*',
                 'typedocuments.description AS document_name',
                 'clients.firstname',
                 'clients.firstlastname',
                 'clients.name_contribuyente as nameClient',
                 'clients.tpersona',
                 'clients.email as mailClient',
-                'companies.name AS company_name'
+                'companies.name AS company_name',
+                'dte.tipoDte',
+                'dte.estadoHacienda',
+                'dte.id_doc',
+                'dte.company_name',
+                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale')
             )
-            // Solo ventas con DTE en estado "Enviado" (sin duplicados)
-            ->whereExists(function($q){
-                $q->select(DB::raw(1))
-                  ->from('dte')
-                  ->whereColumn('dte.sale_id', 'sales.id')
-                  ->where('dte.Estado', 'Enviado');
-            })
-            ->distinct();
+            ->where('dte.Estado', 'Enviado');
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
