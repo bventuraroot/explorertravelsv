@@ -579,6 +579,35 @@ function totalamount() {
 }
 
 
+// Función para actualizar la descripción del producto cuando cambien ruta o reserva
+function updateProductDescription() {
+    var productname = $("#productname").val();
+    var reserva = $("#reserva").val();
+    var ruta = $("#ruta").val();
+    var marca = $("#marca").val();
+
+    if (productname) {
+        var description = productname;
+
+        // Agregar marca si existe
+        if (marca) {
+            description += " " + marca;
+        }
+
+        // Agregar reserva y ruta si existen
+        if (reserva || ruta) {
+            description += " ";
+            if (reserva) description += reserva;
+            if (ruta) description += " " + ruta;
+        }
+
+        // Actualizar el campo de descripción personalizada
+        if ($("#product-description-edit").length) {
+            $("#product-description-edit").val(description);
+        }
+    }
+}
+
 function searchproduct(idpro) {
     // Mostrar campos adicionales para productos de viajes/tickets
     // Se puede modificar esta lógica según las necesidades del negocio
@@ -625,6 +654,8 @@ function searchproduct(idpro) {
                     var defaultDescription = value.productname + (value.marcaname? (" " + value.marcaname) : "");
                     $("#product-description-edit").val(defaultDescription);
                 }
+                // Llamar a la función de actualización para incluir ruta y reserva si existen
+                updateProductDescription();
                 // Actualizar imagen en la vista previa (si existe el contenedor)
                 if($("#product-image").length){
                     var imgTitle = value.image || value.title || '';

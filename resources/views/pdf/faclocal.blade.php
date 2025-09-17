@@ -137,34 +137,38 @@
                             <strong>FACTURA DE CONSUMIDOR FINAL</strong>
                         </td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
                         <td><strong>Código de Generación:</strong></td>
                         <td colspan="2">{{@$json["codigoGeneracion"]}}</td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
                         <td><strong>Sello de recepción:</strong></td>
                         <td colspan="2">{{@$json["selloRecibido"]}}</td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
                         <td><strong>Número de Control:</strong></td>
                         <td colspan="2">{{@$json["identificacion"]["numeroControl"]}}</td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
                         <td><strong>Modelo facturación:</strong></td>
                         <td>Previo</td>
                         <td><strong>Versión del Json:</strong> {{@$documento[0]["versionjson"]}}</td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
                         <td><strong>Tipo de transmisión</strong></td>
                         <td>Normal</td>
                         <td><strong>Fecha emisión:</strong>{{date('d/m/Y', strtotime(@$json["fhRecibido"]))}} </td>
                     </tr>
                     <tr>
                         <td><strong>Hora de emisión:</strong></td>
-                        <td>{{$documento[0]["fechacreacion"]}}</td>
+                        <td>{{substr(@$json["fhRecibido"],12,8)}}</td>
                         <td><strong>Documento interno No:</strong> {{$documento[0]["id_doc"]}}</td>
                     </tr>
-                    <tr style="display: none;">
+                    <tr>
+                        <td><strong>Estado Hacienda:</strong></td>
+                        <td colspan="2">{{@$json["estadoHacienda"]}}</td>
+                    </tr>
+                    <tr>
                         <td colspan="3" align="center">
                             <img src="data:image/png;base64,{{@$qr}}" alt="">
                         </td>

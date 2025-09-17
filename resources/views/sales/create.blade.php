@@ -229,7 +229,7 @@
                                 <input type="hidden" id="ventasexentas" value="0" name="ventasexentas">
                                 <input type="hidden" id="ventatotal" value="0" name="ventatotal">
                                 <input type="hidden" id="ventatotallhidden" value="0" name="ventatotallhidden">
-                                
+
                             </div>
                             <div class="col-sm-1">
                                 <label class="form-label" for="cantidad">Cantidad</label>
@@ -289,11 +289,11 @@
                             <label>Información de producto</label>
                             <div class="col-sm-2">
                                 <label class="form-label" for="reserva">Reserva #</label>
-                                <input type="text" id="reserva" name="reserva" class="form-control">
+                                <input type="text" id="reserva" name="reserva" class="form-control" onchange="updateProductDescription()" oninput="updateProductDescription()">
                             </div>
                             <div class="col-sm-2">
                                 <label class="form-label" for="ruta">Ruta</label>
-                                <input type="text" id="ruta" name="ruta" class="form-control">
+                                <input type="text" id="ruta" name="ruta" class="form-control" onchange="updateProductDescription()" oninput="updateProductDescription()">
                             </div>
                             <div class="col-sm-4">
                                 <label class="form-label" for="destino">Destino</label>
