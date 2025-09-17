@@ -196,11 +196,6 @@ $(function () {
             },
             error: function(xhr, status, error) {
                 console.error('Error cargando destinos:', error);
-                // Fallback con datos básicos si falla la conexión
-                $("#destino").append('<option value="0">Seleccione</option>');
-                $("#destino").append('<option value="1">SAL - San Salvador - El Salvador</option>');
-                $("#destino").append('<option value="2">GUA - Guatemala - Guatemala</option>');
-                $("#destino").append('<option value="3">MEX - Ciudad de México - México</option>');
             }
         });
 
@@ -218,11 +213,6 @@ $(function () {
             },
             error: function(xhr, status, error) {
                 console.error('Error cargando aerolíneas:', error);
-                // Fallback con datos básicos si falla la conexión
-                $("#linea").append('<option value="0">Seleccione</option>');
-                $("#linea").append('<option value="1">AV - Avianca</option>');
-                $("#linea").append('<option value="2">CM - Copa Airlines</option>');
-                $("#linea").append('<option value="3">AA - American Airlines</option>');
             }
         });
 });
