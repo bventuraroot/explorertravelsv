@@ -52,7 +52,12 @@ class SaleController extends Controller
                 'dte.estadoHacienda',
                 'dte.id_doc',
                 'dte.company_name',
-                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'));
+                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'))
+            ->where(function($query) {
+                $query->whereNull('dte.estadoHacienda')
+                      ->orWhere('dte.estadoHacienda', '!=', '03') // Excluir DTE con error (código 03)
+                      ->orWhere('dte.estadoHacienda', '!=', 'ERROR'); // Excluir DTE con estado ERROR
+            });
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);

@@ -88,14 +88,15 @@ $(function () {
                     window.__creatingCorr = true;
                     createcorrsale();
                 }
-                // Avanzar al siguiente paso del wizard únicamente si ya hay correlativo (borrador)
-                // Si acabamos de crear correlativo, el redirect hará el resto
-                // NO ejecutar para drafts - la navegación se maneja en el código de inicialización
-                if (hasValCorr && !valdraft) {
+                // Para nueva venta, ir paso por paso (no saltar al paso de productos)
+                // Solo avanzar automáticamente si es un draft
+                if (hasValCorr && valdraft) {
+                    // Para drafts, ir directamente al paso de productos
                     setTimeout(function(){
                         $("#step1").trigger('click');
                     }, 200);
                 }
+                // Para nueva venta, permanecer en el paso 1 (selección de cliente)
             }
         },
     });
@@ -461,6 +462,7 @@ function agregarp() {
 
 
     // Armar URL absoluta y codificada para evitar caracteres inválidos
+    // Asegurar que todos los valores estén correctamente codificados
     var url =
         "/sale/savefactemp/" + encodeURIComponent(corrid) +
         "/" + encodeURIComponent(clientid) +
@@ -476,13 +478,14 @@ function agregarp() {
         "/" + encodeURIComponent(acuenta) +
         "/" + encodeURIComponent(fpago) +
         "/" + encodeURIComponent(fee) +
-        "/" + encodeURIComponent(reserva) +
-        "/" + encodeURIComponent(ruta) +
-        "/" + encodeURIComponent(destino) +
-        "/" + encodeURIComponent(linea) +
-        "/" + encodeURIComponent(canal) +
-        "/" + encodeURIComponent(descriptionbyproduct);
+        "/" + encodeURIComponent(reserva || '') +
+        "/" + encodeURIComponent(ruta || '') +
+        "/" + encodeURIComponent(destino || '') +
+        "/" + encodeURIComponent(linea || '') +
+        "/" + encodeURIComponent(canal || '') +
+        "/" + encodeURIComponent(descriptionbyproduct || '');
 
+    console.log("DEBUG URL COMPLETA:", url);
 
     $.ajax({
         url: url,
