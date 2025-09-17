@@ -68,30 +68,20 @@ class SaleController extends Controller
         // Obtener las ventas sin duplicados
         $sales = $sales->get();
 
-        // Filtrar ventas que tienen DTE con errores
+        // Mostrar SOLO ventas con DTE presentado (exitoso) y ocultar con error
         $sales = $sales->filter(function($sale) {
-            // Verificar si la venta tiene DTE
-            $hasDte = DB::table('dte')
+            // Debe existir al menos un DTE asociado y que no sea error (codEstado != '03')
+            // y que tenga estadoHacienda (procesado por MH)
+            $hasValidDte = DB::table('dte')
                 ->where('sale_id', $sale->id)
-                ->exists();
-
-            // Si no tiene DTE, mostrarla
-            if (!$hasDte) {
-                return true;
-            }
-
-            // Si tiene DTE, verificar si tiene errores
-            $dteWithErrors = DB::table('dte')
-                ->where('sale_id', $sale->id)
-                ->where(function($query) {
-                    $query->where('estadoHacienda', '03')
-                          ->orWhere('estadoHacienda', 'ERROR');
+                ->where(function($q){
+                    $q->where('codEstado', '!=', '03')
+                      ->orWhereNull('codEstado'); // seguridad por si no se guarda
                 })
+                ->whereNotNull('estadoHacienda')
                 ->exists();
 
-            // Solo incluir ventas que NO tienen DTE con errores
-            // (incluye ventas sin DTE y ventas con DTE exitosos)
-            return !$dteWithErrors;
+            return $hasValidDte;
         });
 
         // Obtener tipos de documento para el filtro
