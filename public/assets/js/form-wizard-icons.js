@@ -188,6 +188,7 @@ $(function () {
             method: "GET",
             success: function (response) {
                 $("#destino").append('<option value="0">Seleccione</option>');
+                console.log(response);
                 $.each(response, function (index, value) {
                     $("#destino").append(
                         '<option value="' + value.id + '">' + value.iata + ' - ' + value.ciudad + ' - ' + value.pais + ' - ' + value.continente + '</option>'
