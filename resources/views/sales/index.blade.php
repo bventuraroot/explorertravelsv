@@ -494,7 +494,7 @@
                         <div id="deal-type" class="content">
                           <div class="row g-3">
                             <div class="pt-4 border rounded col-12 d-flex justify-content-center">
-                              <img src="{{ asset('assets/img/illustrations/auth-register-illustration-'.$configData['style'].'.png') }}" alt="wizard-create-deal" data-app-light-img="illustrations/auth-register-illustration-light.png" data-app-dark-img="illustrations/auth-register-illustration-dark.png" width="150" class="img-fluid">
+                              <img src="{{ asset('assets/img/illustrations/auth-register-illustration-'.$configData['style'].'.png') }}" alt="wizard-create-deal" data-app-light-img="illustrations/auth-register-illustration-light.png" data-app-dark-img="illustrations/auth-register-illustration-dark.png" width="200" class="img-fluid">
                             </div>
                             <div class="pb-2 col-12">
                               <div class="row">

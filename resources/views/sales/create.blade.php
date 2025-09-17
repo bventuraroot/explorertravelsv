@@ -266,22 +266,22 @@
                             @endif
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete13">Iva 13%</label>
-                                <input type="number" id="ivarete13" @if(request('typedocument')==3) readonly @endif name="ivarete13" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                <input type="number" readonly id="ivarete13" @if(request('typedocument')==3) readonly @endif name="ivarete13" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete">Iva Percibido</label>
-                                <input type="number" id="ivarete" @if(request('typedocument')==3) readonly @endif name="ivarete" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                <input type="number" readonly id="ivarete" @if(request('typedocument')==3) readonly @endif name="ivarete" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
 
                             @if(request('typedocument')==8)
                             <div class="col-sm-2">
                                 <label class="form-label" for="rentarete">Renta 10%</label>
-                                <input type="number" id="rentarete" name="rentarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
+                                <input type="number" readonly id="rentarete" name="rentarete" step="0.01" max="10000" placeholder="0.00" class="form-control">
                             </div>
                             @endif
                             <div class="col-sm-2">
                                 <label class="form-label" for="total">Total</label>
-                                <input type="number" id="total" @if(request('typedocument')==3) readonly @endif name="total" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control">
+                                <input type="number" readonly id="total" @if(request('typedocument')==3) readonly @endif name="total" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control">
                             </div>
 
                         </div>
