@@ -292,7 +292,7 @@ function agregarp() {
     if (type == "gravada") {
         pricegravada = parseFloat((price * cantidad)+fee);
         totaltempgravado = parseFloat(pricegravada);
-        if(typedoc==6 || typedoc==8){
+        if(typedoc==6 || typedoc==7 || typedoc==8){
             iva13temp = 0.00;
         }else if(typedoc==3){
             iva13temp = parseFloat(pricegravada * 0.13).toFixed(2);
@@ -435,7 +435,7 @@ function agregarp() {
                     })
                 );
                 $("#sumas").val(sumasl);
-                if(typedoc==6 || typedoc==8){
+                if(typedoc==6 || typedoc==7 || typedoc==8){
                     iva13l=0.00;
                 }else if(typedoc==3){
                     //calculo de iva 13%
@@ -517,6 +517,8 @@ function totalamount() {
     var typecontriclient = $("#typecontribuyenteclient").val();
     var typedoc = $('#typedocument').val();
 
+    console.log("totalamount() - Tipo de documento:", typedoc, typedoc === '7' ? "(Factura de Exportación)" : "");
+
     // Convertir valores a números asegurando que no sean NaN
     var cantidad = parseFloat($("#cantidad").val()) || 0.00;
     var fee = parseFloat($("#fee").val()) || 0.00;
@@ -547,19 +549,43 @@ function totalamount() {
     totalamount = parseFloat(valor * cantidad);
     totaamountsinivi = parseFloat(totalamount/1.13);
 
-    // IVA 13% (solo CCF)
+    // IVA 13% según tipo de documento
     if (typedoc === '3') {
-        // Para Crédito Fiscal: Sumar fee al total con IVA, luego calcular IVA
-        var totalConIva = parseFloat(valor * cantidad * iva); // Total con IVA
-        var totalfeeAmount = parseFloat(fee * cantidad);
+        // CRÉDITO FISCAL: Lógica especial con fee sin IVA
+        var subtotalProducto = parseFloat(valor * cantidad);
+        var feeConIva = parseFloat(fee);
+        var feeSinIva = feeConIva / 1.13; // Convertir fee con IVA a sin IVA
+        var subtotalFee = parseFloat(feeSinIva * cantidad);
 
-        // Sumar fee al total con IVA
-        var totalConIvaYFee = totalConIva + totalfeeAmount;
+        // Actualizar campo fee sin IVA si existe
+        if ($("#feeSinIva").length) {
+            $("#feeSinIva").val(feeSinIva.toFixed(8));
+        }
 
-        // Calcular el IVA sobre el total (con IVA + fee)
-        ivarete13 = parseFloat(totalConIvaYFee * 0.13);
+        // Subtotal total sin IVA
+        var subtotalTotal = subtotalProducto + subtotalFee;
+
+        // Calcular IVA sobre el subtotal total sin IVA
+        ivarete13 = parseFloat(subtotalTotal * 0.13);
         $("#ivarete13").val(ivarete13.toFixed(8));
+
+        // Actualizar totalamount para que refleje el subtotal total
+        totalamount = subtotalTotal;
+    } else if (typedoc === '6') {
+        // FACTURA: IVA calculado normalmente sobre producto
+        var ivaProducto = parseFloat(totalamount * 0.13);
+        ivarete13 = ivaProducto;
+        $("#ivarete13").val(ivarete13.toFixed(2)); // Factura usa 2 decimales
+    } else if (typedoc === '7') {
+        // FACTURA DE EXPORTACIÓN: Sin IVA, manejo similar a factura normal
+        $("#ivarete13").val(0);
+        ivarete13 = 0.00;
+    } else if (typedoc === '8') {
+        // SUJETO EXCLUIDO: Sin IVA
+        $("#ivarete13").val(0);
+        ivarete13 = 0.00;
     } else {
+        // OTROS DOCUMENTOS: Sin IVA
         $("#ivarete13").val(0);
         ivarete13 = 0.00;
     }
@@ -613,41 +639,47 @@ function updateProductDescription() {
     }
 }
 
-// Función para calcular desde precio con IVA (Crédito Fiscal)
+// Función para calcular desde precio con IVA (Solo Crédito Fiscal)
 function calculateFromPriceWithIva() {
+    var typedoc = $('#typedocument').val();
+
+    // Solo ejecutar para Crédito Fiscal
+    if (typedoc !== '3') {
+        return;
+    }
+
     var precioConIva = parseFloat($("#precioConIva").val()) || 0;
     var cantidad = parseFloat($("#cantidad").val()) || 1;
-    var fee = parseFloat($("#fee").val()) || 0;
-    var iva = parseFloat($("#iva").val()) || 1.13; // IVA 13%
+    var feeConIva = parseFloat($("#fee").val()) || 0;
 
     if (precioConIva > 0) {
-        // Calcular precio unitario sin IVA
-        var precioSinIva = precioConIva / iva;
+        // 1. Calcular precio unitario sin IVA (precio con IVA / 1.13)
+        var precioSinIva = precioConIva / 1.13;
         $("#precio").val(precioSinIva.toFixed(8));
+        $("#precioSinIva").val(precioSinIva.toFixed(8));
 
-        // Para Crédito Fiscal: Sumar fee al total con IVA, luego calcular IVA
-        var totalConIva = parseFloat(precioConIva * cantidad);
-        var totalfee = parseFloat(fee * cantidad);
+        // 2. Calcular fee sin IVA (fee con IVA / 1.13)
+        var feeSinIva = feeConIva / 1.13;
+        $("#feeSinIva").val(feeSinIva.toFixed(8));
 
-        // Sumar fee al total con IVA
-        var totalConIvaYFee = totalConIva + totalfee;
+        // 3. Calcular subtotal sin IVA (precio sin IVA * cantidad + fee sin IVA * cantidad)
+        var subtotalProducto = precioSinIva * cantidad;
+        var subtotalFee = feeSinIva * cantidad;
+        var subtotalTotal = subtotalProducto + subtotalFee;
 
-        // Calcular el IVA sobre el total (con IVA + fee)
-        var ivarete13 = parseFloat(totalConIvaYFee * 0.13);
+        // 4. Calcular IVA (13% sobre el subtotal total sin IVA)
+        var ivarete13 = subtotalTotal * 0.13;
 
-        // Calcular subtotal sin IVA
-        var subtotalSinIva = parseFloat(totalConIvaYFee / iva);
-
-        // Total final: subtotal + IVA
-        var totalFinal = subtotalSinIva + ivarete13;
+        // 5. Total final: subtotal sin IVA + IVA
+        var totalFinal = subtotalTotal + ivarete13;
 
         // Actualizar campos visibles
-        $("#subtotal").val(subtotalSinIva.toFixed(8));
+        $("#subtotal").val(subtotalTotal.toFixed(8));
         $("#ivarete13").val(ivarete13.toFixed(8));
         $("#total").val(totalFinal.toFixed(8));
 
         // Actualizar campos ocultos
-        $("#sumas").val(subtotalSinIva.toFixed(8));
+        $("#sumas").val(subtotalTotal.toFixed(8));
         $("#13iva").val(ivarete13.toFixed(8));
         $("#ventatotal").val(totalFinal.toFixed(8));
         $("#ventatotallhidden").val(totalFinal.toFixed(8));
@@ -677,7 +709,7 @@ function searchproduct(idpro) {
         success: function (response) {
             $.each(response, function (index, value) {
 
-                if(typedoc=='6' || typedoc=='8'){
+                if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     pricevalue = parseFloat(value.price);
                 }else if(typedoc=='3'){
                     // Crédito Fiscal: precio unitario SIN IVA
@@ -685,6 +717,10 @@ function searchproduct(idpro) {
                     // Llenar también el campo de precio con IVA si existe
                     if($("#precioConIva").length){
                         $("#precioConIva").val(parseFloat(value.price).toFixed(8));
+                    }
+                    // Llenar campo precio sin IVA si existe
+                    if($("#precioSinIva").length){
+                        $("#precioSinIva").val(pricevalue.toFixed(8));
                     }
                 }else{
                     pricevalue = parseFloat(value.price/iva_entre);
@@ -751,7 +787,7 @@ function changetypesale(type){
     var iva = parseFloat($("#iva").val());
 switch(type){
     case 'gravada':
-        if(typedoc=='6' || typedoc=='8'){
+        if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
             $('#ivarete13').val(parseFloat(0));
         }else{
             $('#ivarete13').val(parseFloat(price*iva).toFixed(2));
@@ -1377,7 +1413,7 @@ function agregarfacdetails(corr) {
             let preciogravadas = 0;
             $.each(response, function (index, value) {
 
-                if(typedoc=='6' || typedoc=='8'){
+                if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
                     preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));

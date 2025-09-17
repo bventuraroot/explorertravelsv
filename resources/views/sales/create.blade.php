@@ -245,8 +245,12 @@
                             </div>
                             @if(request('typedocument')==3)
                             <div class="col-sm-2">
-                                <label class="form-label" for="precioConIva">Precio de Venta</label>
+                                <label class="form-label" for="precioConIva">Precio de Venta (Con IVA)</label>
                                 <input type="number" id="precioConIva" name="precioConIva" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="calculateFromPriceWithIva();" oninput="calculateFromPriceWithIva();">
+                            </div>
+                            <div class="col-sm-2">
+                                <label class="form-label" for="precioSinIva">Precio Sin IVA</label>
+                                <input type="number" readonly id="precioSinIva" name="precioSinIva" step="0.00000001" placeholder="0.00000000" class="form-control">
                             </div>
                             @endif
                             <div class="col-sm-2">
@@ -258,11 +262,25 @@
                                 <input type="number" id="precio" name="precio" step="0.00000001" min="0" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                                 @endif
                             </div>
-                            @if(request('typedocument')==6 || request('typedocument')==3)
+                            @if(request('typedocument')==6 || request('typedocument')==3 || request('typedocument')==7)
                             <div class="col-sm-2">
+                                @if(request('typedocument')==3)
+                                <label class="form-label" for="fee">Fee (Con IVA)</label>
+                                @else
                                 <label class="form-label" for="fee">Fee</label>
+                                @endif
+                                @if(request('typedocument')==3)
                                 <input type="number" id="fee" name="fee" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount(); calculateFromPriceWithIva();" oninput="totalamount(); calculateFromPriceWithIva();">
+                                @else
+                                <input type="number" id="fee" name="fee" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                                @endif
                             </div>
+                            @if(request('typedocument')==3)
+                            <div class="col-sm-2">
+                                <label class="form-label" for="feeSinIva">Fee Sin IVA</label>
+                                <input type="number" readonly id="feeSinIva" name="feeSinIva" step="0.00000001" placeholder="0.00000000" class="form-control">
+                            </div>
+                            @endif
                             @endif
                             <div class="col-sm-2">
                                 <label class="form-label" for="ivarete13">Iva 13%</label>
