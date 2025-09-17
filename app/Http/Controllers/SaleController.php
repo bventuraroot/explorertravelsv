@@ -79,7 +79,7 @@ class SaleController extends Controller
         return view('sales.impdoc', array("corr" => $corr));
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal)
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description)
     {
         DB::beginTransaction();
 
@@ -117,16 +117,6 @@ class SaleController extends Controller
             $feesiniva = round($fee / 1.13, 2);
             $ivafee = round($fee - $feesiniva, 2);
 
-            // Debug para Crédito Fiscal
-            if ($sale->typedocument_id == '3') {
-                \Log::info("=== CONTROLADOR CCF ===");
-                \Log::info("Precio recibido (sin IVA): " . $price);
-                \Log::info("Precio gravada recibido (subtotal sin IVA): " . $pricegravada);
-                \Log::info("IVA 13% recibido: " . $ivarete13);
-                \Log::info("Fee recibido (con IVA): " . $fee);
-                \Log::info("Fee sin IVA calculado: " . $feesiniva);
-                \Log::info("IVA del fee calculado: " . $ivafee);
-            }
             $saledetails = new Salesdetail();
             $saledetails->sale_id = $idsale;
             $saledetails->product_id = $productid;
@@ -148,18 +138,12 @@ class SaleController extends Controller
             $saledetails->linea = $linea;
             $saledetails->canal = $canal;
             $saledetails->user_id = $id_user;
+            $saledetails->description = $description;
 
-            // Debug de valores guardados en BD para CCF
-            if ($sale->typedocument_id == '3') {
-                \Log::info("=== GUARDANDO EN BD ===");
-                \Log::info("priceunit: " . $saledetails->priceunit);
-                \Log::info("pricesale: " . $saledetails->pricesale);
-                \Log::info("detained13: " . $saledetails->detained13);
-                \Log::info("fee: " . $saledetails->fee);
-                \Log::info("feeiva: " . $saledetails->feeiva);
-            }
 
             $saledetails->save();
+
+
             DB::commit();
             return response()->json(array(
                 "res" => "1",
@@ -229,6 +213,9 @@ class SaleController extends Controller
 
     public function getdatadocbycorr($corr)
     {
+        $saleId = base64_decode($corr);
+
+        // Intentar con join de iva primero
         $saledetails = Sale::join('companies', 'companies.id', '=', 'sales.company_id')
             ->join('iva', 'iva.company_id', '=', 'companies.id')
             ->leftJoin('clients', 'clients.id', '=', 'sales.client_id')
@@ -243,8 +230,28 @@ class SaleController extends Controller
                 'iva.valor AS iva',
                 'iva.valor_entre AS iva_entre'
             )
-            ->where('sales.id', '=', base64_decode($corr))
+            ->where('sales.id', '=', $saleId)
             ->get();
+
+        // Si no hay resultados, intentar sin el join de iva
+        if ($saledetails->count() == 0) {
+            $saledetails = Sale::join('companies', 'companies.id', '=', 'sales.company_id')
+                ->leftJoin('clients', 'clients.id', '=', 'sales.client_id')
+                ->select(
+                    'sales.*',
+                    'companies.*',
+                    'clients.id AS client_id',
+                    'clients.firstname AS client_firstname',
+                    'clients.secondname AS client_secondname',
+                    'clients.comercial_name AS comercial_name',
+                    'clients.tipoContribuyente AS client_contribuyente',
+                    DB::raw('0.13 AS iva'),
+                    DB::raw('0.13 AS iva_entre')
+                )
+                ->where('sales.id', '=', $saleId)
+                ->get();
+        }
+
         return response()->json($saledetails);
     }
 
@@ -617,10 +624,18 @@ class SaleController extends Controller
         $saledetails = Salesdetail::leftJoin('products', 'products.id', '=', 'salesdetails.product_id')
             ->select(
                 'salesdetails.*',
-                DB::raw('CONCAT(products.name, " - ", salesdetails.reserva, " - ", salesdetails.ruta) as product_name')
+                DB::raw('CASE
+                    WHEN salesdetails.reserva IS NOT NULL AND salesdetails.ruta IS NOT NULL
+                    THEN CONCAT(products.name, " - ", salesdetails.reserva, " - ", salesdetails.ruta)
+                    WHEN salesdetails.reserva IS NOT NULL
+                    THEN CONCAT(products.name, " - ", salesdetails.reserva)
+                    ELSE products.name
+                END as product_name')
             )
             ->where('sale_id', '=', base64_decode($corr))
             ->get();
+
+
         return response()->json($saledetails);
     }
 

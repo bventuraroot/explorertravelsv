@@ -11,13 +11,17 @@ $( document ).ready(function() {
     if (valcorr && $('#corr').length) {
         $('#corr').val(valcorr);
     }
-    if (operation == 'delete') {
+    // Obtener parámetro step de la URL
+    var urlParams = new URLSearchParams(window.location.search);
+    var stepParam = urlParams.get('step');
+
+    if (operation == 'delete' || stepParam == '3') {
         var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
         stepper.to(3);
     }else{
         if(valdraft && $.isNumeric(valcorr)){
             var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
-        stepper.to(2);
+            stepper.to(3); // Cambiar a paso 3 (productos) en lugar de paso 2 (cliente)
         }
     }
 
@@ -86,7 +90,8 @@ $(function () {
                 }
                 // Avanzar al siguiente paso del wizard únicamente si ya hay correlativo (borrador)
                 // Si acabamos de crear correlativo, el redirect hará el resto
-                if (hasValCorr) {
+                // NO ejecutar para drafts - la navegación se maneja en el código de inicialización
+                if (hasValCorr && !valdraft) {
                     setTimeout(function(){
                         $("#step1").trigger('click');
                     }, 200);
@@ -189,9 +194,10 @@ $(function () {
             success: function (response) {
                 $("#destino").append('<option value="0">Seleccione</option>');
                 $.each(response, function (index, value) {
-                    $("#destino").append(
-                        '<option value="' + value.id + '">' + value.iata + ' - ' + value.ciudad + ' - ' + value.pais + ' - ' + value.continente + '</option>'
-                    );
+                    var optionValue = value.id_aeropuerto;
+                    var optionText = value.iata + ' - ' + value.ciudad + ' - ' + value.pais + ' - ' + value.continente;
+                    $("#destino").append('<option value="' + optionValue + '">' + optionText + '</option>');
+
                 });
             },
             error: function(xhr, status, error) {
@@ -207,7 +213,7 @@ $(function () {
                 $("#linea").append('<option value="0">Seleccione</option>');
                 $.each(response, function (index, value) {
                     $("#linea").append(
-                        '<option value="' + value.id + '">' + value.iata + ' - ' + value.nombre + '</option>'
+                        '<option value="' + value.id_aerolinea + '">' + value.iata + ' - ' + value.nombre + '</option>'
                     );
                 });
             },
@@ -229,28 +235,62 @@ function agregarp() {
 
     var productid = $("#productid").val();
     //alert(productid);
-    var reserva = $('#reserva').val();
-    var ruta = $('#ruta').val();
-    var destino = $('#destino').val();
-    var linea = $('#linea').val();
-    var canal = $('#Canal').val();
+    var reserva = $('#reserva').val() || '';
+    var ruta = $('#ruta').val() || '';
+
+    // Capturar valores de select2 de manera más robusta
+    var destino = '';
+    var linea = '';
+    var canal = '';
+
+    // Usar selector más específico para evitar conflictos
+    var destinoElement = $('#add-information-tickets #destino');
+    var lineaElement = $('#add-information-tickets #linea');
+    var canalElement = $('#add-information-tickets #Canal');
+
+    // Verificar si los elementos existen y están visibles
+    if (destinoElement.length > 0) {
+        destino = destinoElement.val() || '';
+    }
+    if (lineaElement.length > 0) {
+        linea = lineaElement.val() || '';
+    }
+    if (canalElement.length > 0) {
+        canal = canalElement.val() || '';
+    }
+
+    // Tratar "0" y "undefined" como valor vacío para select2
+    if (destino === '0' || destino === 'undefined' || destino === undefined) destino = '';
+    if (linea === '0' || linea === 'undefined' || linea === undefined) linea = '';
+    if (canal === '0' || canal === 'undefined' || canal === undefined) canal = '';
+
     // Respetar lógica original: siempre leer de #fee (visible u oculto)
     var fee = parseFloat($("#fee").val()) || 0.00;
     //var fee2 = parseFloat($("#fee2").val()) || 0.00;
 
-    // Validar si el producto es 9 y los campos son obligatorios
-    if (productid == 9) {
-        if (!reserva || !ruta || !destino || !linea || !canal) {
-            swal.fire("Favor complete la información del producto");
-            return;
+    // Validar si el producto requiere información adicional (1, 2, 3, 9, 16)
+    var productosConInfo = ['1', '2', '3', '9', '16', '11'];
+    if (productosConInfo.includes(productid.toString())) {
+        // Para productos que requieren información adicional, validar campos obligatorios
+        if (productid == 9) {
+            if (!reserva || !ruta || !destino || !linea || !canal) {
+                swal.fire("Favor complete la información del producto");
+                return;
+            }
         }
+        // Para otros productos con info adicional, permitir campos vacíos pero no enviar "null"
+        if (!reserva) reserva = "";
+        if (!ruta) ruta = "";
+        if (!destino) destino = "";
+        if (!linea) linea = "";
+        if (!canal) canal = "";
     } else {
-        // Si el producto no es 9, enviar valores vacíos
-        reserva = "null";
-        ruta = "null";
-        destino = "0";
-        linea = "0";
-        canal = "null";
+        // Si el producto no requiere información adicional, enviar valores vacíos
+        reserva = "";
+        ruta = "";
+        destino = "";
+        linea = "";
+        canal = "";
     }
     var typedoc = $('#typedocument').val();
     var clientid = $("#client").val();
@@ -291,14 +331,22 @@ function agregarp() {
     var priceunitariofee = 0;
     if (type == "gravada") {
         if(typedoc==3){
-            // Para Crédito Fiscal: pricegravada es el subtotal sin IVA
-            var subtotalProducto = parseFloat(price * cantidad);
+            // Para Crédito Fiscal: el fee del input viene con IVA, convertir a sin IVA
             var feeConIva = parseFloat(fee);
             var feeSinIva = feeConIva / 1.13;
-            var subtotalFee = parseFloat(feeSinIva * cantidad);
-            pricegravada = subtotalProducto + subtotalFee; // Subtotal sin IVA
-            iva13temp = parseFloat(pricegravada * 0.13).toFixed(8);
-            console.log("Preview CCF - Precio:", price, "Fee con IVA:", fee, "Fee sin IVA:", feeSinIva, "Subtotal:", pricegravada, "IVA:", iva13temp);
+            var precioUnitarioTotal = parseFloat(price) + feeSinIva;
+            pricegravada = precioUnitarioTotal * cantidad; // (precio + fee sin IVA) × cantidad
+            iva13temp = 0; // El IVA se calcula en la sección de abajo
+
+            console.log("DEBUG CÁLCULO PRECIO GRAVADA:", {
+                price: price,
+                fee: fee,
+                feeConIva: feeConIva,
+                feeSinIva: feeSinIva,
+                precioUnitarioTotal: precioUnitarioTotal,
+                cantidad: cantidad,
+                pricegravada: pricegravada
+            });
         } else {
             // Para otros documentos: lógica normal
             pricegravada = parseFloat((price * cantidad)+fee);
@@ -323,7 +371,15 @@ function agregarp() {
     renta10temp = parseFloat(rentarete*cantidad).toFixed(2);
     var totaltemp = parseFloat(parseFloat(pricegravada) + parseFloat(priceexenta) + parseFloat(pricenosujeta));
     var ventatotaltotal =  parseFloat(ventatotal); //+ parseFloat(iva13) + parseFloat(ivaretenido);
-    priceunitariofee = price + (fee/cantidad);
+    if(typedoc==3){
+        // Para Crédito Fiscal: precio unitario = precio + fee sin IVA
+        var feeConIva = parseFloat(fee);
+        var feeSinIva = feeConIva / 1.13;
+        priceunitariofee = parseFloat(price) + feeSinIva;
+    } else {
+        // Para otros documentos: precio unitario incluye fee
+        priceunitariofee = price + (fee/cantidad);
+    }
     var totaltemptotal = parseFloat(
     ($.isNumeric(pricegravada)? pricegravada: 0) +
     ($.isNumeric(priceexenta)? priceexenta: 0) +
@@ -338,9 +394,25 @@ function agregarp() {
         descriptionbyproduct = customDescriptionField.val().trim();
     } else if(productid==10){
         descriptionbyproduct = productname;
-    }else {
-        descriptionbyproduct =  productname + (marca? (" " + marca) : (" " + reserva + " " + ruta));
+    } else {
+        // Construir descripción de manera segura
+        var descParts = [productname];
+
+        if (marca && marca.trim() !== "") {
+            descParts.push(marca.trim());
+        } else if (reserva && reserva.trim() !== "" && ruta && ruta.trim() !== "") {
+            descParts.push(reserva.trim());
+            descParts.push(ruta.trim());
+        }
+
+        descriptionbyproduct = descParts.join(" ");
     }
+
+    // Limpiar caracteres problemáticos para URL
+    descriptionbyproduct = descriptionbyproduct.replace(/[^\w\s\-\.]/g, '').trim();
+
+    // Reemplazar múltiples espacios con un solo espacio
+    descriptionbyproduct = descriptionbyproduct.replace(/\s+/g, ' ');
 
     //enviar a temp factura
     // Validar corr y client antes de enviar para evitar 500 en backend
@@ -354,7 +426,12 @@ function agregarp() {
     }
 
     // Normalizar datos para evitar 'undefined' / 'NaN' en la URL
-    function nz(v, def){ return (v===undefined || v===null || v==="" || (typeof v === 'number' && isNaN(v))) ? def : v; }
+    function nz(v, def){
+        if (v === undefined || v === null || v === "" || v === 'undefined' || (typeof v === 'number' && isNaN(v))) {
+            return def;
+        }
+        return v;
+    }
     productid = nz(productid, 0);
     cantidad = nz(cantidad, 1);
     price = nz(price, 0.00);
@@ -367,19 +444,21 @@ function agregarp() {
     acuenta = nz(acuenta, 'SIN VALOR DEFINIDO');
     fpago = nz(fpago, 0);
     fee = nz(fee, 0.00);
-    reserva = nz(reserva, 'null');
-    ruta = nz(ruta, 'null');
-    destino = nz(destino, 0);
-    linea = nz(linea, 0);
-    canal = nz(canal, 'null');
+    reserva = nz(reserva, '');
+    ruta = nz(ruta, '');
+    destino = nz(destino, '');
+    linea = nz(linea, '');
+    canal = nz(canal, '');
+    descriptionbyproduct = nz(descriptionbyproduct, '');
 
-    // Debug: Verificar valores que se envían al controlador
-    console.log("=== ENVIANDO A CONTROLADOR ===");
-    console.log("Tipo documento:", typedoc);
-    console.log("Precio (sin IVA):", price);
-    console.log("Fee (con IVA):", fee);
-    console.log("Precio gravada:", pricegravada);
-    console.log("IVA 13%:", ivarete13);
+    // Validación final para evitar valores undefined en la URL
+    if (destino === undefined || destino === 'undefined') destino = '';
+    if (linea === undefined || linea === 'undefined') linea = '';
+    if (reserva === undefined || reserva === 'undefined') reserva = '';
+    if (ruta === undefined || ruta === 'undefined') ruta = '';
+    if (canal === undefined || canal === 'undefined') canal = '';
+    if (descriptionbyproduct === undefined || descriptionbyproduct === 'undefined') descriptionbyproduct = '';
+
 
     // Armar URL absoluta y codificada para evitar caracteres inválidos
     var url =
@@ -401,7 +480,10 @@ function agregarp() {
         "/" + encodeURIComponent(ruta) +
         "/" + encodeURIComponent(destino) +
         "/" + encodeURIComponent(linea) +
-        "/" + encodeURIComponent(canal);
+        "/" + encodeURIComponent(canal) +
+        "/" + encodeURIComponent(descriptionbyproduct);
+
+
     $.ajax({
         url: url,
         method: "GET",
@@ -443,7 +525,38 @@ function agregarp() {
                     response.idsaledetail +
                     ')"><span class="ti ti-trash"></span></button></td></tr>';
                 $("#tblproduct tbody").append(row);
-                sumasl = sumas + totaltemp;
+
+                // Calcular totales después de agregar la fila
+                if(typedoc==3){
+                    // Para Crédito Fiscal, calcular totales sumando todos los productos de la tabla
+                    var totalGravadas = 0;
+                    var totalIva = 0;
+
+                    // Sumar todos los productos de la tabla
+                    $("#tblproduct tbody tr").each(function(index) {
+                        var gravadasText = $(this).find("td:eq(5)").text(); // Columna GRAVADAS
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+
+                        // Para Crédito Fiscal, la columna GRAVADAS ya incluye (precio + fee) × cantidad
+                        totalGravadas += gravadas;
+                        console.log("DEBUG NUEVO PRODUCTO - Fila", index, "gravadas:", gravadas, "totalGravadas:", totalGravadas);
+                    });
+
+                    // Calcular IVA sobre el total de gravadas
+                    totalIva = totalGravadas * 0.13;
+
+                    sumasl = totalGravadas;
+                    iva13l = totalIva;
+
+                    console.log("DEBUG NUEVO PRODUCTO FINAL - totalGravadas:", totalGravadas, "totalIva:", totalIva);
+                } else {
+                    // Para otros documentos, sumar normalmente
+                    sumasl = sumas + totaltemp;
+                    if(typedoc==6 || typedoc==7 || typedoc==8){
+                        iva13l=0.00;
+                    }
+                }
+
                 $("#sumasl").html(
                     sumasl.toLocaleString("en-US", {
                         style: "currency",
@@ -451,12 +564,6 @@ function agregarp() {
                     })
                 );
                 $("#sumas").val(sumasl);
-                if(typedoc==6 || typedoc==7 || typedoc==8){
-                    iva13l=0.00;
-                }else if(typedoc==3){
-                    //calculo de iva 13%
-                    iva13l = parseFloat(parseFloat(iva13) + parseFloat(iva13temp));
-                }
                 $("#13ival").html(
                     iva13l.toLocaleString("en-US", {
                         style: "currency",
@@ -502,7 +609,13 @@ function agregarp() {
                 );
                 $("#ventasexentas").val(ventasexentasl);
 
-                ventatotall = parseFloat(ventatotaltotal)  + parseFloat(totaltemptotal);
+                if(typedoc==3){
+                    // Para Crédito Fiscal, calcular total como suma de gravadas + IVA
+                    ventatotall = sumasl + iva13l;
+                } else {
+                    // Para otros documentos, sumar normalmente
+                    ventatotall = parseFloat(ventatotaltotal) + parseFloat(totaltemptotal);
+                }
                 $("#ventatotall").html(
                     parseFloat(ventatotall).toLocaleString("en-US", {
                         style: "currency",
@@ -517,7 +630,10 @@ function agregarp() {
     });
     $('#precio').val(0.00);
     $('#fee').val(0.00);
-    $('#ivarete13').val(0.00);
+    // No resetear ivarete13 para Crédito Fiscal ya que se calcula en totalamount()
+    if($("#typedocument").val() !== '3'){
+        $('#ivarete13').val(0.00);
+    }
     $('#ivarete').val(0.00);
     $('#rentarete').val(0.00);
     $('#reserva').val();
@@ -533,7 +649,6 @@ function totalamount() {
     var typecontriclient = $("#typecontribuyenteclient").val();
     var typedoc = $('#typedocument').val();
 
-    console.log("totalamount() - Tipo de documento:", typedoc, typedoc === '7' ? "(Factura de Exportación)" : "");
 
     // Convertir valores a números asegurando que no sean NaN
     var cantidad = parseFloat($("#cantidad").val()) || 0.00;
@@ -856,12 +971,8 @@ function eliminarpro(id) {
                             }).then((result) => {
                                 /* Read more about isConfirmed, isDenied below */
                                 if (result.isConfirmed) {
-                                    //$("#pro" + id).remove();
-                                    //$('#resultados').load(location.href + " #resultados");
-                                    //var details = agregarfacdetails($('#valcorr').val());
-                                    //location.reload(true);
-                                    window.location.href =
-                                    "create?corr=" + corr + "&draft=true&typedocument=" + document +"&operation=delete";
+                                    // Recargar la página pero mantenerse en el paso 3 (agregar productos)
+                                    window.location.href = "create?corr=" + corr + "&draft=true&typedocument=" + document + "&step=3";
                                 }
                             });
                         } else if (response.res == 0) {
@@ -890,32 +1001,81 @@ function aviablenext(idcompany) {
     $("#step1").prop("disabled", false);
 }
 
+function loadClientsAndSelectDraft(idcompany, draftClientId) {
+    $.ajax({
+        url: "/client/getclientbycompany/" + btoa(idcompany),
+        method: "GET",
+        success: function (response) {
+            // Solo agregar "Seleccione" si no existe
+            if ($("#client option[value='0']").length === 0) {
+                $("#client").append('<option value="0">Seleccione</option>');
+            }
+            $.each(response, function (index, value) {
+                // Verificar si la opción ya existe antes de agregarla
+                var optionExists = $("#client option[value='" + value.id + "']").length > 0;
+                if (!optionExists) {
+                    if(value.tpersona=='J'){
+                        $("#client").append(
+                            '<option value="' +
+                                value.id +
+                                '">' +
+                                value.name_contribuyente.toUpperCase() +
+                                "</option>"
+                        );
+                    }else if (value.tpersona=='N'){
+                        $("#client").append(
+                            '<option value="' +
+                                value.id +
+                                '">' +
+                                value.firstname.toUpperCase() +
+                                " " +
+                                value.firstlastname.toUpperCase() +
+                                "</option>"
+                        );
+                    }
+                }
+            });
+
+            // Después de cargar todos los clientes, seleccionar el cliente del borrador
+            if (draftClientId != null && draftClientId != '') {
+                $("#client").val(draftClientId);
+            }
+        },
+    });
+}
+
 function getclientbycompanyurl(idcompany) {
     $.ajax({
         url: "/client/getclientbycompany/" + btoa(idcompany),
         method: "GET",
         success: function (response) {
-            $("#client").append('<option value="0">Seleccione</option>');
+            // Solo agregar "Seleccione" si no existe
+            if ($("#client option[value='0']").length === 0) {
+                $("#client").append('<option value="0">Seleccione</option>');
+            }
             $.each(response, function (index, value) {
-                //console.log(value);
-                if(value.tpersona=='J'){
-                    $("#client").append(
-                        '<option value="' +
-                            value.id +
-                            '">' +
-                            value.name_contribuyente.toUpperCase() +
-                            "</option>"
-                    );
-                }else if (value.tpersona=='N'){
-                    $("#client").append(
-                        '<option value="' +
-                            value.id +
-                            '">' +
-                            value.firstname.toUpperCase() +
-                            " " +
-                            value.firstlastname.toUpperCase() +
-                            "</option>"
-                    );
+                // Verificar si la opción ya existe antes de agregarla
+                var optionExists = $("#client option[value='" + value.id + "']").length > 0;
+                if (!optionExists) {
+                    if(value.tpersona=='J'){
+                        $("#client").append(
+                            '<option value="' +
+                                value.id +
+                                '">' +
+                                value.name_contribuyente.toUpperCase() +
+                                "</option>"
+                        );
+                    }else if (value.tpersona=='N'){
+                        $("#client").append(
+                            '<option value="' +
+                                value.id +
+                                '">' +
+                                value.firstname.toUpperCase() +
+                                " " +
+                                value.firstlastname.toUpperCase() +
+                                "</option>"
+                        );
+                    }
                 }
             });
         },
@@ -1042,7 +1202,6 @@ function draftdocument(corr, draft) {
             method: "GET",
             async: false,
             success: function (response) {
-                //console.log(response);
                 $.each(response, function (index, value) {
                     //campo de company
                     $('#company').empty();
@@ -1064,38 +1223,27 @@ function draftdocument(corr, draft) {
                     $('#date').prop('disabled', true);
                     $("#corr").val(corr);
                     $("#date").val(value.date);
-                    //campo cliente
-                    if(value.client_id != null && value.client_firstname!='N/A'){
-                        $("#client").append(
-                            '<option value="' +
-                                value.client_id +
-                                '">' +
-                                value.client_firstname +' '+ value.client_secondname +
-                                "</option>"
-                        );
-                        $('#client').prop('disabled', true);
-                    }else if(value.client_firstname=='N/A') {
-                        $("#client").append(
-                            '<option value="' +
-                                value.client_id +
-                                '">' +
-                                value.comercial_name +
-                                "</option>"
-                        );
-                        $('#client').prop('disabled', true);
-                    }else{
-                        var getsclient =  getclientbycompanyurl(value.id);
-                    }
+                    //campo cliente - cargar todos los clientes disponibles para permitir cambio
+                    // Primero limpiar el select para evitar duplicados
+                    $("#client").empty();
+
+                    // Guardar el client_id para seleccionarlo después
+                    var draftClientId = value.client_id;
+
+                    // Cargar clientes y seleccionar el del borrador
+                    loadClientsAndSelectDraft(value.id, draftClientId);
                     if(value.waytopay != null){
                         $("#fpago option[value="+ value.waytopay +"]").attr("selected",true);
                     }
                     $("#acuenta").val(value.acuenta);
-                    var details = agregarfacdetails(corr);
 
                     // Llenar campos específicos de Crédito Fiscal si es necesario
                     if(value.typedocument_id == '3') {
                         fillCreditFiscalFieldsFromDraft();
                     }
+
+                    // Cargar detalles después de llenar los campos de entrada
+                    var details = agregarfacdetails(corr);
                 });
             },
             failure: function (response) {
@@ -1123,7 +1271,6 @@ function fillCreditFiscalFieldsFromDraft() {
         var precioConIva = precioSinIva * 1.13;
         $("#precioConIva").val(precioConIva.toFixed(8));
 
-        console.log("Borrador CCF - Precio sin IVA:", precioSinIva, "Precio con IVA:", precioConIva);
     }
 
     if (feeSinIva > 0) {
@@ -1132,13 +1279,13 @@ function fillCreditFiscalFieldsFromDraft() {
         $("#fee").val(feeConIva.toFixed(8)); // Mostrar fee con IVA en el campo
         $("#feeSinIva").val(feeSinIva.toFixed(8)); // Mostrar fee sin IVA en readonly
 
-        console.log("Borrador CCF - Fee sin IVA (BD):", feeSinIva, "Fee con IVA (campo):", feeConIva);
     }
 
-    // Ejecutar cálculos después de llenar los campos
-    setTimeout(function() {
-        calculateFromPriceWithIva();
-    }, 100);
+    // NO ejecutar cálculos cuando se carga un draft
+    // Los cálculos del resumen se manejan en agregarfacdetails()
+    // setTimeout(function() {
+    //     calculateFromPriceWithIva();
+    // }, 100);
 }
 
 function getinfodoc(){
@@ -1150,7 +1297,6 @@ function getinfodoc(){
         async: false,
         success: function (response) {
             salida = true;
-            //console.log(response);
             $('#logodocfinal').attr('src', '../assets/img/logo/' + response[0].logo);
             $('#addressdcfinal').empty();
             $('#addressdcfinal').html('' + response[0].country_name.toUpperCase() + ', ' + response[0].department_name + ', ' + response[0].municipality_name + '</br>' + response[0].address);
@@ -1251,7 +1397,6 @@ function creardocuments() {
                         url: "createdocument/" + btoa(corr) + '/' + totalamount,
                         method: "GET",
                         success: function (response) {
-                            console.log('Respuesta del servidor:', response);
 
                             if (response.res == 1) {
                                 resolve(response); // Resuelve la promesa si la solicitud es exitosa
@@ -1425,7 +1570,6 @@ function creardocuments() {
             swalWithBootstrapButtons.fire(swalConfig).then((result) => {
                 if (result.isConfirmed && error.type === 'hacienda_rejected') {
                     // Reintentar la creación del documento
-                    console.log('Reintentando creación de documento...');
                     // Aquí podrías llamar nuevamente a la función de creación
                     // o recargar la página para que el usuario corrija los datos
                     window.location.reload();
@@ -1458,10 +1602,41 @@ function agregarfacdetails(corr) {
             let preciogravadas = 0;
             $.each(response, function (index, value) {
 
+                // Para Crédito Fiscal, llenar campos de entrada con datos del draft
+                if(typedoc=='3' && index === 0) {
+                    // Solo llenar una vez con el primer producto
+                    console.log("DEBUG DRAFT - Datos del primer producto:", {
+                        priceunit: value.priceunit,
+                        fee: value.fee,
+                        amountp: value.amountp,
+                        pricesale: value.pricesale,
+                        detained13: value.detained13
+                    });
+                    $("#precio").val(value.priceunit);
+                    $("#fee").val(value.fee);
+                    $("#cantidad").val(value.amountp);
+                }
+
                 if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
                     preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
+                }else if(typedoc=='3'){
+                    // CRÉDITO FISCAL: el fee en BD ya viene sin IVA
+                    var feeSinIva = parseFloat(value.fee); // Fee ya viene sin IVA de la BD
+                    preciounitario = parseFloat(value.priceunit) + feeSinIva; // Precio unitario = precio + fee sin IVA
+                    preciogravadas = preciounitario * parseFloat(value.amountp); // (precio + fee) × cantidad
+                    // El IVA se calcula en la sección de abajo, no aquí
+                    ivarete13total += parseFloat(value.detained13);
+
+                    console.log("DEBUG DRAFT - Cálculo producto", index, ":", {
+                        priceunit: value.priceunit,
+                        fee: value.fee,
+                        feeSinIva: feeSinIva,
+                        preciounitario: preciounitario,
+                        preciogravadas: preciogravadas,
+                        detained13: value.detained13
+                    });
                 }else{
                     ivarete13total += parseFloat(value.detained13);
                     preciounitario = parseFloat(value.priceunit);
@@ -1519,7 +1694,13 @@ function agregarfacdetails(corr) {
                     value.id +
                     ')"><span class="ti ti-trash"></span></button></td></tr>';
                 $("#tblproduct tbody").append(row);
-                sumasl = totalsumas;
+
+                // Para otros documentos, usar la lógica original
+                if(typedoc!='3'){
+                    sumasl = totalsumas;
+                    iva13l = ivarete13total;
+                }
+
                 $("#sumasl").html(
                     sumasl.toLocaleString("en-US", {
                         style: "currency",
@@ -1527,7 +1708,6 @@ function agregarfacdetails(corr) {
                     })
                 );
                 $("#sumas").val(sumasl);
-                iva13l = ivarete13total;
                 $("#13ival").html(
                     iva13l.toLocaleString("en-US", {
                         style: "currency",
@@ -1567,7 +1747,14 @@ function agregarfacdetails(corr) {
                     })
                 );
                 $("#ventasexentas").val(ventasexentasl);
-                ventatotall = totaltemptotal;
+
+                if(typedoc=='3'){
+                    // Para Crédito Fiscal, usar el total calculado en totalamount()
+                    ventatotall = parseFloat($("#total").val()) || 0;
+                } else {
+                    // Para otros documentos, usar la lógica original
+                    ventatotall = totaltemptotal;
+                }
                 $("#ventatotall").html(
                     ventatotall.toLocaleString("en-US", {
                         style: "currency",
@@ -1577,6 +1764,60 @@ function agregarfacdetails(corr) {
                 $("#ventatotallhidden").val(ventatotall);
                 $("#ventatotal").val(ventatotall);
             });
+
+            // Para Crédito Fiscal, calcular totales después de agregar todos los productos
+            if(typedoc=='3'){
+                // Agregar delay para asegurar que la tabla esté completamente renderizada
+                setTimeout(function() {
+                    var totalGravadas = 0;
+                    var totalIva = 0;
+
+                    // Sumar todos los productos de la tabla
+                    $("#tblproduct tbody tr").each(function(index) {
+                        var gravadasText = $(this).find("td:eq(5)").text(); // Columna GRAVADAS
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+
+                        // Para Crédito Fiscal, necesitamos sumar también el fee
+                        // El fee se guarda por separado, así que necesitamos obtenerlo de los datos originales
+                        // Por ahora, usaremos el precio unitario que ya incluye el fee
+                        var precioUnitarioText = $(this).find("td:eq(2)").text(); // Columna PRECIO UNIT.
+                        var precioUnitario = parseFloat(precioUnitarioText.replace(/[$,]/g, '')) || 0;
+
+                        totalGravadas += precioUnitario; // Usar precio unitario que incluye fee
+                        console.log("DEBUG DRAFT FINAL - Fila", index, "gravadas:", gravadas, "precioUnitario:", precioUnitario, "totalGravadas:", totalGravadas);
+                    });
+
+                    // Calcular IVA sobre el total de gravadas
+                    totalIva = totalGravadas * 0.13;
+
+                    // Actualizar los campos del resumen
+                    $("#sumasl").html(
+                        totalGravadas.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                        })
+                    );
+                    $("#sumas").val(totalGravadas);
+
+                    $("#13ival").html(
+                        totalIva.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                        })
+                    );
+                    $("#13iva").val(totalIva);
+
+                    $("#ventatotall").html(
+                        (totalGravadas + totalIva).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                        })
+                    );
+                    $("#ventatotallhidden").val(totalGravadas + totalIva);
+                    $("#ventatotal").val(totalGravadas + totalIva);
+                }, 500); // Delay de 500ms para asegurar renderizado completo
+            }
+
         },
         failure: function (response) {
             Swal.fire("Hay un problema: " + response.responseText);
