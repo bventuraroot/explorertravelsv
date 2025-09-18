@@ -272,7 +272,7 @@
             <tr style="page-break-inside:avoid;">
                 <th>{{$loop->index+1}}</th>
                 <td align="center">{{$d["cantidad"]}}</td>
-                <td>{{descrproduct($d["id_producto"])}}</td>
+                <td>{{$d["descripcion"]}}</td>
                 <td align="right">{{FNumero($d["precio_unitario"])}}</td>
                 <td align="right">0.00</td>
                 <td align="right">{{FNumero($d["no_imponible"])}}</td>
