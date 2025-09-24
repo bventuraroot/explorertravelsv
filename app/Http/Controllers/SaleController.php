@@ -85,7 +85,7 @@ class SaleController extends Controller
         return view('sales.impdoc', array("corr" => $corr));
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description)
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada')
     {
         DB::beginTransaction();
 
@@ -96,28 +96,49 @@ class SaleController extends Controller
             $sale->acuenta = $acuenta;
             $sale->waytopay = $fpago;
             $sale->save();
-            //$iva_calculado = round($price/1.13,2);
-            //$preciogravado = round($iva_calculado*$cantidad,2);
-            //$ivafac = round($pricegravada-($pricegravada/1.13),2);
-            //precio unitario
-            //iva fac
-            $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
-            //precio gravado
-            $pricegravadafac = round($pricegravada / 1.13, 3);
-            //precio unitario evaluar si es gravada sino solamente es el precio unitario
-            if ($pricegravada != "0.00") {
-                $priceunitariofac = round($pricegravadafac / $cantidad, 3);
-            } else {
+            // Lógica basada en el tipo de venta (como en Roma Copies)
+            if ($tipoVenta === 'gravada') {
+                // Venta gravada: calcular IVA normalmente
+                $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
+                $pricegravadafac = round($pricegravada / 1.13, 3);
+
+                if ($pricegravada != "0.00") {
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
+                } else {
+                    $priceunitariofac = round($price, 3);
+                }
+
+                if ($sale->typedocument_id == '8') {
+                    $priceunitariofac = $price;
+                    $pricegravadafac = $pricegravada;
+                    $ivafac = 0.00;
+                }
+            } elseif ($tipoVenta === 'exenta') {
+                // Venta exenta: NO genera IVA
                 $priceunitariofac = round($price, 3);
-            }
-            if ($sale->typedocument_id == '8') {
-                $priceunitariofac = $price;
-                $pricegravadafac = $pricegravada;
-            }
-            //$ivarete13 = round($pricegravada * 0.13, 2);
-            //$ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
-            if ($sale->typedocument_id == '8') {
+                $pricegravadafac = 0.00;
                 $ivafac = 0.00;
+            } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
+                // Venta no sujeta: NO genera IVA
+                $priceunitariofac = round($price, 3);
+                $pricegravadafac = 0.00;
+                $ivafac = 0.00;
+            } else {
+                // Por defecto, tratar como gravada
+                $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
+                $pricegravadafac = round($pricegravada / 1.13, 3);
+
+                if ($pricegravada != "0.00") {
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
+                } else {
+                    $priceunitariofac = round($price, 3);
+                }
+
+                if ($sale->typedocument_id == '8') {
+                    $priceunitariofac = $price;
+                    $pricegravadafac = $pricegravada;
+                    $ivafac = 0.00;
+                }
             }
             //iva al fee
             $feesiniva = round($fee / 1.13, 2);
@@ -127,13 +148,29 @@ class SaleController extends Controller
             $saledetails->sale_id = $idsale;
             $saledetails->product_id = $productid;
             $saledetails->amountp = $cantidad;
-            //$saledetails->priceunit = ($sale->typedocument_id==6) ? round($iva_calculado,2) : $price;
-            $saledetails->priceunit = ($sale->typedocument_id == '6' || $sale->typedocument_id == '8') ? round($priceunitariofac, 2) : $price;
-            //$saledetails->pricesale = ($sale->typedocument_id==6) ? round($preciogravado,2) : $pricegravada;
-            $saledetails->pricesale = ($sale->typedocument_id == '6' || $sale->typedocument_id == '8') ? round($pricegravadafac, 2) : $pricegravada;
-            $saledetails->nosujeta = $pricenosujeta;
-            $saledetails->exempt = $priceexenta;
-            $saledetails->detained13 = ($sale->typedocument_id == '6' || $sale->typedocument_id == '8') ? round($ivafac, 2) : $ivarete13;
+            $saledetails->priceunit = round($priceunitariofac, 2);
+            $saledetails->pricesale = round($pricegravadafac, 2);
+
+            // Asignar valores según el tipo de venta (como en Roma Copies)
+            if ($tipoVenta === 'gravada') {
+                $saledetails->nosujeta = 0.00;
+                $saledetails->exempt = 0.00;
+                $saledetails->detained13 = round($ivafac, 2);
+            } elseif ($tipoVenta === 'exenta') {
+                $saledetails->nosujeta = 0.00;
+                $saledetails->exempt = $priceexenta;
+                $saledetails->detained13 = 0.00;
+            } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
+                $saledetails->nosujeta = $pricenosujeta;
+                $saledetails->exempt = 0.00;
+                $saledetails->detained13 = 0.00;
+            } else {
+                // Por defecto, usar valores originales
+                $saledetails->nosujeta = $pricenosujeta;
+                $saledetails->exempt = $priceexenta;
+                $saledetails->detained13 = round($ivafac, 2);
+            }
+
             $saledetails->detained = $ivarete;
             $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 2) : round($renta * $cantidad, 2);
             $saledetails->fee = $feesiniva;

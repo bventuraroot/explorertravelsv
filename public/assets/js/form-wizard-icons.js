@@ -483,7 +483,8 @@ function agregarp() {
         "/" + encodeURIComponent(destino || '') +
         "/" + encodeURIComponent(linea || '') +
         "/" + encodeURIComponent(canal || '') +
-        "/" + encodeURIComponent(descriptionbyproduct || '');
+        "/" + encodeURIComponent(descriptionbyproduct || '') +
+        "/" + encodeURIComponent(type || 'gravada');
 
     console.log("DEBUG URL COMPLETA:", url);
 
@@ -651,6 +652,7 @@ function totalamount() {
     var typecontricompany = $("#typecontribuyente").val();
     var typecontriclient = $("#typecontribuyenteclient").val();
     var typedoc = $('#typedocument').val();
+    var type = $("#typesale").val(); // Obtener el tipo de venta
 
 
     // Convertir valores a números asegurando que no sean NaN
@@ -683,45 +685,54 @@ function totalamount() {
     totalamount = parseFloat(valor * cantidad);
     totaamountsinivi = parseFloat(totalamount/1.13);
 
-    // IVA 13% según tipo de documento
-    if (typedoc === '3') {
-        // CRÉDITO FISCAL: Lógica especial con fee sin IVA
-        var subtotalProducto = parseFloat(valor * cantidad);
-        var feeConIva = parseFloat(fee);
-        var feeSinIva = feeConIva / 1.13; // Convertir fee con IVA a sin IVA
-        var subtotalFee = parseFloat(feeSinIva * cantidad);
-
-        // Actualizar campo fee sin IVA si existe
-        if ($("#feeSinIva").length) {
-            $("#feeSinIva").val(feeSinIva.toFixed(8));
-        }
-
-        // Subtotal total sin IVA
-        var subtotalTotal = subtotalProducto + subtotalFee;
-
-        // Calcular IVA sobre el subtotal total sin IVA
-        ivarete13 = parseFloat(subtotalTotal * 0.13);
-        $("#ivarete13").val(ivarete13.toFixed(8));
-
-        // Actualizar totalamount para que refleje el subtotal total
-        totalamount = subtotalTotal;
-    } else if (typedoc === '6') {
-        // FACTURA: IVA calculado normalmente sobre producto
-        var ivaProducto = parseFloat(totalamount * 0.13);
-        ivarete13 = ivaProducto;
-        $("#ivarete13").val(ivarete13.toFixed(2)); // Factura usa 2 decimales
-    } else if (typedoc === '7') {
-        // FACTURA DE EXPORTACIÓN: Sin IVA, manejo similar a factura normal
+    // Lógica basada en el tipo de venta (como en Roma Copies)
+    if (type === 'exenta' || type === 'nosujeta') {
+        // VENTAS EXENTAS O NO SUJETAS: NO generan IVA
         $("#ivarete13").val(0);
         ivarete13 = 0.00;
-    } else if (typedoc === '8') {
-        // SUJETO EXCLUIDO: Sin IVA
-        $("#ivarete13").val(0);
-        ivarete13 = 0.00;
+        $("#ivarete").val(0.00);
+        $("#rentarete").val(0.00);
     } else {
-        // OTROS DOCUMENTOS: Sin IVA
-        $("#ivarete13").val(0);
-        ivarete13 = 0.00;
+        // VENTAS GRAVADAS: calcular IVA según tipo de documento
+        if (typedoc === '3') {
+            // CRÉDITO FISCAL: Lógica especial con fee sin IVA
+            var subtotalProducto = parseFloat(valor * cantidad);
+            var feeConIva = parseFloat(fee);
+            var feeSinIva = feeConIva / 1.13; // Convertir fee con IVA a sin IVA
+            var subtotalFee = parseFloat(feeSinIva * cantidad);
+
+            // Actualizar campo fee sin IVA si existe
+            if ($("#feeSinIva").length) {
+                $("#feeSinIva").val(feeSinIva.toFixed(8));
+            }
+
+            // Subtotal total sin IVA
+            var subtotalTotal = subtotalProducto + subtotalFee;
+
+            // Calcular IVA sobre el subtotal total sin IVA
+            ivarete13 = parseFloat(subtotalTotal * 0.13);
+            $("#ivarete13").val(ivarete13.toFixed(8));
+
+            // Actualizar totalamount para que refleje el subtotal total
+            totalamount = subtotalTotal;
+        } else if (typedoc === '6') {
+            // FACTURA: IVA calculado normalmente sobre producto
+            var ivaProducto = parseFloat(totalamount * 0.13);
+            ivarete13 = ivaProducto;
+            $("#ivarete13").val(ivarete13.toFixed(2)); // Factura usa 2 decimales
+        } else if (typedoc === '7') {
+            // FACTURA DE EXPORTACIÓN: Sin IVA
+            $("#ivarete13").val(0);
+            ivarete13 = 0.00;
+        } else if (typedoc === '8') {
+            // SUJETO EXCLUIDO: Sin IVA
+            $("#ivarete13").val(0);
+            ivarete13 = 0.00;
+        } else {
+            // OTROS DOCUMENTOS: Sin IVA
+            $("#ivarete13").val(0);
+            ivarete13 = 0.00;
+        }
     }
 
     // IVA Percibido 1% sobre total por cantidad
