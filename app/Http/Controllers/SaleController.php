@@ -255,13 +255,13 @@ class SaleController extends Controller
                     $priceunitariofac = round($pricegravadafac / $cantidad, 3);
                 }
             } elseif ($tipoVenta === 'exenta') {
-                // Venta exenta: precio ya incluye IVA, pero NO generamos IVA adicional
-                $priceunitariofac = round($price + $fee, 3); // Incluir fee sin IVA
+                // Venta exenta: mantener precio unitario original, no va en gravadas
+                $priceunitariofac = round($price, 3); // Precio unitario sin modificar
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                // Venta no sujeta: precio ya incluye IVA, pero NO generamos IVA adicional
-                $priceunitariofac = round($price + $fee, 3); // Incluir fee sin IVA
+                // Venta no sujeta: mantener precio unitario original, no va en gravadas
+                $priceunitariofac = round($price, 3); // Precio unitario sin modificar
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } else {

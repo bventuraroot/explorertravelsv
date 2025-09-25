@@ -801,6 +801,7 @@ function updateProductDescription() {
 // Función para calcular desde precio con IVA (Solo Crédito Fiscal)
 function calculateFromPriceWithIva() {
     var typedoc = $('#typedocument').val();
+    var type = $("#typesale").val(); // Obtener tipo de venta
 
     // Solo ejecutar para Crédito Fiscal
     if (typedoc !== '3') {
@@ -812,29 +813,51 @@ function calculateFromPriceWithIva() {
     var feeConIva = parseFloat($("#fee").val()) || 0;
 
     if (precioConIva > 0) {
-        // 1. Calcular precio unitario sin IVA (precio con IVA / 1.13)
-        var precioSinIva = precioConIva / 1.13;
-        $("#precio").val(precioSinIva.toFixed(8));
+        // Para exenta y no sujeta, el precio unitario sin IVA es igual al precio con IVA
+        if (type === 'exenta' || type === 'nosujeta') {
+            // Precio unitario sin IVA = precio con IVA (no se quita IVA)
+            $("#precio").val(precioConIva.toFixed(8));
+            $("#feeSinIva").val(feeConIva.toFixed(8));
 
-        // 2. Calcular fee sin IVA (fee con IVA / 1.13)
-        var feeSinIva = feeConIva / 1.13;
-        $("#feeSinIva").val(feeSinIva.toFixed(8));
+            // Calcular subtotal
+            var subtotalProducto = precioConIva * cantidad;
+            var subtotalFee = feeConIva * cantidad;
+            var subtotalTotal = subtotalProducto + subtotalFee;
 
-        // 3. Calcular subtotal sin IVA (precio sin IVA * cantidad + fee sin IVA * cantidad)
-        var subtotalProducto = precioSinIva * cantidad;
-        var subtotalFee = feeSinIva * cantidad;
-        var subtotalTotal = subtotalProducto + subtotalFee;
+            // No calcular IVA para exenta/no sujeta
+            var ivarete13 = 0;
+            var totalFinal = subtotalTotal;
 
-        // 4. Calcular IVA (13% sobre el subtotal total sin IVA)
-        var ivarete13 = subtotalTotal * 0.13;
+            // Actualizar campos visibles
+            $("#subtotal").val(subtotalTotal.toFixed(8));
+            $("#ivarete13").val(0);
+            $("#total").val(totalFinal.toFixed(8));
+        } else {
+            // Para venta gravada, calcular precio sin IVA
+            // 1. Calcular precio unitario sin IVA (precio con IVA / 1.13)
+            var precioSinIva = precioConIva / 1.13;
+            $("#precio").val(precioSinIva.toFixed(8));
 
-        // 5. Total final: subtotal sin IVA + IVA
-        var totalFinal = subtotalTotal + ivarete13;
+            // 2. Calcular fee sin IVA (fee con IVA / 1.13)
+            var feeSinIva = feeConIva / 1.13;
+            $("#feeSinIva").val(feeSinIva.toFixed(8));
 
-        // Actualizar campos visibles
-        $("#subtotal").val(subtotalTotal.toFixed(8));
-        $("#ivarete13").val(ivarete13.toFixed(8));
-        $("#total").val(totalFinal.toFixed(8));
+            // 3. Calcular subtotal sin IVA (precio sin IVA * cantidad + fee sin IVA * cantidad)
+            var subtotalProducto = precioSinIva * cantidad;
+            var subtotalFee = feeSinIva * cantidad;
+            var subtotalTotal = subtotalProducto + subtotalFee;
+
+            // 4. Calcular IVA (13% sobre el subtotal total sin IVA)
+            var ivarete13 = subtotalTotal * 0.13;
+
+            // 5. Total final: subtotal sin IVA + IVA
+            var totalFinal = subtotalTotal + ivarete13;
+
+            // Actualizar campos visibles
+            $("#subtotal").val(subtotalTotal.toFixed(8));
+            $("#ivarete13").val(ivarete13.toFixed(8));
+            $("#total").val(totalFinal.toFixed(8));
+        }
 
         // Actualizar campos ocultos
         $("#sumas").val(subtotalTotal.toFixed(8));
