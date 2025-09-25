@@ -958,28 +958,9 @@ function changetypesale(type){
     var price = $("#precio").val();
     var typedoc = $('#typedocument').val();
     var iva = parseFloat($("#iva").val());
-switch(type){
-    case 'gravada':
-        if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
-            $('#ivarete13').val(parseFloat(0));
-        }else{
-            $('#ivarete13').val(parseFloat(price*iva).toFixed(2));
-        }
 
-        if(typedoc=='8'){
-            $('#rentarete').val(parseFloat(price*0.10).toFixed(2));
-        }
-
-        break;
-    case 'exenta':
-        $('#ivarete13').val(0.00);
-        $('#ivarete').val(0.00);
-        $('#rentarete').val(0.00);
-        break;
-    case 'nosujeta':
-        $('#ivarete13').val(0.00);
-        break;
-}
+    // Llamar a totalamount() para recalcular todo correctamente
+    totalamount();
 }
 
 function eliminarpro(id) {
