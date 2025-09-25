@@ -1649,42 +1649,33 @@ function agregarfacdetails(corr) {
                     $("#cantidad").val(value.amountp);
                 }
 
-                if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                // Determinar si el item es gravado, exento o no sujeto (como Roma Copies)
+                var isGravado = parseFloat(value.pricesale) > 0 && parseFloat(value.nosujeta) == 0 && parseFloat(value.exempt) == 0;
+                var isExento = parseFloat(value.exempt) > 0;
+                var isNoSujeto = parseFloat(value.nosujeta) > 0;
+
+                if(typedoc=='3'){
+                    // CRÉDITO FISCAL: igual que Roma Copies
+                    preciounitario = parseFloat(value.priceunit); // Sin IVA
+                    if(isGravado) {
+                        preciogravadas = parseFloat(value.pricesale); // Sin IVA
+                        var iva13Line = parseFloat(preciogravadas * 0.13);
+                        ivarete13total += iva13Line;
+                    } else {
+                        preciogravadas = 0;
+                        var iva13Line = 0;
+                    }
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + iva13Line);
+                }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
                     preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
-                }else if(typedoc=='3'){
-                    // CRÉDITO FISCAL: el fee en BD ya viene sin IVA
-                    var feeSinIva = parseFloat(value.fee); // Fee ya viene sin IVA de la BD
-                    preciounitario = parseFloat(value.priceunit) + feeSinIva; // Precio unitario = precio + fee sin IVA
-                    preciogravadas = preciounitario * parseFloat(value.amountp); // (precio + fee) × cantidad
-                    // El IVA se calcula en la sección de abajo, no aquí
-                    ivarete13total += parseFloat(value.detained13);
-
-                    console.log("DEBUG DRAFT - Cálculo producto", index, ":", {
-                        priceunit: value.priceunit,
-                        fee: value.fee,
-                        feeSinIva: feeSinIva,
-                        preciounitario: preciounitario,
-                        preciogravadas: preciogravadas,
-                        detained13: value.detained13
-                    });
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else{
                     ivarete13total += parseFloat(value.detained13);
                     preciounitario = parseFloat(value.priceunit);
                     preciogravadas = parseFloat(value.pricesale);
-                }
-                // Calcular total correcto según tipo de venta
-                var totaltemp;
-                if (parseFloat(value.nosujeta) > 0) {
-                    // Venta no sujeta: solo usar nosujeta
-                    totaltemp = parseFloat(value.nosujeta);
-                } else if (parseFloat(value.exempt) > 0) {
-                    // Venta exenta: solo usar exempt
-                    totaltemp = parseFloat(value.exempt);
-                } else {
-                    // Venta gravada: usar preciogravadas
-                    totaltemp = parseFloat(preciogravadas);
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }
                 totalsumas += totaltemp;
                 rentatotal += parseFloat(value.renta);
@@ -1692,9 +1683,8 @@ function agregarfacdetails(corr) {
                 nosujetatotal += parseFloat(value.nosujeta);
                 exempttotal += parseFloat(value.exempt);
                 pricesaletotal += parseFloat(value.pricesale);
-                // Calcular total correcto para el resumen general
-                var totalProducto = totaltemp + parseFloat(value.detained13) - (parseFloat(value.renta) + parseFloat(value.detained));
-                totaltemptotal += totalProducto;
+                totaltemptotal += (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(value.pricesale))
+                + (parseFloat(value.detained13) - (parseFloat(value.renta) + (parseFloat(value.detained))));
                 var sumasl = 0;
                 var iva13l = 0;
                 var renta10l = 0;
@@ -1739,11 +1729,9 @@ function agregarfacdetails(corr) {
                     ')"><span class="ti ti-trash"></span></button></td></tr>';
                 $("#tblproduct tbody").append(row);
 
-                // Para otros documentos, usar la lógica original
-                if(typedoc!='3'){
-                    sumasl = totalsumas;
-                    iva13l = ivarete13total;
-                }
+                // Actualizar totales como Roma Copies
+                sumasl = totalsumas;
+                iva13l = ivarete13total;
 
                 $("#sumasl").html(
                     sumasl.toLocaleString("en-US", {
@@ -1809,64 +1797,6 @@ function agregarfacdetails(corr) {
                 $("#ventatotal").val(ventatotall);
             });
 
-            // Para Crédito Fiscal, calcular totales después de agregar todos los productos
-            if(typedoc=='3'){
-                // Agregar delay para asegurar que la tabla esté completamente renderizada
-                setTimeout(function() {
-                    var totalGravadas = 0;
-                    var totalIva = 0;
-
-                    // Sumar solo las ventas gravadas (excluir no sujetas y exentas)
-                    $("#tblproduct tbody tr").each(function(index) {
-                        var nosujetasText = $(this).find("td:eq(3)").text(); // Columna NO SUJETAS
-                        var exentasText = $(this).find("td:eq(4)").text(); // Columna EXENTAS
-                        var gravadasText = $(this).find("td:eq(5)").text(); // Columna GRAVADAS
-
-                        var nosujetas = parseFloat(nosujetasText.replace(/[$,]/g, '')) || 0;
-                        var exentas = parseFloat(exentasText.replace(/[$,]/g, '')) || 0;
-                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
-
-                        // Solo sumar a gravadas si no es venta no sujeta o exenta
-                        if (nosujetas === 0 && exentas === 0) {
-                            totalGravadas += gravadas;
-                        }
-
-                        console.log("DEBUG DRAFT FINAL - Fila", index, "nosujetas:", nosujetas, "exentas:", exentas, "gravadas:", gravadas, "totalGravadas:", totalGravadas);
-                    });
-
-                    // Calcular IVA solo sobre las ventas gravadas
-                    totalIva = totalGravadas * 0.13;
-
-                    // Actualizar los campos del resumen
-                    $("#sumasl").html(
-                        totalGravadas.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                        })
-                    );
-                    $("#sumas").val(totalGravadas);
-
-                    $("#13ival").html(
-                        totalIva.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                        })
-                    );
-                    $("#13iva").val(totalIva);
-
-                    // Calcular total general: gravadas + no sujetas + exentas + IVA
-                    var totalGeneral = totalGravadas + nosujetatotal + exempttotal + totalIva;
-
-                    $("#ventatotall").html(
-                        totalGeneral.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                        })
-                    );
-                    $("#ventatotallhidden").val(totalGeneral);
-                    $("#ventatotal").val(totalGeneral);
-                }, 500); // Delay de 500ms para asegurar renderizado completo
-            }
 
         },
         failure: function (response) {
