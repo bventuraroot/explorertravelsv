@@ -722,18 +722,36 @@ function totalamount() {
             // Actualizar totalamount para que refleje el subtotal total
             totalamount = subtotalTotal;
         } else if (typedoc === '6') {
-            // FACTURA: IVA calculado normalmente sobre producto
-            var ivaProducto = parseFloat(totalamount * 0.13);
-            ivarete13 = ivaProducto;
-            $("#ivarete13").val(ivarete13.toFixed(2)); // Factura usa 2 decimales
+            // FACTURA: Precio unitario CON IVA incluido, IVA mostrado como 0
+            var precioConIva = parseFloat(valor * 1.13); // Precio con IVA incluido
+            var ivaIncluido = parseFloat(valor * 0.13); // IVA incluido en el precio
+
+            // Actualizar el precio unitario para mostrar con IVA incluido
+            $("#precio").val(precioConIva.toFixed(2));
+
+            // El IVA se muestra como 0 porque ya está incluido en el precio
+            $("#ivarete13").val(0);
+            ivarete13 = 0.00;
+
+            // Recalcular totalamount con el nuevo precio
+            totalamount = parseFloat(precioConIva * cantidad);
         } else if (typedoc === '7') {
             // FACTURA DE EXPORTACIÓN: Sin IVA
             $("#ivarete13").val(0);
             ivarete13 = 0.00;
         } else if (typedoc === '8') {
-            // SUJETO EXCLUIDO: Sin IVA
+            // SUJETO EXCLUIDO: Precio unitario CON IVA incluido, IVA mostrado como 0
+            var precioConIva = parseFloat(valor * 1.13); // Precio con IVA incluido
+
+            // Actualizar el precio unitario para mostrar con IVA incluido
+            $("#precio").val(precioConIva.toFixed(2));
+
+            // El IVA se muestra como 0 porque ya está incluido en el precio
             $("#ivarete13").val(0);
             ivarete13 = 0.00;
+
+            // Recalcular totalamount con el nuevo precio
+            totalamount = parseFloat(precioConIva * cantidad);
         } else {
             // OTROS DOCUMENTOS: Sin IVA
             $("#ivarete13").val(0);
@@ -755,7 +773,16 @@ function totalamount() {
 
     // Total general: precio + fee*cantidad + IVA - retenciones
     totalfee = parseFloat(fee * cantidad);
-    var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
+
+    // Para facturas y sujeto excluido, el IVA ya está incluido en totalamount
+    var totalFinal;
+    if (typedoc === '6' || typedoc === '8') {
+        // Factura y Sujeto Excluido: IVA ya incluido en totalamount
+        totalFinal = totalamount + totalfee - retencionamount - renta;
+    } else {
+        // Otros documentos: sumar IVA por separado
+        totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
+    }
 
     $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
 }
