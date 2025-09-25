@@ -1780,13 +1780,8 @@ function agregarfacdetails(corr) {
                 );
                 $("#ventasexentas").val(ventasexentasl);
 
-                if(typedoc=='3'){
-                    // Para Crédito Fiscal, usar el total calculado en totalamount()
-                    ventatotall = parseFloat($("#total").val()) || 0;
-                } else {
-                    // Para otros documentos, usar la lógica original
-                    ventatotall = totaltemptotal;
-                }
+                // Calcular total general: sumas + IVA - retenciones (como Roma Copies)
+                ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
                 $("#ventatotall").html(
                     ventatotall.toLocaleString("en-US", {
                         style: "currency",
