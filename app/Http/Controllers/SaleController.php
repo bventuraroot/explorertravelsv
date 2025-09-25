@@ -27,19 +27,19 @@ class SaleController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $id_user = auth()->user()->id;
-        // Consultar el rol del usuario (asumiendo que el rol de admin tiene role_id = 1)
+        // Consultar el rol del usuario (asumiendo que el rol de admin tiene role_id = 1 y contabilidad role_id = 2)
         $rolQuery = "SELECT a.role_id FROM model_has_roles a WHERE a.model_id = ?";
         $rolResult = DB::select($rolQuery, [$id_user]);
-        $isAdmin = !empty($rolResult) && $rolResult[0]->role_id == 1;
+        $isAdmin = !empty($rolResult) && ($rolResult[0]->role_id == 1 || $rolResult[0]->role_id == 2);
 
-        // Consulta original (puede mostrar duplicados si hay múltiples DTE asociados)
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->where('sales.typesale', '<>', '3')
             ->select(
                 'sales.*',
                 'typedocuments.description AS document_name',
@@ -53,31 +53,82 @@ class SaleController extends Controller
                 'dte.estadoHacienda',
                 'dte.id_doc',
                 'dte.company_name',
-                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale')
-            )
-            ->where(function($query) {
-                $query->whereNull('dte.Estado')
-                      ->orWhere('dte.Estado', '<>', 'Rechazado');
-            });
+                DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'),
+                DB::raw('(SELECT COUNT(*) FROM sales nc INNER JOIN typedocuments tdnc ON nc.typedocument_id = tdnc.id WHERE nc.doc_related = sales.id AND tdnc.type = "NCR" AND nc.state = 1) AS tiene_nota_credito'),
+                DB::raw('(SELECT COUNT(*) FROM sales nd INNER JOIN typedocuments tdnd ON nd.typedocument_id = tdnd.id WHERE nd.doc_related = sales.id AND tdnd.type = "NDB" AND nd.state = 1) AS tiene_nota_debito'),
+                DB::raw('(SELECT GROUP_CONCAT(CONCAT(dte_nc.id_doc, " (", nc.date, ")") SEPARATOR ", ") FROM sales nc INNER JOIN typedocuments tdnc ON nc.typedocument_id = tdnc.id INNER JOIN dte dte_nc ON dte_nc.sale_id = nc.id WHERE nc.doc_related = sales.id AND tdnc.type = "NCR" AND nc.state = 1) AS notas_credito'),
+                DB::raw('(SELECT GROUP_CONCAT(CONCAT(dte_nd.id_doc, " (", nd.date, ")") SEPARATOR ", ") FROM sales nd INNER JOIN typedocuments tdnd ON nd.typedocument_id = tdnd.id INNER JOIN dte dte_nd ON dte_nd.sale_id = nd.id WHERE nd.doc_related = sales.id AND tdnd.type = "NDB" AND nd.state = 1) AS notas_debito'),
+                DB::raw('CASE
+                    WHEN sales.totalamount IS NULL OR sales.totalamount = 0 THEN
+                        COALESCE((SELECT SUM(sd.nosujeta + sd.exempt + sd.pricesale + sd.detained13 - sd.renta - sd.detained)
+                                 FROM salesdetails sd WHERE sd.sale_id = sales.id), 0)
+                    ELSE sales.totalamount
+                END AS calculated_total'));
+
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
             $sales->where('sales.user_id', $id_user);
         }
 
-        // Obtener las ventas filtradas (solo con DTE "Enviado")
-        $sales = $sales->get();
+        // Aplicar filtros de fecha
+        if ($request->filled('fecha_desde') && $request->filled('fecha_hasta')) {
+            // Si se proporcionan ambas fechas, usar el rango especificado
+            $sales->where('sales.date', '>=', $request->fecha_desde)
+                  ->where('sales.date', '<=', $request->fecha_hasta);
+        } elseif ($request->filled('fecha_desde')) {
+            // Si solo se proporciona fecha desde, mostrar desde esa fecha hasta hoy
+            $sales->where('sales.date', '>=', $request->fecha_desde)
+                  ->where('sales.date', '<=', date('Y-m-d'));
+        } elseif ($request->filled('fecha_hasta')) {
+            // Si solo se proporciona fecha hasta, mostrar los últimos 7 días hasta esa fecha
+            $fechaDesde = date('Y-m-d', strtotime($request->fecha_hasta . ' -7 days'));
+            $sales->where('sales.date', '>=', $fechaDesde)
+                  ->where('sales.date', '<=', $request->fecha_hasta);
+        } else {
+            // Si no se proporcionan fechas, mostrar solo los últimos 7 días por defecto
+            $fechaHasta = date('Y-m-d');
+            $fechaDesde = date('Y-m-d', strtotime('-7 days'));
+            $sales->where('sales.date', '>=', $fechaDesde)
+                  ->where('sales.date', '<=', $fechaHasta);
+        }
 
-        // Obtener tipos de documento para el filtro
-        $tiposDocumento = DB::table('typedocuments')->get();
+        if ($request->filled('tipo_documento')) {
+            $sales->where('sales.typedocument_id', $request->tipo_documento);
+        }
 
-        // Obtener clientes para el filtro
-        $clientes = DB::table('clients')->get();
+        if ($request->filled('correlativo')) {
+            $correlativo = $request->correlativo;
+            $sales->where(function($query) use ($correlativo) {
+                $query->where('sales.id', 'LIKE', "%{$correlativo}%")
+                      ->orWhere('dte.id_doc', 'LIKE', "%{$correlativo}%");
+            });
+        }
 
-        return view('sales.index', array(
-            "sales" => $sales,
-            "tiposDocumento" => $tiposDocumento,
-            "clientes" => $clientes
-        ));
+        if ($request->filled('cliente_id')) {
+            $sales->where('sales.client_id', $request->cliente_id);
+        }
+
+        // Obtener los datos para los filtros
+        $tiposDocumento = DB::table('typedocuments')
+            ->select('id', 'description')
+            ->orderBy('description')
+            ->get();
+
+        $clientes = DB::table('clients')
+            ->select('id', 'name_contribuyente', 'comercial_name', 'firstname', 'firstlastname', 'tpersona')
+            ->orderBy('name_contribuyente')
+            ->get();
+
+        // Obtener la primera empresa (la que siempre se usa)
+        $empresaPrincipal = DB::table('companies')
+            ->select('id', 'name')
+            ->orderBy('id')
+            ->first();
+
+        // Obtener las ventas filtradas ordenadas por fecha descendente
+        $sales = $sales->orderBy('sales.date', 'desc')->get();
+
+        return view('sales.index', compact('sales', 'tiposDocumento', 'clientes', 'empresaPrincipal'));
     }
 
     public function impdoc($corr)
@@ -546,7 +597,7 @@ class SaleController extends Controller
         ELSE c.name
         END AS descripcion,
         b.amountp cantidad,
-        (b.priceunit+b.fee) precio_unitario,
+        (b.priceunit) precio_unitario,
         0 descuento,
         0 no_imponible,
         (b.pricesale+b.nosujeta+b.exempt) subtotal,
