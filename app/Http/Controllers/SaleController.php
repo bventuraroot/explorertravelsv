@@ -193,18 +193,24 @@ class SaleController extends Controller
                 }
 
                 if ($sale->typedocument_id == '8') {
+                    // Sujeto excluido: precio con IVA, pero IVA = 0
                     $priceunitariofac = $price;
                     $pricegravadafac = $pricegravada;
                     $ivafac = 0.00;
+                } elseif ($sale->typedocument_id == '3') {
+                    // Crédito fiscal: quitar IVA del precio y calcularlo por separado
+                    $pricegravadafac = round($pricegravada / 1.13, 3);
+                    $ivafac = round($pricegravada - $pricegravadafac, 2);
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
                 }
             } elseif ($tipoVenta === 'exenta') {
                 // Venta exenta: precio ya incluye IVA, pero NO generamos IVA adicional
-                $priceunitariofac = round($price, 3);
+                $priceunitariofac = round($price + $fee, 3); // Incluir fee sin IVA
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
                 // Venta no sujeta: precio ya incluye IVA, pero NO generamos IVA adicional
-                $priceunitariofac = round($price, 3);
+                $priceunitariofac = round($price + $fee, 3); // Incluir fee sin IVA
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } else {
@@ -215,18 +221,30 @@ class SaleController extends Controller
                 if ($pricegravada != "0.00") {
                     $priceunitariofac = round($pricegravadafac / $cantidad, 3);
                 } else {
-                    $priceunitariofac = round($price, 3);
+                    $priceunitariofac = round($price + $fee, 3);
                 }
 
                 if ($sale->typedocument_id == '8') {
-                    $priceunitariofac = $price;
+                    // Sujeto excluido: precio con IVA, pero IVA = 0
+                    $priceunitariofac = $price + $fee;
                     $pricegravadafac = $pricegravada;
                     $ivafac = 0.00;
+                } elseif ($sale->typedocument_id == '3') {
+                    // Crédito fiscal: quitar IVA del precio y calcularlo por separado
+                    $pricegravadafac = round($pricegravada / 1.13, 3);
+                    $ivafac = round($pricegravada - $pricegravadafac, 2);
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
                 }
             }
-            //iva al fee
-            $feesiniva = round($fee / 1.13, 2);
-            $ivafee = round($fee - $feesiniva, 2);
+            //iva al fee - solo para ventas gravadas
+            if ($tipoVenta === 'gravada') {
+                $feesiniva = round($fee / 1.13, 2);
+                $ivafee = round($fee - $feesiniva, 2);
+            } else {
+                // Para ventas exentas/no sujetas, el fee no tiene IVA
+                $feesiniva = round($fee, 2);
+                $ivafee = 0.00;
+            }
 
             $saledetails = new Salesdetail();
             $saledetails->sale_id = $idsale;

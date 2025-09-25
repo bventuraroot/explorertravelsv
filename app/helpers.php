@@ -670,7 +670,16 @@ if (!function_exists('fac')) {
             $properties_items_cuerpoDocumento = array();
 
             $iva_calculadofac = round(($item->iva/$item->cantidad),2);
-
+            if($item->no_sujetas > 0){
+            $ventagravada = 0;
+            $ivaItem = 0;
+            }else if($item->exentas > 0){
+            $ventagravada = 0;
+            $ivaItem = 0;
+            }else{
+            $ventagravada = round((float)($item->gravadas + $item->iva), 2);
+            $ivaItem = round((float)$item->iva, 2);
+            }
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i, //intval($item["corr"]),
                 "tipoItem"          => intval($item->tipo_item),
@@ -680,17 +689,15 @@ if (!function_exists('fac')) {
                 "codTributo"        => null,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-
-
                 "precioUni"         => round((float)($item->precio_unitario + $iva_calculadofac), 2),
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => (float)$item->no_sujetas,
                 "ventaExenta"       => (float)$item->exentas,
-                "ventaGravada"      => round((float)($item->gravadas + $item->iva), 2),
+                "ventaGravada"      => $ventagravada,
                 "tributos"          =>  null,
                 "psv"               => (float)"0.00",
                 "noGravado"         => (float)$item->no_imponible,
-                "ivaItem"           => round((float)$item->iva,2)
+                "ivaItem"           => $ivaItem
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
