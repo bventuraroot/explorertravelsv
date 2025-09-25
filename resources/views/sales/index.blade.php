@@ -237,7 +237,7 @@
 
         <!-- Filtros -->
         <div class="card-body">
-            <form method="GET" action="{{ route('sale.index') }}" class="mb-4 row g-3">
+            <form method="GET" action="{{ route('sale.index') }}" class="mb-4 row g-3 filter-form" id="filter-form">
                 <div class="col-md-2">
                     <label class="form-label">Fecha Desde</label>
                     <input type="date" name="fecha_desde" class="form-control" value="{{ request('fecha_desde') }}">

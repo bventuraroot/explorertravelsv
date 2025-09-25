@@ -633,11 +633,14 @@ $(document).ready(function() {
     // Inicializar popovers
     $('[data-bs-toggle="popover"]').popover();
 
-    // Configurar validación de formularios
+    // Configurar validación de formularios (excluyendo formularios de filtros)
     $('form').on('submit', function(e) {
-        if (!validarFormulario(this.id)) {
-            e.preventDefault();
-            mostrarToast('Por favor complete todos los campos requeridos', 'error');
+        // Excluir formularios de filtros de la validación
+        if (!$(this).hasClass('filter-form') && !$(this).attr('action').includes('sale.index')) {
+            if (!validarFormulario(this.id)) {
+                e.preventDefault();
+                mostrarToast('Por favor complete todos los campos requeridos', 'error');
+            }
         }
     });
 
