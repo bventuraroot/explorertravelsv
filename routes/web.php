@@ -154,7 +154,10 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('createdocument/{corr}/{amount}', [SaleController::class, 'createdocument'])->name('createdocument');
         Route::get('impdoc/{corr}', [SaleController::class, 'impdoc'])->name('impdoc');
         Route::get('destroy/{id}', [SaleController::class, 'destroy'])->name('destroy');
-        Route::get('savefactemp/{idsale}/{clientid}/{productid}/{cantida}/{price}/{nosujeto}/{exento}/{gravado}/{iva}/{renta}/{retenido}/{acuenta}/{fpago}/{fee}/{reserva}/{ruta}/{destino}/{linea}/{canal}/{description}/{tipoVenta?}', [SaleController::class, 'savefactemp'])->name('savefactemp');
+        // Nuevo endpoint POST seguro
+        Route::post('savefactemp', [SaleController::class, 'savefactempPost'])->name('savefactemp.post');
+        // Mantener compatibilidad GET temporalmente
+        Route::get('savefactemp/{idsale}/{clientid}/{productid}/{cantida}/{price}/{nosujeto}/{exento}/{gravado}/{iva}/{renta}/{retenido}/{acuenta}/{fpago}/{fee}/{reserva}/{ruta}/{destino}/{linea}/{canal}/{description}/{tipoVenta}', [SaleController::class, 'savefactemp'])->name('savefactemp');
         Route::get('newcorrsale/{idempresa}/{iduser}/{typedocument}', [SaleController::class, 'newcorrsale'])->name('newcorrsale');
         Route::get('getdetailsdoc/{corr}', [SaleController::class, 'getdetailsdoc'])->name('getdetailsdoc');
         Route::get('destroysaledetail/{idsaledetail}', [SaleController::class, 'destroysaledetail'])->name('destroysaledetail');

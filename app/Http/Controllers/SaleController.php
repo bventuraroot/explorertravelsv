@@ -85,8 +85,92 @@ class SaleController extends Controller
         return view('sales.impdoc', array("corr" => $corr));
     }
 
+    /**
+     * Nuevo endpoint POST para agregar detalle de venta de forma segura.
+     * Acepta los mismos campos que el GET anterior y delega a savefactemp().
+     */
+    public function savefactempPost(Request $request)
+    {
+        $validated = $request->validate([
+            'idsale' => 'required',
+            'clientid' => 'required',
+            'productid' => 'required',
+            'cantidad' => 'required|numeric',
+            'price' => 'required|numeric',
+            'pricenosujeta' => 'required|numeric',
+            'priceexenta' => 'required|numeric',
+            'pricegravada' => 'required|numeric',
+            'ivarete13' => 'required|numeric',
+            'renta' => 'required|numeric',
+            'ivarete' => 'required|numeric',
+            'acuenta' => 'nullable|string',
+            'fpago' => 'required',
+            'fee' => 'nullable|numeric',
+            'reserva' => 'nullable|string',
+            'ruta' => 'nullable|string',
+            'destino' => 'nullable|string',
+            'linea' => 'nullable|string',
+            'canal' => 'nullable|string',
+            'description' => 'nullable|string',
+            'tipoVenta' => 'nullable|string',
+        ]);
+
+        // Normalizar valores nulos
+        $acuenta = $request->input('acuenta', '');
+        $fee = $request->input('fee', 0);
+        $reserva = $request->input('reserva', '');
+        $ruta = $request->input('ruta', '');
+        $destino = $request->input('destino', '');
+        $linea = $request->input('linea', '');
+        $canal = $request->input('canal', '');
+        $description = $request->input('description', '');
+        $tipoVenta = $request->input('tipoVenta', 'gravada');
+
+        return $this->savefactemp(
+            $request->idsale,
+            $request->clientid,
+            $request->productid,
+            $request->cantidad,
+            $request->price,
+            $request->pricenosujeta,
+            $request->priceexenta,
+            $request->pricegravada,
+            $request->ivarete13,
+            $request->renta,
+            $request->ivarete,
+            $acuenta,
+            $request->fpago,
+            $fee,
+            $reserva,
+            $ruta,
+            $destino,
+            $linea,
+            $canal,
+            $description,
+            $tipoVenta
+        );
+    }
+
     public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada')
     {
+        // Limpiar parámetros que vienen como 'SIN_VALOR'
+        $acuenta = ($acuenta === 'SIN_VALOR') ? '' : $acuenta;
+        $reserva = ($reserva === 'SIN_VALOR') ? '' : $reserva;
+        $ruta = ($ruta === 'SIN_VALOR') ? '' : $ruta;
+        $destino = ($destino === 'SIN_VALOR') ? '' : $destino;
+        $linea = ($linea === 'SIN_VALOR') ? '' : $linea;
+        $canal = ($canal === 'SIN_VALOR') ? '' : $canal;
+        $description = ($description === 'SIN_VALOR') ? '' : $description;
+
+        // Log para debug
+        Log::info('savefactemp llamado', [
+            'tipoVenta' => $tipoVenta,
+            'price' => $price,
+            'pricenosujeta' => $pricenosujeta,
+            'priceexenta' => $priceexenta,
+            'pricegravada' => $pricegravada
+        ]);
+
         DB::beginTransaction();
 
         try {
@@ -358,7 +442,7 @@ class SaleController extends Controller
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(pricesale) gravadas,
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE pricesale END) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -371,7 +455,7 @@ class SaleController extends Controller
             0 ivarete,
             SUM(renta) rentarete,
             NULL pagos,
-            SUM(detained13) iva')
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
                 )
                 ->get();
             //detalle de montos de la factura
@@ -1273,7 +1357,7 @@ class SaleController extends Controller
             ->select(
                 DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(pricesale) gravadas,
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE pricesale END) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -1286,7 +1370,7 @@ class SaleController extends Controller
             0 ivarete,
             0 rentarete,
             NULL pagos,
-            SUM(detained13) iva')
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
             )
             ->get();
         //detalle de montos de la factura

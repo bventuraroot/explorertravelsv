@@ -463,35 +463,40 @@ function agregarp() {
 
     // Armar URL absoluta y codificada para evitar caracteres inválidos
     // Asegurar que todos los valores estén correctamente codificados
-    var url =
-        "/sale/savefactemp/" + encodeURIComponent(corrid) +
-        "/" + encodeURIComponent(clientid) +
-        "/" + encodeURIComponent(productid) +
-        "/" + encodeURIComponent(cantidad) +
-        "/" + encodeURIComponent(price) +
-        "/" + encodeURIComponent(pricenosujeta) +
-        "/" + encodeURIComponent(priceexenta) +
-        "/" + encodeURIComponent(pricegravada) +
-        "/" + encodeURIComponent(ivarete13) +
-        "/" + encodeURIComponent(rentarete) +
-        "/" + encodeURIComponent(ivarete) +
-        "/" + encodeURIComponent(acuenta) +
-        "/" + encodeURIComponent(fpago) +
-        "/" + encodeURIComponent(fee) +
-        "/" + encodeURIComponent(reserva || '') +
-        "/" + encodeURIComponent(ruta || '') +
-        "/" + encodeURIComponent(destino || '') +
-        "/" + encodeURIComponent(linea || '') +
-        "/" + encodeURIComponent(canal || '') +
-        "/" + encodeURIComponent(descriptionbyproduct || '') +
-        "/" + encodeURIComponent(type || 'gravada');
+    // Enviar por POST (como en Roma Copies), con CSRF
+    var postUrl = "/sale/savefactemp";
+    var dataPost = {
+        idsale: corrid,
+        clientid: clientid,
+        productid: productid,
+        cantidad: cantidad,
+        price: price,
+        pricenosujeta: pricenosujeta,
+        priceexenta: priceexenta,
+        pricegravada: pricegravada,
+        ivarete13: ivarete13,
+        renta: rentarete,
+        ivarete: ivarete,
+        acuenta: acuenta,
+        fpago: fpago,
+        fee: fee,
+        reserva: reserva,
+        ruta: ruta,
+        destino: destino,
+        linea: linea,
+        canal: canal,
+        description: descriptionbyproduct,
+        tipoVenta: type
+    };
 
     console.log("DEBUG TIPO VENTA:", type);
-    console.log("DEBUG URL COMPLETA:", url);
+    console.log("DEBUG POST:", postUrl, dataPost);
 
     $.ajax({
-        url: url,
-        method: "GET",
+        url: postUrl,
+        method: "POST",
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        data: dataPost,
         success: function (response) {
             if (response.res == 1) {
                 var row =
