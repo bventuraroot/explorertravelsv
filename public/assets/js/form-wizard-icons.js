@@ -1674,15 +1674,27 @@ function agregarfacdetails(corr) {
                     preciounitario = parseFloat(value.priceunit);
                     preciogravadas = parseFloat(value.pricesale);
                 }
-                var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
+                // Calcular total correcto según tipo de venta
+                var totaltemp;
+                if (parseFloat(value.nosujeta) > 0) {
+                    // Venta no sujeta: solo usar nosujeta
+                    totaltemp = parseFloat(value.nosujeta);
+                } else if (parseFloat(value.exempt) > 0) {
+                    // Venta exenta: solo usar exempt
+                    totaltemp = parseFloat(value.exempt);
+                } else {
+                    // Venta gravada: usar preciogravadas
+                    totaltemp = parseFloat(preciogravadas);
+                }
                 totalsumas += totaltemp;
                 rentatotal += parseFloat(value.renta);
                 ivaretetotal += parseFloat(value.detained);
                 nosujetatotal += parseFloat(value.nosujeta);
                 exempttotal += parseFloat(value.exempt);
                 pricesaletotal += parseFloat(value.pricesale);
-                totaltemptotal += (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(value.pricesale))
-                + (parseFloat(value.detained13) - (parseFloat(value.renta) + (parseFloat(value.detained))));
+                // Calcular total correcto para el resumen general
+                var totalProducto = totaltemp + parseFloat(value.detained13) - (parseFloat(value.renta) + parseFloat(value.detained));
+                totaltemptotal += totalProducto;
                 var sumasl = 0;
                 var iva13l = 0;
                 var renta10l = 0;
