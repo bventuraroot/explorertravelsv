@@ -114,15 +114,15 @@ class SaleController extends Controller
                     $ivafac = 0.00;
                 }
             } elseif ($tipoVenta === 'exenta') {
-                // Venta exenta: NO genera IVA
+                // Venta exenta: precio ya incluye IVA, pero NO generamos IVA adicional
                 $priceunitariofac = round($price, 3);
-                $pricegravadafac = 0.00;
-                $ivafac = 0.00;
+                $pricegravadafac = 0.00; // No va en gravadas
+                $ivafac = 0.00; // No genera IVA
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                // Venta no sujeta: NO genera IVA
+                // Venta no sujeta: precio ya incluye IVA, pero NO generamos IVA adicional
                 $priceunitariofac = round($price, 3);
-                $pricegravadafac = 0.00;
-                $ivafac = 0.00;
+                $pricegravadafac = 0.00; // No va en gravadas
+                $ivafac = 0.00; // No genera IVA
             } else {
                 // Por defecto, tratar como gravada
                 $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
@@ -158,10 +158,10 @@ class SaleController extends Controller
                 $saledetails->detained13 = round($ivafac, 2);
             } elseif ($tipoVenta === 'exenta') {
                 $saledetails->nosujeta = 0.00;
-                $saledetails->exempt = $priceexenta;
+                $saledetails->exempt = $priceexenta; // El precio total ya incluye IVA
                 $saledetails->detained13 = 0.00;
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                $saledetails->nosujeta = $pricenosujeta;
+                $saledetails->nosujeta = $pricenosujeta; // El precio total ya incluye IVA
                 $saledetails->exempt = 0.00;
                 $saledetails->detained13 = 0.00;
             } else {

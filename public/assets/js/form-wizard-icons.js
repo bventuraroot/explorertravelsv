@@ -486,6 +486,7 @@ function agregarp() {
         "/" + encodeURIComponent(descriptionbyproduct || '') +
         "/" + encodeURIComponent(type || 'gravada');
 
+    console.log("DEBUG TIPO VENTA:", type);
     console.log("DEBUG URL COMPLETA:", url);
 
     $.ajax({
