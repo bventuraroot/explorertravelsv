@@ -1816,22 +1816,25 @@ function agregarfacdetails(corr) {
                     var totalGravadas = 0;
                     var totalIva = 0;
 
-                    // Sumar todos los productos de la tabla
+                    // Sumar solo las ventas gravadas (excluir no sujetas y exentas)
                     $("#tblproduct tbody tr").each(function(index) {
+                        var nosujetasText = $(this).find("td:eq(3)").text(); // Columna NO SUJETAS
+                        var exentasText = $(this).find("td:eq(4)").text(); // Columna EXENTAS
                         var gravadasText = $(this).find("td:eq(5)").text(); // Columna GRAVADAS
+
+                        var nosujetas = parseFloat(nosujetasText.replace(/[$,]/g, '')) || 0;
+                        var exentas = parseFloat(exentasText.replace(/[$,]/g, '')) || 0;
                         var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
 
-                        // Para Crédito Fiscal, necesitamos sumar también el fee
-                        // El fee se guarda por separado, así que necesitamos obtenerlo de los datos originales
-                        // Por ahora, usaremos el precio unitario que ya incluye el fee
-                        var precioUnitarioText = $(this).find("td:eq(2)").text(); // Columna PRECIO UNIT.
-                        var precioUnitario = parseFloat(precioUnitarioText.replace(/[$,]/g, '')) || 0;
+                        // Solo sumar a gravadas si no es venta no sujeta o exenta
+                        if (nosujetas === 0 && exentas === 0) {
+                            totalGravadas += gravadas;
+                        }
 
-                        totalGravadas += precioUnitario; // Usar precio unitario que incluye fee
-                        console.log("DEBUG DRAFT FINAL - Fila", index, "gravadas:", gravadas, "precioUnitario:", precioUnitario, "totalGravadas:", totalGravadas);
+                        console.log("DEBUG DRAFT FINAL - Fila", index, "nosujetas:", nosujetas, "exentas:", exentas, "gravadas:", gravadas, "totalGravadas:", totalGravadas);
                     });
 
-                    // Calcular IVA sobre el total de gravadas
+                    // Calcular IVA solo sobre las ventas gravadas
                     totalIva = totalGravadas * 0.13;
 
                     // Actualizar los campos del resumen
@@ -1851,14 +1854,17 @@ function agregarfacdetails(corr) {
                     );
                     $("#13iva").val(totalIva);
 
+                    // Calcular total general: gravadas + no sujetas + exentas + IVA
+                    var totalGeneral = totalGravadas + nosujetatotal + exempttotal + totalIva;
+
                     $("#ventatotall").html(
-                        (totalGravadas + totalIva).toLocaleString("en-US", {
+                        totalGeneral.toLocaleString("en-US", {
                             style: "currency",
                             currency: "USD",
                         })
                     );
-                    $("#ventatotallhidden").val(totalGravadas + totalIva);
-                    $("#ventatotal").val(totalGravadas + totalIva);
+                    $("#ventatotallhidden").val(totalGeneral);
+                    $("#ventatotal").val(totalGeneral);
                 }, 500); // Delay de 500ms para asegurar renderizado completo
             }
 
