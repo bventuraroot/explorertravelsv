@@ -715,9 +715,16 @@ function totalamount() {
             // Subtotal total sin IVA
             var subtotalTotal = subtotalProducto + subtotalFee;
 
-            // Calcular IVA sobre el subtotal total sin IVA
-            ivarete13 = parseFloat(subtotalTotal * 0.13);
-            $("#ivarete13").val(ivarete13.toFixed(8));
+            // Para crédito fiscal, solo calcular IVA si es venta gravada
+            if (type === 'gravada') {
+                // Calcular IVA sobre el subtotal total sin IVA
+                ivarete13 = parseFloat(subtotalTotal * 0.13);
+                $("#ivarete13").val(ivarete13.toFixed(8));
+            } else {
+                // Para exenta/no sujeta, no calcular IVA
+                ivarete13 = 0.00;
+                $("#ivarete13").val(0);
+            }
 
             // Actualizar totalamount para que refleje el subtotal total
             totalamount = subtotalTotal;
