@@ -1810,9 +1810,9 @@ function agregarfacdetails(corr) {
             );
             $("#ventasexentas").val(ventasexentasl);
 
-            // Calcular total general: gravadas + no sujetas + exentas + IVA - retenciones
-            // totalsumas corresponde a gravadas (base sin IVA)
-            ventatotall = (totalsumas + nosujetatotal + exempttotal) + ivarete13total - (rentatotal + ivaretetotal);
+            // Calcular total general: SUMAS (subtotal ventas) + IVA - retenciones
+            // "SUMAS" ya incluye gravadas + no sujetas + exentas. No volver a sumar no sujetas/exentas.
+            ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
             $("#ventatotall").html(
                 ventatotall.toLocaleString("en-US", { style: "currency", currency: "USD" })
             );
