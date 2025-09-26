@@ -1810,8 +1810,9 @@ function agregarfacdetails(corr) {
             );
             $("#ventasexentas").val(ventasexentasl);
 
-            // Calcular total general: sumas + IVA - retenciones (como Roma Copies)
-            ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
+            // Calcular total general: gravadas + no sujetas + exentas + IVA - retenciones
+            // totalsumas corresponde a gravadas (base sin IVA)
+            ventatotall = (totalsumas + nosujetatotal + exempttotal) + ivarete13total - (rentatotal + ivaretetotal);
             $("#ventatotall").html(
                 ventatotall.toLocaleString("en-US", { style: "currency", currency: "USD" })
             );
