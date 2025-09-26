@@ -178,7 +178,7 @@ $(document).ready(function () {
 
     $("#ncredit").inputmask("999999-9");
     $("#nitedit").inputmask("99999999-9");
-    $("#pasaporteedit").inputmask("AAAAAAAAAA");
+    // Sin máscara para el pasaporte - permite cualquier formato
     $("#tel1edit").inputmask("9999-9999");
     $("#tel2edit").inputmask("9999-9999");
 
