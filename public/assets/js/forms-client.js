@@ -695,7 +695,7 @@ function editClient(id) {
                 Swal.fire('Error', 'No se pudieron cargar los datos del cliente', 'error');
                 return;
             }
-            
+
             llamarselected(
                 response[0]["country"],
                 response[0]["departament"],
