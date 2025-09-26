@@ -1055,3 +1055,72 @@ function mask(inputField, separator, pattern, nums) {
         inputField.valant = val;
     }
 }
+
+// Manejo específico del formulario de edición de clientes
+$(document).ready(function() {
+    $('#addNewClientForm').on('submit', function(e) {
+        e.preventDefault();
+
+        // Mostrar loading
+        Swal.fire({
+            title: 'Guardando...',
+            text: 'Por favor espera',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Obtener datos del formulario
+        var formData = new FormData(this);
+
+        // Enviar datos
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                Swal.close();
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: 'Cliente actualizado correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    location.reload();
+                });
+            },
+            error: function(xhr) {
+                Swal.close();
+
+                var errorMessage = 'Error al guardar el cliente';
+                var errorDetails = '';
+
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    if (xhr.responseJSON.errors) {
+                        errorDetails = '<ul>';
+                        $.each(xhr.responseJSON.errors, function(key, value) {
+                            errorDetails += '<li>' + value[0] + '</li>';
+                        });
+                        errorDetails += '</ul>';
+                    }
+                } else if (xhr.responseText) {
+                    errorDetails = xhr.responseText;
+                }
+
+                Swal.fire({
+                    title: 'Error',
+                    html: '<strong>' + errorMessage + '</strong>' + (errorDetails ? '<br><br>' + errorDetails : ''),
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    });
+});
