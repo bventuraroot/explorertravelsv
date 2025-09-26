@@ -796,9 +796,21 @@ function editClient(id) {
                     $("#extranjerolabeledit").css("display", "block !important");
                     $("#extranjerolabeledit").css("visibility", "visible !important");
                     $("#extranjerolabeledit").css("opacity", "1 !important");
+                    $("#extranjerolabeledit").css("position", "relative !important");
+                    $("#extranjerolabeledit").css("z-index", "9999 !important");
                     $("#extranjerolabeledit").show();
                     $("#extranjerolabeledit").removeClass("d-none");
                     $("#extranjerolabeledit").addClass("d-block");
+
+                    // Forzar visibilidad del elemento directamente
+                    var element = $("#extranjerolabeledit")[0];
+                    if (element) {
+                        element.style.display = "block";
+                        element.style.visibility = "visible";
+                        element.style.opacity = "1";
+                        element.style.position = "relative";
+                        element.style.zIndex = "9999";
+                    }
 
                     // Verificar si el elemento padre está oculto
                     var parent = $("#extranjerolabeledit").parent();
@@ -817,6 +829,17 @@ function editClient(id) {
                     console.log("Computed display:", computedStyle.display);
                     console.log("Computed visibility:", computedStyle.visibility);
                     console.log("Computed opacity:", computedStyle.opacity);
+                    console.log("Computed position:", computedStyle.position);
+                    console.log("Computed z-index:", computedStyle.zIndex);
+                    console.log("Computed width:", computedStyle.width);
+                    console.log("Computed height:", computedStyle.height);
+                    console.log("Computed top:", computedStyle.top);
+                    console.log("Computed left:", computedStyle.left);
+
+                    // Verificar si el elemento está fuera de la pantalla
+                    var rect = $("#extranjerolabeledit")[0].getBoundingClientRect();
+                    console.log("Element rect:", rect);
+                    console.log("Element is in viewport:", rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth);
 
                     console.log("Forced visibility after modal open - extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                 }
