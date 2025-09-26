@@ -356,21 +356,6 @@ $configData = Helper::appClasses();
                 <span class="switch-label">¿Es Contribuyente?</span>
             </label>
         </div>
-        <div class="mb-3">
-            <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit">
-                <input type="checkbox" class="switch-input" id="extranjeroedit" name="extranjeroedit"
-                    onclick="esextranjeroedit();" />
-                <span class="switch-toggle-slider">
-                    <span class="switch-on">
-                        <i class="ti ti-check"></i>
-                    </span>
-                    <span class="switch-off">
-                        <i class="ti ti-x"></i>
-                    </span>
-                </span>
-                <span class="switch-label">¿Es Extranjero?</span>
-            </label>
-        </div>
                 <div id="siescontri" style="display: none;">
                     <div class="mb-3">
                         <label class="form-label" for="legal">Representante Legal</label>
@@ -538,6 +523,22 @@ $configData = Helper::appClasses();
                     <span class="switch-label">¿Es Contribuyente?</span>
                 </label>
                 <input type="hidden" value="0" name="contribuyenteeditvalor" id="contribuyenteeditvalor">
+            </div>
+            <div class="mb-3">
+                <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit"
+                    style="display: none;">
+                    <input type="checkbox" class="switch-input" id="extranjeroedit" name="extranjeroedit"
+                        onclick="esextranjeroedit();" />
+                    <span class="switch-toggle-slider">
+                        <span class="switch-on">
+                            <i class="ti ti-check"></i>
+                        </span>
+                        <span class="switch-off">
+                            <i class="ti ti-x"></i>
+                        </span>
+                    </span>
+                    <span class="switch-label">¿Es Extranjero?</span>
+                </label>
             </div>
             <div class="mb-3" id="dui_fields">
                 <label class="form-label" for="nitedit">DUI/NIT</label>
