@@ -295,14 +295,14 @@ $configData = Helper::appClasses();
                     <label for="departament" class="form-label">Departamento</label>
                     <select class="select2dep form-select" id="departament" name="departament"
                         aria-label="Seleccionar opcion" onchange="getmunicipio(this.value,'','')">
-                        <option selected>Seleccione</option>
+                        <option value="0" selected>No aplica</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label for="municipio" class="form-label">Municipio</label>
                     <select class="select2muni form-select" id="municipio" name="municipio"
                         aria-label="Seleccionar opcion">
-                        <option selected>Seleccione</option>
+                        <option value="0" selected>No aplica</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -491,14 +491,14 @@ $configData = Helper::appClasses();
                 <label for="departamentedit" class="form-label">Departamento</label>
                 <select class="select2depedit form-select" id="departamentedit" name="departamentedit"
                     aria-label="Seleccionar opcion" onchange="getmunicipio(this.value,'','')">
-                    <option selected>Seleccione</option>
+                    <option value="0" selected>No aplica</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label for="municipioedit" class="form-label">Municipio</label>
                 <select class="select2muniedit form-select" id="municipioedit" name="municipioedit"
                     aria-label="Seleccionar opcion">
-                    <option selected>Seleccione</option>
+                    <option value="0" selected>No aplica</option>
                 </select>
             </div>
             <div class="mb-3">

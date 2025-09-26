@@ -437,7 +437,7 @@ function getdepartamentos(pais, type = "", selected, selectedact) {
             url: "/getdepartment/" + btoa(pais),
             method: "GET",
             success: function (response) {
-                $("#departamentedit").find("option:not(:first)").remove();
+                $("#departamentedit").find("option[value!='0']").remove();
                 $.each(response, function (index, value) {
                     if (selected != "" && value.id == selected) {
                         $("#departamentedit").append(
@@ -491,7 +491,7 @@ function getdepartamentos(pais, type = "", selected, selectedact) {
             url: "/getdepartment/" + btoa(pais),
             method: "GET",
             success: function (response) {
-                $("#departament").find("option:not(:first)").remove();
+                $("#departament").find("option[value!='0']").remove();
                 $.each(response, function (index, value) {
                     $("#departament").append(
                         '<option value="' +
@@ -529,7 +529,7 @@ function getmunicipio(dep, type = "", selected) {
             url: "/getmunicipality/" + btoa(dep),
             method: "GET",
             success: function (response) {
-                $("#municipioedit").find("option:not(:first)").remove();
+                $("#municipioedit").find("option[value!='0']").remove();
                 $.each(response, function (index, value) {
                     if (selected !== "" && value.id == selected) {
                         $("#municipioedit").append(
@@ -557,7 +557,7 @@ function getmunicipio(dep, type = "", selected) {
             url: "/getmunicipality/" + btoa(dep),
             method: "GET",
             success: function (response) {
-                $("#municipio").find("option:not(:first)").remove();
+                $("#municipio").find("option[value!='0']").remove();
                 $.each(response, function (index, value) {
                     $("#municipio").append(
                         '<option value="' +
