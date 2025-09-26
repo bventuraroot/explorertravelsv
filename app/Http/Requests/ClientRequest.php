@@ -35,7 +35,6 @@ class ClientRequest extends FormRequest
             'email' => 'nullable|email|max:255',
             'tpersona' => 'required|in:N,J',
             'nit' => [
-                'required_if:tpersona,N',
                 'nullable',
                 'string',
                 'max:20',
@@ -43,6 +42,11 @@ class ClientRequest extends FormRequest
                     // Validar duplicados según tipo de persona
                     $tpersona = $this->input('tpersona');
                     $extranjero = $this->input('extranjero') === 'on' ? '1' : ($this->input('extranjeroedit') === 'on' ? '1' : '0');
+
+                    // Validar que el DUI sea requerido para personas naturales NO extranjeras
+                    if ($tpersona === 'N' && $extranjero === '0' && (empty($value) || $value === '')) {
+                        $fail('El DUI es requerido para personas naturales no extranjeras.');
+                    }
 
                     // Determinar qué campo de empresa usar
                     $companyId = $this->input('companyselected') ?: $this->input('companyselectededit');
