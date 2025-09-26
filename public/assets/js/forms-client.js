@@ -832,6 +832,42 @@ function editClient(id) {
                         element.style.height = "auto";
                         element.style.minWidth = "200px";
                         element.style.minHeight = "40px";
+
+                        // Si aún no es visible, crear un nuevo elemento (solo en edición)
+                        if (!$("#extranjerolabeledit").is(":visible") && $("#offcanvasUpdateClient").length > 0) {
+                            console.log("Element still not visible, creating new one");
+
+                            // Crear un nuevo elemento desde cero
+                            var newElement = document.createElement('label');
+                            newElement.className = 'switch switch-success';
+                            newElement.id = 'extranjerolabeledit';
+                            newElement.name = 'extranjerolabeledit';
+                            newElement.style.display = 'block';
+                            newElement.style.visibility = 'visible';
+                            newElement.style.opacity = '1';
+                            newElement.style.position = 'relative';
+                            newElement.style.zIndex = '9999';
+                            newElement.style.width = 'auto';
+                            newElement.style.height = 'auto';
+                            newElement.style.minWidth = '200px';
+                            newElement.style.minHeight = '40px';
+
+                            newElement.innerHTML = `
+                                <input type="checkbox" class="switch-input" id="extranjeroedit" name="extranjeroedit" onclick="esextranjeroedit();" />
+                                <span class="switch-toggle-slider">
+                                    <span class="switch-on">
+                                        <i class="ti ti-check"></i>
+                                    </span>
+                                    <span class="switch-off">
+                                        <i class="ti ti-x"></i>
+                                    </span>
+                                </span>
+                                <span class="switch-label">¿Es Extranjero?</span>
+                            `;
+
+                            element.parentNode.replaceChild(newElement, element);
+                            console.log("Element replaced with new one created from scratch");
+                        }
                     }
 
                     // Verificar si el elemento padre está oculto
