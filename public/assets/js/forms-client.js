@@ -805,6 +805,8 @@ function editClient(id) {
                 }
                 if (index == "pasaporte") {
                     $("#pasaporteedit").val(value);
+                } else if (index == "company_id") {
+                    $("#companyselectededit").val(value);
                 } else {
                     $("#" + index + "edit").val(value);
                 }

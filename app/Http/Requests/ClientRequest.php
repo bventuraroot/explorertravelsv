@@ -42,14 +42,17 @@ class ClientRequest extends FormRequest
                 function ($attribute, $value, $fail) use ($clientId) {
                     // Validar duplicados según tipo de persona
                     $tpersona = $this->input('tpersona');
-                    $extranjero = $this->input('extranjeroedit') === 'on' ? '1' : '0';
+                    $extranjero = $this->input('extranjero') === 'on' ? '1' : ($this->input('extranjeroedit') === 'on' ? '1' : '0');
+
+                    // Determinar qué campo de empresa usar
+                    $companyId = $this->input('companyselected') ?: $this->input('companyselectededit');
 
                     if ($tpersona === 'N' && $extranjero === '0' && $value) {
                         // Para personas naturales no extranjeras, validar DUI (nit)
                         $query = Client::where('nit', $value)
                             ->where('tpersona', 'N')
                             ->where('extranjero', '0')
-                            ->where('company_id', $this->input('companyselectededit'));
+                            ->where('company_id', $companyId);
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -62,7 +65,7 @@ class ClientRequest extends FormRequest
                         // Para personas jurídicas, validar NIT
                         $query = Client::where('nit', $value)
                             ->where('tpersona', 'J')
-                            ->where('company_id', $this->input('companyselectededit'));
+                            ->where('company_id', $companyId);
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -82,9 +85,12 @@ class ClientRequest extends FormRequest
                 function ($attribute, $value, $fail) use ($clientId) {
                     // Solo validar NCR si es persona jurídica y el valor no es N/A
                     if ($this->input('tpersona') === 'J' && $value && $value !== 'N/A') {
+                        // Determinar qué campo de empresa usar
+                        $companyId = $this->input('companyselected') ?: $this->input('companyselectededit');
+
                         $query = Client::where('ncr', $value)
                             ->where('tpersona', 'J')
-                            ->where('company_id', $this->input('companyselectededit'));
+                            ->where('company_id', $companyId);
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -97,17 +103,21 @@ class ClientRequest extends FormRequest
                 }
             ],
             'pasaporte' => [
+                'required_if:extranjero,on',
                 'required_if:extranjeroedit,on',
                 'nullable',
                 'string',
                 'max:20',
                 function ($attribute, $value, $fail) use ($clientId) {
                     // Solo validar pasaporte si es extranjero y el valor no está vacío
-                    $extranjero = $this->input('extranjeroedit') === 'on' ? '1' : '0';
+                    $extranjero = $this->input('extranjero') === 'on' ? '1' : ($this->input('extranjeroedit') === 'on' ? '1' : '0');
                     if ($extranjero === '1' && $value) {
+                        // Determinar qué campo de empresa usar
+                        $companyId = $this->input('companyselected') ?: $this->input('companyselectededit');
+
                         $query = Client::where('pasaporte', $value)
                             ->where('extranjero', '1')
-                            ->where('company_id', $this->input('companyselectededit'));
+                            ->where('company_id', $companyId);
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -119,11 +129,30 @@ class ClientRequest extends FormRequest
                     }
                 }
             ],
-            'companyselectededit' => 'required|exists:companies,id',
+            'companyselected' => 'required_without:companyselectededit|nullable|exists:companies,id',
+            'companyselectededit' => 'required_without:companyselected|nullable|exists:companies,id',
             'economicactivity_id' => 'nullable|exists:economicactivities,id',
             'country' => 'required|exists:countries,id',
-            'departament' => 'nullable|exists:departments,id',
-            'municipio' => 'nullable|exists:municipalities,id',
+            'departament' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value && $value !== '0' && $value !== '') {
+                        if (!\App\Models\Department::where('id', $value)->exists()) {
+                            $fail('El departamento seleccionado no existe.');
+                        }
+                    }
+                }
+            ],
+            'municipio' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value && $value !== '0' && $value !== '') {
+                        if (!\App\Models\Municipality::where('id', $value)->exists()) {
+                            $fail('El municipio seleccionado no existe.');
+                        }
+                    }
+                }
+            ],
             'address' => 'required|string|max:500',
             'tel1' => 'required|string|max:20',
             'tel2' => 'nullable|string|max:20',
@@ -147,7 +176,9 @@ class ClientRequest extends FormRequest
             'nit.required_if' => 'El DUI es requerido para personas naturales.',
             'ncr.required_if' => 'El NCR es requerido para personas jurídicas.',
             'pasaporte.required_if' => 'El pasaporte es requerido para extranjeros.',
-            'companyselectededit.required' => 'La empresa es requerida.',
+            'companyselected.required_without' => 'La empresa es requerida.',
+            'companyselected.exists' => 'La empresa seleccionada no existe.',
+            'companyselectededit.required_without' => 'La empresa es requerida.',
             'companyselectededit.exists' => 'La empresa seleccionada no existe.',
             'economicactivity_id.exists' => 'La actividad económica seleccionada no existe.',
             'country.required' => 'El país es requerido.',
@@ -175,6 +206,7 @@ class ClientRequest extends FormRequest
             'nit' => 'DUI',
             'ncr' => 'NCR',
             'pasaporte' => 'pasaporte',
+            'companyselected' => 'empresa',
             'companyselectededit' => 'empresa',
             'economicactivity_id' => 'actividad económica',
             'country' => 'país',
