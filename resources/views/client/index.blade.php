@@ -357,8 +357,7 @@ $configData = Helper::appClasses();
             </label>
         </div>
         <div class="mb-3">
-            <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit"
-                style="display: none;">
+            <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit">
                 <input type="checkbox" class="switch-input" id="extranjeroedit" name="extranjeroedit"
                     onclick="esextranjeroedit();" />
                 <span class="switch-toggle-slider">

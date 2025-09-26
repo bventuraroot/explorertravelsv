@@ -767,12 +767,30 @@ function editClient(id) {
             const bsOffcanvas = new bootstrap.Offcanvas(
                 "#offcanvasUpdateClient"
             ).show();
-            
+
             // Forzar visibilidad del switch extranjero después de que se abra el modal
             setTimeout(function() {
                 if ($("#tpersonaedit").val() == "N") {
+                    // Intentar múltiples métodos para forzar visibilidad
                     $("#extranjerolabeledit").css("display", "block !important");
+                    $("#extranjerolabeledit").css("visibility", "visible !important");
+                    $("#extranjerolabeledit").css("opacity", "1 !important");
                     $("#extranjerolabeledit").show();
+                    $("#extranjerolabeledit").removeClass("d-none");
+                    $("#extranjerolabeledit").addClass("d-block");
+
+                    // Verificar si el elemento padre está oculto
+                    var parent = $("#extranjerolabeledit").parent();
+                    console.log("Parent element:", parent[0]);
+                    console.log("Parent display:", parent.css("display"));
+                    console.log("Parent visibility:", parent.css("visibility"));
+
+                    // Verificar si hay algún CSS que esté ocultando el elemento
+                    var computedStyle = window.getComputedStyle($("#extranjerolabeledit")[0]);
+                    console.log("Computed display:", computedStyle.display);
+                    console.log("Computed visibility:", computedStyle.visibility);
+                    console.log("Computed opacity:", computedStyle.opacity);
+
                     console.log("Forced visibility after modal open - extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                 }
             }, 500);
