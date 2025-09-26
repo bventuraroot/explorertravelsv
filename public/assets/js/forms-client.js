@@ -689,6 +689,13 @@ function editClient(id) {
         url: "/client/getClientid/" + btoa(id),
         method: "GET",
         success: function (response) {
+            // Verificar que la respuesta tenga datos
+            if (!response || !response[0]) {
+                console.error('No se encontraron datos del cliente');
+                Swal.fire('Error', 'No se pudieron cargar los datos del cliente', 'error');
+                return;
+            }
+            
             llamarselected(
                 response[0]["country"],
                 response[0]["departament"],
