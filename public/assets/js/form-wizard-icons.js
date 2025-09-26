@@ -1639,6 +1639,14 @@ function agregarfacdetails(corr) {
             let pricesaletotal = 0;
             let preciounitario = 0;
             let preciogravadas = 0;
+            // Variables para el resumen (evitar ReferenceError)
+            let sumasl = 0;
+            let iva13l = 0;
+            let renta10l = 0;
+            let ivaretenidol = 0;
+            let ventasnosujetasl = 0;
+            let ventasexentasl = 0;
+            let ventatotall = 0;
             $.each(response, function (index, value) {
 
                 // Para Crédito Fiscal, llenar campos de entrada con datos del draft
