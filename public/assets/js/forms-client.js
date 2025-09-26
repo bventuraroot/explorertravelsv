@@ -578,7 +578,8 @@ function typepersonedit(type) {
 
     if (type == "N") {
         $("#contribuyentelabeledit").css("display", "block");
-        $("#extranjerolabeledit").css("display", "block");
+        $("#extranjerolabeledit").css("display", "block !important");
+        $("#extranjerolabeledit").show();
         $("#siescontriedit").css("display", "none");
         $("#dui_fields").css("display", "block");
         $("#pasaporte_fields_edit").css("display", "none");
@@ -586,6 +587,7 @@ function typepersonedit(type) {
         $("#nacimientof").css("display", "block");
         console.log("Natural person selected - switches should be visible");
         console.log("extranjerolabeledit display after typepersonedit:", $("#extranjerolabeledit").css("display"));
+        console.log("extranjerolabeledit is visible after typepersonedit:", $("#extranjerolabeledit").is(":visible"));
     } else if (type == "J") {
         $("#contribuyentelabeledit").css("display", "none");
         $("#extranjerolabeledit").css("display", "none");
@@ -705,20 +707,24 @@ function editClient(id) {
 
                     if (value == "1") {
                         $("#extranjeroedit").prop("checked", true);
-                        $("#extranjerolabeledit").css("display", "block");
+                        $("#extranjerolabeledit").css("display", "block !important");
+                        $("#extranjerolabeledit").show();
                         // Asegurar que se muestre el campo de pasaporte
                         $("#pasaporte_fields_edit").css("display", "block");
                         $("#dui_fields").css("display", "none");
                         console.log("Extranjero set to true - pasaporte should be visible");
                         console.log("extranjerolabeledit display after setting:", $("#extranjerolabeledit").css("display"));
+                        console.log("extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                     } else if (value == "0") {
                         $("#extranjeroedit").prop("checked", false);
-                        $("#extranjerolabeledit").css("display", "block");
+                        $("#extranjerolabeledit").css("display", "block !important");
+                        $("#extranjerolabeledit").show();
                         // Asegurar que se muestre el campo de DUI
                         $("#pasaporte_fields_edit").css("display", "none");
                         $("#dui_fields").css("display", "block");
                         console.log("Extranjero set to false - DUI should be visible");
                         console.log("extranjerolabeledit display after setting:", $("#extranjerolabeledit").css("display"));
+                        console.log("extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                     }
                 }
                 if (index == "tpersona") {
@@ -761,6 +767,15 @@ function editClient(id) {
             const bsOffcanvas = new bootstrap.Offcanvas(
                 "#offcanvasUpdateClient"
             ).show();
+            
+            // Forzar visibilidad del switch extranjero después de que se abra el modal
+            setTimeout(function() {
+                if ($("#tpersonaedit").val() == "N") {
+                    $("#extranjerolabeledit").css("display", "block !important");
+                    $("#extranjerolabeledit").show();
+                    console.log("Forced visibility after modal open - extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
+                }
+            }, 500);
         },
     });
 }
