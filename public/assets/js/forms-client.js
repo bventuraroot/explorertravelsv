@@ -998,7 +998,7 @@ function pasaporteMask(inputField) {
         pasaportePattern = [cleanValue.length]; // Si no coincide, deja el formato sin guiones
     }
 
-    mask(inputField, separator, pasaportePattern, true);
+    mask(inputField, separator, pasaportePattern, false);
 }
 
 
