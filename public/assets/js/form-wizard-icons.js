@@ -1656,14 +1656,16 @@ function agregarfacdetails(corr) {
 
                 if(typedoc=='3'){
                     // CRÉDITO FISCAL: igual que Roma Copies
-                    preciounitario = parseFloat(value.priceunit); // Sin IVA
                     if(isGravado) {
                         preciogravadas = parseFloat(value.pricesale); // Sin IVA
                         var iva13Line = parseFloat(preciogravadas * 0.13);
                         ivarete13total += iva13Line;
+                        // Para mostrar en tabla: precio unitario con IVA
+                        preciounitario = parseFloat(value.priceunit) + (iva13Line / parseFloat(value.cantidad));
                     } else {
                         preciogravadas = 0;
                         var iva13Line = 0;
+                        preciounitario = parseFloat(value.priceunit); // Sin IVA para exenta/no sujeta
                     }
                     var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + iva13Line);
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
