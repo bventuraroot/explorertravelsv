@@ -42,9 +42,9 @@ class ClientController extends Controller
     // Construcción de la consulta
     $clientsQuery = Client::join('addresses', 'clients.address_id', '=', 'addresses.id')
         ->join('countries', 'addresses.country_id', '=', 'countries.id')
-        ->join('departments', 'addresses.department_id', '=', 'departments.id')
-        ->join('municipalities', 'addresses.municipality_id', '=', 'municipalities.id')
-        ->join('economicactivities', 'clients.economicactivity_id', '=', 'economicactivities.id')
+        ->leftJoin('departments', 'addresses.department_id', '=', 'departments.id')
+        ->leftJoin('municipalities', 'addresses.municipality_id', '=', 'municipalities.id')
+        ->leftJoin('economicactivities', 'clients.economicactivity_id', '=', 'economicactivities.id')
         ->join('phones', 'clients.phone_id', '=', 'phones.id')
         ->select(
             'clients.*',
