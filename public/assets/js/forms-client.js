@@ -573,8 +573,6 @@ function getmunicipio(dep, type = "", selected) {
 }
 
 function typepersonedit(type) {
-    console.log("typepersonedit called with type:", type);
-    console.log("extranjerolabeledit element exists:", $("#extranjerolabeledit").length > 0);
 
     if (type == "N") {
         $("#contribuyentelabeledit").css("display", "block");
@@ -597,13 +595,18 @@ function typepersonedit(type) {
         }
 
         $("#siescontriedit").css("display", "none");
-        $("#dui_fields").css("display", "block");
-        $("#pasaporte_fields_edit").css("display", "none");
+
+        // Verificar si es extranjero para mostrar el campo correcto
+        if ($("#extranjeroedit").is(":checked")) {
+            $("#dui_fields").css("display", "none");
+            $("#pasaporte_fields_edit").css("display", "block");
+        } else {
+            $("#dui_fields").css("display", "block");
+            $("#pasaporte_fields_edit").css("display", "none");
+        }
+
         validarchecked();
         $("#nacimientof").css("display", "block");
-        console.log("Natural person selected - switches should be visible");
-        console.log("extranjerolabeledit display after typepersonedit:", $("#extranjerolabeledit").css("display"));
-        console.log("extranjerolabeledit is visible after typepersonedit:", $("#extranjerolabeledit").is(":visible"));
     } else if (type == "J") {
         $("#contribuyentelabeledit").css("display", "none");
         $("#extranjerolabeledit").css("display", "none");
@@ -674,14 +677,12 @@ function llamarselected(pais, departamento, municipio, acteconomica) {
 }
 
 function editClient(id) {
-    console.log("editClient called with id:", id);
     //Get data edit companies
     //alert('entro');
     $.ajax({
         url: "/client/getClientid/" + btoa(id),
         method: "GET",
         success: function (response) {
-            console.log("Client data loaded:", response[0]);
             llamarselected(
                 response[0]["country"],
                 response[0]["departament"],
@@ -717,9 +718,6 @@ function editClient(id) {
                     }
                 }
                 if (index == "extranjero") {
-                    console.log("Loading extranjero value:", value);
-                    console.log("extranjerolabeledit element exists:", $("#extranjerolabeledit").length > 0);
-                    console.log("extranjerolabeledit current display:", $("#extranjerolabeledit").css("display"));
 
                     if (value == "1") {
                         $("#extranjeroedit").prop("checked", true);
@@ -741,12 +739,9 @@ function editClient(id) {
                             element.style.minHeight = "40px";
                         }
 
-                        // Asegurar que se muestre el campo de pasaporte
+                        // Asegurar que se muestre el campo de pasaporte y se oculte el DUI
                         $("#pasaporte_fields_edit").css("display", "block");
                         $("#dui_fields").css("display", "none");
-                        console.log("Extranjero set to true - pasaporte should be visible");
-                        console.log("extranjerolabeledit display after setting:", $("#extranjerolabeledit").css("display"));
-                        console.log("extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                     } else if (value == "0") {
                         $("#extranjeroedit").prop("checked", false);
                         $("#extranjerolabeledit").css("display", "block !important");
@@ -758,12 +753,9 @@ function editClient(id) {
                             parent.css("visibility", "visible");
                         }
 
-                        // Asegurar que se muestre el campo de DUI
+                        // Asegurar que se muestre el campo de DUI y se oculte el pasaporte
                         $("#pasaporte_fields_edit").css("display", "none");
                         $("#dui_fields").css("display", "block");
-                        console.log("Extranjero set to false - DUI should be visible");
-                        console.log("extranjerolabeledit display after setting:", $("#extranjerolabeledit").css("display"));
-                        console.log("extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                     }
                 }
                 if (index == "tpersona") {
@@ -835,7 +827,6 @@ function editClient(id) {
 
                         // Si aún no es visible, crear un nuevo elemento (solo en edición)
                         if (!$("#extranjerolabeledit").is(":visible") && $("#offcanvasUpdateClient").length > 0) {
-                            console.log("Element still not visible, creating new one");
 
                             // Crear un nuevo elemento desde cero
                             var newElement = document.createElement('label');
@@ -866,7 +857,6 @@ function editClient(id) {
                             `;
 
                             element.parentNode.replaceChild(newElement, element);
-                            console.log("Element replaced with new one created from scratch");
 
                             // Forzar el tamaño del nuevo elemento
                             newElement.style.width = "200px";
@@ -875,48 +865,16 @@ function editClient(id) {
                             newElement.style.minHeight = "40px";
                             newElement.style.maxWidth = "none";
                             newElement.style.maxHeight = "none";
-
-                            // Verificar si el nuevo elemento es visible
-                            setTimeout(function() {
-                                var newRect = newElement.getBoundingClientRect();
-                                console.log("New element rect:", newRect);
-                                console.log("New element is visible:", $(newElement).is(":visible"));
-                                console.log("New element computed width:", window.getComputedStyle(newElement).width);
-                                console.log("New element computed height:", window.getComputedStyle(newElement).height);
-                            }, 100);
                         }
                     }
 
                     // Verificar si el elemento padre está oculto
                     var parent = $("#extranjerolabeledit").parent();
-                    console.log("Parent element:", parent[0]);
-                    console.log("Parent display:", parent.css("display"));
-                    console.log("Parent visibility:", parent.css("visibility"));
 
                     // Si el padre está oculto, mostrarlo
                     if (parent.css("visibility") === "hidden") {
                         parent.css("visibility", "visible");
-                        console.log("Parent visibility fixed to visible");
                     }
-
-                    // Verificar si hay algún CSS que esté ocultando el elemento
-                    var computedStyle = window.getComputedStyle($("#extranjerolabeledit")[0]);
-                    console.log("Computed display:", computedStyle.display);
-                    console.log("Computed visibility:", computedStyle.visibility);
-                    console.log("Computed opacity:", computedStyle.opacity);
-                    console.log("Computed position:", computedStyle.position);
-                    console.log("Computed z-index:", computedStyle.zIndex);
-                    console.log("Computed width:", computedStyle.width);
-                    console.log("Computed height:", computedStyle.height);
-                    console.log("Computed top:", computedStyle.top);
-                    console.log("Computed left:", computedStyle.left);
-
-                    // Verificar si el elemento está fuera de la pantalla
-                    var rect = $("#extranjerolabeledit")[0].getBoundingClientRect();
-                    console.log("Element rect:", rect);
-                    console.log("Element is in viewport:", rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth);
-
-                    console.log("Forced visibility after modal open - extranjerolabeledit is visible:", $("#extranjerolabeledit").is(":visible"));
                 }
             }, 500);
         },
