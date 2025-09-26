@@ -1762,6 +1762,16 @@ function agregarfacdetails(corr) {
             nosujetatotal = parseFloat(nosujetatotal) || 0;
             exempttotal = parseFloat(exempttotal) || 0;
 
+            // Debug: verificar valores calculados
+            console.log("DEBUG DRAFT - Valores calculados:", {
+                totalsumas: totalsumas,
+                ivarete13total: ivarete13total,
+                rentatotal: rentatotal,
+                ivaretetotal: ivaretetotal,
+                nosujetatotal: nosujetatotal,
+                exempttotal: exempttotal
+            });
+
             // Actualizar totales como Roma Copies
             sumasl = totalsumas;
             iva13l = ivarete13total;
