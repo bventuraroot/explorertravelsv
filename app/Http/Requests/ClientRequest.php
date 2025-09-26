@@ -28,25 +28,28 @@ class ClientRequest extends FormRequest
         $clientId = $this->route('client') ? $this->route('client')->id : null;
 
         return [
-            'firstname' => 'required_if:tpersona,N|string|max:255',
-            'firstlastname' => 'required_if:tpersona,N|string|max:255',
-            'comercial_name' => 'required_if:tpersona,J|string|max:255',
-            'name_contribuyente' => 'required_if:tpersona,J|string|max:255',
+            'firstname' => 'required_if:tpersona,N|nullable|string|max:255',
+            'firstlastname' => 'required_if:tpersona,N|nullable|string|max:255',
+            'comercial_name' => 'required_if:tpersona,J|nullable|string|max:255',
+            'name_contribuyente' => 'required_if:tpersona,J|nullable|string|max:255',
             'email' => 'nullable|email|max:255',
-            'tpersona' => 'required|in:N,J,E',
+            'tpersona' => 'required|in:N,J',
             'nit' => [
-                'required',
+                'required_if:tpersona,N',
+                'nullable',
                 'string',
                 'max:20',
                 function ($attribute, $value, $fail) use ($clientId) {
                     // Validar duplicados según tipo de persona
                     $tpersona = $this->input('tpersona');
+                    $extranjero = $this->input('extranjeroedit') === 'on' ? '1' : '0';
 
-                    if ($tpersona === 'N') {
-                        // Para personas naturales, validar DUI (nit)
+                    if ($tpersona === 'N' && $extranjero === '0' && $value) {
+                        // Para personas naturales no extranjeras, validar DUI (nit)
                         $query = Client::where('nit', $value)
                             ->where('tpersona', 'N')
-                            ->where('company_id', $this->input('companyselected'));
+                            ->where('extranjero', '0')
+                            ->where('company_id', $this->input('companyselectededit'));
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -55,11 +58,11 @@ class ClientRequest extends FormRequest
                         if ($query->exists()) {
                             $fail('El DUI ya está registrado para otra persona natural en esta empresa.');
                         }
-                    } elseif ($tpersona === 'J') {
+                    } elseif ($tpersona === 'J' && $value) {
                         // Para personas jurídicas, validar NIT
                         $query = Client::where('nit', $value)
                             ->where('tpersona', 'J')
-                            ->where('company_id', $this->input('companyselected'));
+                            ->where('company_id', $this->input('companyselectededit'));
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -72,6 +75,7 @@ class ClientRequest extends FormRequest
                 }
             ],
             'ncr' => [
+                'required_if:tpersona,J',
                 'nullable',
                 'string',
                 'max:20',
@@ -80,7 +84,7 @@ class ClientRequest extends FormRequest
                     if ($this->input('tpersona') === 'J' && $value && $value !== 'N/A') {
                         $query = Client::where('ncr', $value)
                             ->where('tpersona', 'J')
-                            ->where('company_id', $this->input('companyselected'));
+                            ->where('company_id', $this->input('companyselectededit'));
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -93,15 +97,17 @@ class ClientRequest extends FormRequest
                 }
             ],
             'pasaporte' => [
+                'required_if:extranjeroedit,on',
                 'nullable',
                 'string',
                 'max:20',
                 function ($attribute, $value, $fail) use ($clientId) {
                     // Solo validar pasaporte si es extranjero y el valor no está vacío
-                    if ($this->input('tpersona') === 'E' && $value) {
+                    $extranjero = $this->input('extranjeroedit') === 'on' ? '1' : '0';
+                    if ($extranjero === '1' && $value) {
                         $query = Client::where('pasaporte', $value)
-                            ->where('tpersona', 'E')
-                            ->where('company_id', $this->input('companyselected'));
+                            ->where('extranjero', '1')
+                            ->where('company_id', $this->input('companyselectededit'));
 
                         if ($clientId) {
                             $query->where('id', '!=', $clientId);
@@ -113,11 +119,11 @@ class ClientRequest extends FormRequest
                     }
                 }
             ],
-            'companyselected' => 'required|exists:companies,id',
-            'economicactivity_id' => 'required|exists:economicactivities,id',
+            'companyselectededit' => 'required|exists:companies,id',
+            'economicactivity_id' => 'nullable|exists:economicactivities,id',
             'country' => 'required|exists:countries,id',
-            'departament' => 'required|exists:departments,id',
-            'municipio' => 'required|exists:municipalities,id',
+            'departament' => 'nullable|exists:departments,id',
+            'municipio' => 'nullable|exists:municipalities,id',
             'address' => 'required|string|max:500',
             'tel1' => 'required|string|max:20',
             'tel2' => 'nullable|string|max:20',
@@ -137,17 +143,16 @@ class ClientRequest extends FormRequest
             'comercial_name.required_if' => 'El nombre comercial es requerido para personas jurídicas.',
             'name_contribuyente.required_if' => 'El nombre del contribuyente es requerido para personas jurídicas.',
             'tpersona.required' => 'El tipo de persona es requerido.',
-            'tpersona.in' => 'El tipo de persona debe ser Natural, Jurídica o Extranjero.',
-            'nit.required' => 'El DUI/NIT es requerido.',
-            'companyselected.required' => 'La empresa es requerida.',
-            'companyselected.exists' => 'La empresa seleccionada no existe.',
-            'economicactivity_id.required' => 'La actividad económica es requerida.',
+            'tpersona.in' => 'El tipo de persona debe ser Natural o Jurídica.',
+            'nit.required_if' => 'El DUI es requerido para personas naturales.',
+            'ncr.required_if' => 'El NCR es requerido para personas jurídicas.',
+            'pasaporte.required_if' => 'El pasaporte es requerido para extranjeros.',
+            'companyselectededit.required' => 'La empresa es requerida.',
+            'companyselectededit.exists' => 'La empresa seleccionada no existe.',
             'economicactivity_id.exists' => 'La actividad económica seleccionada no existe.',
             'country.required' => 'El país es requerido.',
             'country.exists' => 'El país seleccionado no existe.',
-            'departament.required' => 'El departamento es requerido.',
             'departament.exists' => 'El departamento seleccionado no existe.',
-            'municipio.required' => 'El municipio es requerido.',
             'municipio.exists' => 'El municipio seleccionado no existe.',
             'address.required' => 'La dirección es requerida.',
             'tel1.required' => 'El teléfono principal es requerido.',
@@ -167,10 +172,10 @@ class ClientRequest extends FormRequest
             'comercial_name' => 'nombre comercial',
             'name_contribuyente' => 'nombre del contribuyente',
             'tpersona' => 'tipo de persona',
-            'nit' => 'DUI/NIT',
+            'nit' => 'DUI',
             'ncr' => 'NCR',
             'pasaporte' => 'pasaporte',
-            'companyselected' => 'empresa',
+            'companyselectededit' => 'empresa',
             'economicactivity_id' => 'actividad económica',
             'country' => 'país',
             'departament' => 'departamento',
