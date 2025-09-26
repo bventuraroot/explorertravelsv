@@ -657,15 +657,17 @@ function escontriedit() {
 
 function esextranjeroedit() {
     if ($("#extranjeroedit").is(":checked")) {
-        $("#pasaporte_fields_edit").css("display", "");
+        $("#pasaporte_fields_edit").css("display", "block");
         $("#dui_fields").css("display", "none");
-        // Limpiar el campo NIT cuando se selecciona extranjero
-        $("#nitedit").val("");
+        $("#pasaporte_fields_edit").show();
+        $("#dui_fields").hide();
+        // No limpiar campos automáticamente para preservar los datos
     } else {
         $("#pasaporte_fields_edit").css("display", "none");
-        $("#dui_fields").css("display", "");
-        // Limpiar el campo pasaporte cuando se deselecciona extranjero
-        $("#pasaporteedit").val("");
+        $("#dui_fields").css("display", "block");
+        $("#pasaporte_fields_edit").hide();
+        $("#dui_fields").show();
+        // No limpiar campos automáticamente para preservar los datos
     }
 }
 
