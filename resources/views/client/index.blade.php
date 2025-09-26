@@ -353,9 +353,25 @@ $configData = Helper::appClasses();
                                 <i class="ti ti-x"></i>
                             </span>
                         </span>
-                        <span class="switch-label">¿Es Contribuyente?</span>
-                    </label>
-                </div>
+                <span class="switch-label">¿Es Contribuyente?</span>
+            </label>
+        </div>
+        <div class="mb-3">
+            <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit"
+                style="display: none;">
+                <input type="checkbox" class="switch-input" id="extranjeroedit" name="extranjeroedit"
+                    onclick="esextranjeroedit();" />
+                <span class="switch-toggle-slider">
+                    <span class="switch-on">
+                        <i class="ti ti-check"></i>
+                    </span>
+                    <span class="switch-off">
+                        <i class="ti ti-x"></i>
+                    </span>
+                </span>
+                <span class="switch-label">¿Es Extranjero?</span>
+            </label>
+        </div>
                 <div id="siescontri" style="display: none;">
                     <div class="mb-3">
                         <label class="form-label" for="legal">Representante Legal</label>
@@ -529,6 +545,12 @@ $configData = Helper::appClasses();
                 <input type="text" id="nitedit" class="form-control" placeholder="xxxxxxxx-x"
                     onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nitedit"
                     onblur="validateClientKey(this, document.getElementById('tpersonaedit').value, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
+            </div>
+            <div class="mb-3" id="pasaporte_fields_edit" style="display: none;">
+                <label class="form-label" for="pasaporteedit">Pasaporte</label>
+                <input type="text" id="pasaporteedit" class="form-control" placeholder="Número de Pasaporte"
+                    onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporteedit" 
+                    onblur="validateClientKey(this, 'E', document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
             </div>
             <div id="siescontriedit" style="display: none;">
                 <div class="mb-3">

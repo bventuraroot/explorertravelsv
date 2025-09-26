@@ -245,8 +245,8 @@ class ClientController extends Controller
 
             $address = new Address();
             $address->country_id = $request->country;
-            $address->department_id = $request->departament;
-            $address->municipality_id = $request->municipio;
+            $address->department_id = (!empty($request->departament) && $request->departament != '0') ? $request->departament : null;
+            $address->municipality_id = (!empty($request->municipio) && $request->municipio != '0') ? $request->municipio : null;
             $address->reference = $request->address;
             $address->save();
             //dd($request);
@@ -268,14 +268,14 @@ class ClientController extends Controller
             } else {
                 $extranjero = '0';
             }
-            $client->ncr = (is_null($request->ncr) ? 'N/A' : $request->ncr);
+            $client->ncr = (is_null($request->ncr) ? 'N/A' : str_replace(['-', ' '], '', $request->ncr));
             $client->giro = (is_null($request->giro) ? 'N/A' : $request->giro);
-            $client->nit = $request->nit;
+            $client->nit = str_replace(['-', ' '], '', $request->nit);
             $client->legal = (is_null($request->legal) ? 'N/A' : $request->legal);
             $client->tpersona = $request->tpersona;
             $client->contribuyente = $contri;
             $client->extranjero = $extranjero;
-            $client->pasaporte = $request->pasaporte;
+            $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporte);
             $client->tipoContribuyente = $request->tipocontribuyente;
             $client->economicactivity_id = $request->acteconomica;
             $client->birthday = date('Ymd', strtotime($request->birthday));
@@ -341,8 +341,8 @@ class ClientController extends Controller
 
         $address = Address::find($request->addresseditid);
         $address->country_id = $request->countryedit;
-        $address->department_id = $request->departamentedit;
-        $address->municipality_id = $request->municipioedit;
+        $address->department_id = (!empty($request->departamentedit) && $request->departamentedit != '0') ? $request->departamentedit : null;
+        $address->municipality_id = (!empty($request->municipioedit) && $request->municipioedit != '0') ? $request->municipioedit : null;
         $address->reference = $request->addressedit;
         $address->save();
         //dd($request);
@@ -354,12 +354,14 @@ class ClientController extends Controller
         $client->comercial_name = $request->comercial_nameedit;
         $client->name_contribuyente = $request->name_contribuyenteedit;
         $client->email = $request->emailedit;
-        $client->ncr = $request->ncredit;
+        $client->ncr = str_replace(['-', ' '], '', $request->ncredit);
         $client->giro = $request->giroedit;
-        $client->nit = $request->nitedit;
+        $client->nit = str_replace(['-', ' '], '', $request->nitedit);
         $client->legal = $request->legaledit;
         $client->tpersona = $request->tpersonaedit;
         $client->contribuyente = $request->contribuyenteeditvalor;
+        $client->extranjero = $request->extranjeroedit == 'on' ? '1' : '0';
+        $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporteedit);
         $client->tipoContribuyente = $request->tipocontribuyenteedit;
         $client->economicactivity_id = $request->acteconomicaedit;
         $client->birthday = date('Ymd', strtotime($request->birthdayedit));

@@ -140,6 +140,10 @@ function validateClientExists() {
     } else if (tpersona == "J") {
         key = $("#ncr").val();
     }
+    
+    // Quitar guiones y espacios para validación
+    key = key.replace(/[- ]/g, '');
+    
     if (!key || key.trim() === "") {
         $("#btnsavenewclient").prop("disabled", true);
         return;
@@ -179,10 +183,10 @@ $(document).ready(function () {
 
 
     $("#nit").change(function () {
-        var key = $("#nit").val();
+        var key = $("#nit").val().replace(/[- ]/g, ''); // Quitar guiones
         var tpersona = $("#tpersona").val();
         var companyId = $("#companyselected").val();
-
+        
         if (!key || key.trim() === "") {
             $("#btnsavenewclient").prop("disabled", true);
             return;
@@ -251,10 +255,10 @@ $(document).ready(function () {
     });
 
     $("#ncr").change(function () {
-        var key = $("#ncr").val();
+        var key = $("#ncr").val().replace(/[- ]/g, ''); // Quitar guiones
         var tpersona = $("#tpersona").val();
         var companyId = $("#companyselected").val();
-
+        
         if (!key || key.trim() === "") {
             $("#btnsavenewclient").prop("disabled", true);
             return;
@@ -537,12 +541,16 @@ function typepersonedit(type) {
         $("#contribuyentelabeledit").css("display", "");
         $("#extranjerolabeledit").css("display", "");
         $("#siescontriedit").css("display", "none");
+        $("#dui_fields").css("display", "");
+        $("#pasaporte_fields_edit").css("display", "none");
         validarchecked();
         $("#nacimientof").css("display", "");
     } else {
         $("#contribuyentelabeledit").css("display", "none");
         $("#extranjerolabeledit").css("display", "none");
         $("#siescontriedit").css("display", "");
+        $("#dui_fields").css("display", "none");
+        $("#pasaporte_fields_edit").css("display", "none");
         $("#nacimientof").css("display", "none");
     }
 }
@@ -578,6 +586,20 @@ function escontriedit() {
         $("#siescontriedit").css("display", "none");
     }
     validarchecked();
+}
+
+function esextranjeroedit() {
+    if ($("#extranjeroedit").is(":checked")) {
+        $("#pasaporte_fields_edit").css("display", "");
+        $("#dui_fields").css("display", "none");
+        // Limpiar el campo NIT cuando se selecciona extranjero
+        $("#nitedit").val("");
+    } else {
+        $("#pasaporte_fields_edit").css("display", "none");
+        $("#dui_fields").css("display", "");
+        // Limpiar el campo pasaporte cuando se deselecciona extranjero
+        $("#pasaporteedit").val("");
+    }
 }
 
 function validarchecked() {
@@ -630,6 +652,17 @@ function editClient(id) {
                     if ($("#tpersonaedit").val() == "J") {
                         $("#contribuyentelabeledit").css("display", "none");
                         $("#siescontriedit").css("display", "");
+                    }
+                }
+                if (index == "extranjero") {
+                    if (value == "1") {
+                        $("#extranjeroedit").prop("checked", true);
+                        $("#extranjerolabeledit").css("display", "");
+                        esextranjeroedit();
+                    } else if (value == "0") {
+                        $("#extranjeroedit").prop("checked", false);
+                        $("#extranjerolabeledit").css("display", "");
+                        esextranjeroedit();
                     }
                 }
                 if (index == "tpersona") {
