@@ -573,6 +573,7 @@ function getmunicipio(dep, type = "", selected) {
 }
 
 function typepersonedit(type) {
+    console.log("typepersonedit called with type:", type);
     if (type == "N") {
         $("#contribuyentelabeledit").css("display", "");
         $("#extranjerolabeledit").css("display", "");
@@ -581,6 +582,7 @@ function typepersonedit(type) {
         $("#pasaporte_fields_edit").css("display", "none");
         validarchecked();
         $("#nacimientof").css("display", "");
+        console.log("Natural person selected - switches should be visible");
     } else if (type == "J") {
         $("#contribuyentelabeledit").css("display", "none");
         $("#extranjerolabeledit").css("display", "none");
@@ -588,6 +590,7 @@ function typepersonedit(type) {
         $("#dui_fields").css("display", "none");
         $("#pasaporte_fields_edit").css("display", "none");
         $("#nacimientof").css("display", "none");
+        console.log("Legal entity selected - switches should be hidden");
     }
 }
 
@@ -650,12 +653,14 @@ function llamarselected(pais, departamento, municipio, acteconomica) {
 }
 
 function editClient(id) {
+    console.log("editClient called with id:", id);
     //Get data edit companies
     //alert('entro');
     $.ajax({
         url: "/client/getClientid/" + btoa(id),
         method: "GET",
         success: function (response) {
+            console.log("Client data loaded:", response[0]);
             llamarselected(
                 response[0]["country"],
                 response[0]["departament"],
@@ -691,18 +696,21 @@ function editClient(id) {
                     }
                 }
                 if (index == "extranjero") {
+                    console.log("Loading extranjero value:", value);
                     if (value == "1") {
                         $("#extranjeroedit").prop("checked", true);
                         $("#extranjerolabeledit").css("display", "");
                         // Asegurar que se muestre el campo de pasaporte
                         $("#pasaporte_fields_edit").css("display", "");
                         $("#dui_fields").css("display", "none");
+                        console.log("Extranjero set to true - pasaporte should be visible");
                     } else if (value == "0") {
                         $("#extranjeroedit").prop("checked", false);
                         $("#extranjerolabeledit").css("display", "");
                         // Asegurar que se muestre el campo de DUI
                         $("#pasaporte_fields_edit").css("display", "none");
                         $("#dui_fields").css("display", "");
+                        console.log("Extranjero set to false - DUI should be visible");
                     }
                 }
                 if (index == "tpersona") {
