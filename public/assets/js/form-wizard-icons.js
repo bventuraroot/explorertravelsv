@@ -1678,8 +1678,9 @@ function agregarfacdetails(corr) {
                         // Para exenta/no sujeta también mostrar sin IVA
                         preciounitario = parseFloat(value.priceunit);
                     }
-                    // Total de la fila = (no sujetas + exentas) + (gravadas sin IVA + fee sin IVA) + IVA calculado
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + (parseFloat(preciogravadas) + feeSinIvaLinea) + iva13Line);
+                    // Total de la fila (CCF) debe mostrarse SIN IVA
+                    // Total base = (no sujetas + exentas) + (gravadas sin IVA + fee sin IVA)
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + (parseFloat(preciogravadas) + feeSinIvaLinea));
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
