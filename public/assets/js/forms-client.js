@@ -867,6 +867,23 @@ function editClient(id) {
 
                             element.parentNode.replaceChild(newElement, element);
                             console.log("Element replaced with new one created from scratch");
+
+                            // Forzar el tamaño del nuevo elemento
+                            newElement.style.width = "200px";
+                            newElement.style.height = "40px";
+                            newElement.style.minWidth = "200px";
+                            newElement.style.minHeight = "40px";
+                            newElement.style.maxWidth = "none";
+                            newElement.style.maxHeight = "none";
+
+                            // Verificar si el nuevo elemento es visible
+                            setTimeout(function() {
+                                var newRect = newElement.getBoundingClientRect();
+                                console.log("New element rect:", newRect);
+                                console.log("New element is visible:", $(newElement).is(":visible"));
+                                console.log("New element computed width:", window.getComputedStyle(newElement).width);
+                                console.log("New element computed height:", window.getComputedStyle(newElement).height);
+                            }, 100);
                         }
                     }
 
