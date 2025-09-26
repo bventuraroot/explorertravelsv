@@ -335,8 +335,8 @@ $configData = Helper::appClasses();
                 <div id="siextranjero" style="display: none;">
                     <div class="mb-3">
                         <label class="form-label" for="pasaporte">Pasaporte</label>
-                        <input type="text" id="pasaporte" class="form-control" placeholder="xxxxxx-x"
-                            onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporte"
+                        <input type="text" id="pasaporte" class="form-control" placeholder="Número de Pasaporte"
+                            maxlength="20" aria-label="pasaporte" name="pasaporte"
                             onblur="validateClientKey(this, 'E', document.getElementById('companyselected').value);" />
                     </div>
                 </div>
