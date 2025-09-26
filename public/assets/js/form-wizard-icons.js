@@ -1045,32 +1045,53 @@ function loadClientsAndSelectDraft(idcompany, draftClientId) {
         url: "/client/getclientbycompany/" + btoa(idcompany),
         method: "GET",
         success: function (response) {
+            // Limpiar opciones existentes excepto "Seleccione"
+            $("#client option:not([value='0'])").remove();
+
             // Solo agregar "Seleccione" si no existe
             if ($("#client option[value='0']").length === 0) {
                 $("#client").append('<option value="0">Seleccione</option>');
             }
+
+            var typedocument = $("#typedocument").val();
+
             $.each(response, function (index, value) {
                 // Verificar si la opción ya existe antes de agregarla
                 var optionExists = $("#client option[value='" + value.id + "']").length > 0;
                 if (!optionExists) {
-                    if(value.tpersona=='J'){
-                        $("#client").append(
-                            '<option value="' +
-                                value.id +
-                                '">' +
-                                value.name_contribuyente.toUpperCase() +
-                                "</option>"
-                        );
-                    }else if (value.tpersona=='N'){
-                        $("#client").append(
-                            '<option value="' +
-                                value.id +
-                                '">' +
-                                value.firstname.toUpperCase() +
-                                " " +
-                                value.firstlastname.toUpperCase() +
-                                "</option>"
-                        );
+                    // Para documentos FEX (tipo 7), solo mostrar personas naturales extranjeras
+                    if (typedocument === '7') {
+                        if (value.tpersona === 'N' && value.extranjero === '1') {
+                            var clientName = value.firstname.toUpperCase() + " " + value.firstlastname.toUpperCase();
+                            var clientInfo = clientName + " | " +
+                                "DUI: " + value.nit +
+                                (value.pasaporte ? " | PASAPORTE: " + value.pasaporte : "") +
+                                " | NATURAL EXTRANJERO";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }
+                    } else {
+                        // Para otros documentos, mostrar clientes naturales y jurídicos con información completa
+                        if(value.tpersona=='J'){
+                            var clientInfo = value.name_contribuyente.toUpperCase() + " | " +
+                                "NIT: " + value.nit +
+                                (value.ncr ? " | NCR: " + value.ncr : "") +
+                                " | JURÍDICA";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }else if (value.tpersona=='N'){
+                            var clientInfo = value.firstname.toUpperCase() + " " + value.firstlastname.toUpperCase() + " | " +
+                                "DUI: " + value.nit +
+                                " | NATURAL";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }
                     }
                 }
             });
@@ -1088,32 +1109,53 @@ function getclientbycompanyurl(idcompany) {
         url: "/client/getclientbycompany/" + btoa(idcompany),
         method: "GET",
         success: function (response) {
+            // Limpiar opciones existentes excepto "Seleccione"
+            $("#client option:not([value='0'])").remove();
+
             // Solo agregar "Seleccione" si no existe
             if ($("#client option[value='0']").length === 0) {
                 $("#client").append('<option value="0">Seleccione</option>');
             }
+
+            var typedocument = $("#typedocument").val();
+
             $.each(response, function (index, value) {
                 // Verificar si la opción ya existe antes de agregarla
                 var optionExists = $("#client option[value='" + value.id + "']").length > 0;
                 if (!optionExists) {
-                    if(value.tpersona=='J'){
-                        $("#client").append(
-                            '<option value="' +
-                                value.id +
-                                '">' +
-                                value.name_contribuyente.toUpperCase() +
-                                "</option>"
-                        );
-                    }else if (value.tpersona=='N'){
-                        $("#client").append(
-                            '<option value="' +
-                                value.id +
-                                '">' +
-                                value.firstname.toUpperCase() +
-                                " " +
-                                value.firstlastname.toUpperCase() +
-                                "</option>"
-                        );
+                    // Para documentos FEX (tipo 7), solo mostrar personas naturales extranjeras
+                    if (typedocument === '7') {
+                        if (value.tpersona === 'N' && value.extranjero === '1') {
+                            var clientName = value.firstname.toUpperCase() + " " + value.firstlastname.toUpperCase();
+                            var clientInfo = clientName + " | " +
+                                "DUI: " + value.nit +
+                                (value.pasaporte ? " | PASAPORTE: " + value.pasaporte : "") +
+                                " | NATURAL EXTRANJERO";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }
+                    } else {
+                        // Para otros documentos, mostrar clientes naturales y jurídicos con información completa
+                        if(value.tpersona=='J'){
+                            var clientInfo = value.name_contribuyente.toUpperCase() + " | " +
+                                "NIT: " + value.nit +
+                                (value.ncr ? " | NCR: " + value.ncr : "") +
+                                " | JURÍDICA";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }else if (value.tpersona=='N'){
+                            var clientInfo = value.firstname.toUpperCase() + " " + value.firstlastname.toUpperCase() + " | " +
+                                "DUI: " + value.nit +
+                                " | NATURAL";
+
+                            $("#client").append(
+                                '<option value="' + value.id + '">' + clientInfo + "</option>"
+                            );
+                        }
                     }
                 }
             });
@@ -1155,6 +1197,23 @@ function valtrypecontri(idcliente) {
                     Swal.fire({
                         title: "No se puede crear Crédito Fiscal",
                         text: "Solo se permiten personas naturales contribuyentes y personas jurídicas.",
+                        icon: "warning",
+                        confirmButtonText: "Entendido"
+                    });
+                    $("#client").val('').trigger('change');
+                    return;
+                }
+            }
+
+            // Validar si se puede crear Factura de Exportación (FEX)
+            if (typedocument === '7') { // Factura de Exportación
+                var tpersona = response.tpersona;
+                var extranjero = response.extranjero;
+                // Solo permitir personas naturales extranjeras
+                if (tpersona !== 'N' || extranjero !== '1') {
+                    Swal.fire({
+                        title: "No se puede crear Factura de Exportación",
+                        text: "Solo se permiten personas naturales extranjeras para facturas de exportación.",
                         icon: "warning",
                         confirmButtonText: "Entendido"
                     });

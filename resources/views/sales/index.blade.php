@@ -536,13 +536,13 @@
                                 </div>
                                 <div class="mb-2 col-md mb-md-0">
                                     <div class="form-check custom-option custom-option-icon">
-                                      <label class="form-check-label custom-option-content" for="nota">
+                                      <label class="form-check-label custom-option-content" for="exportacion">
                                         <span class="custom-option-body">
-                                          <i class="mb-2 ti ti-receipt-refund"></i>
-                                          <span class="custom-option-title">FACTURA DE EXPORTACION</span>
-                                          <small>Creación de documento para exportaciones.</small>
+                                          <i class="mb-2 ti ti-world-upload"></i>
+                                          <span class="custom-option-title">FACTURA DE EXPORTACIÓN</span>
+                                          <small>Creación de documento para exportaciones internacionales.</small>
                                         </span>
-                                        <input name="typedocument" class="form-check-input" type="radio" value="7" id="nota" />
+                                        <input name="typedocument" class="form-check-input" type="radio" value="7" id="exportacion" />
                                       </label>
                                     </div>
                                   </div>

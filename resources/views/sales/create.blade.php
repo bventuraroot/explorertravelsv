@@ -42,6 +42,12 @@
         case '3':
             $document = 'Crédito Fiscal';
             break;
+        case '7':
+            $document = 'Factura de Exportación';
+            break;
+        default:
+            $document = 'Documento';
+            break;
     }
 @endphp
     <!-- Default Icons Wizard -->
@@ -176,6 +182,17 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Campos específicos para Factura de Exportación -->
+                                @if(request('typedocument') == '7')
+                                <div class="mt-3 alert alert-warning" id="export-fields">
+                                    <h6><i class="ti ti-world-upload me-2"></i>Datos de Exportación</h6>
+                                    <small class="text-muted">
+                                        <i class="ti ti-info-circle me-1"></i>
+                                        <strong>Restricción:</strong> Solo se pueden seleccionar personas naturales extranjeras para facturas de exportación.
+                                    </small>
+                                </div>
+                                @endif
                             </div>
                             <div class="col-sm-4">
                                 <label class="form-label" for="fpago">Forma de pago</label>

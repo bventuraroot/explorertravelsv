@@ -629,6 +629,7 @@ if (!function_exists('fac')) {
             "descActividad"         => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $cliente[0]->descActividad,
 
         ];
+        dd($receptor);
 
         if ($cliente[0]->codPais == '9300') {
 
@@ -1100,135 +1101,126 @@ if (!function_exists('clq')) {
 if (!function_exists('fex')) {
     function fex($comprobante_procesar, $uuid_generado)
     {
-        $encabezado = $comprobante_procesar["encabezado"][0];
-        //dd($comprobante_procesar);
+        $comprobante = [];
+        $encabezado = $comprobante_procesar["documento"][0];
+        $emisor_data = $comprobante_procesar["emisor"];
+        $cliente = $comprobante_procesar["cliente"];
+        $totales = $comprobante_procesar["totales"];
         $cuerpo = $comprobante_procesar["detalle"];
-        //dd($cuerpo);
         $uuid = $uuid_generado;
-        $numero_documento = CerosIzquierda($encabezado["nu_doc"], 15);
-        $tipo_documento = $encabezado["cod_tipo_documento"];
-        $caja = $encabezado["cod_establecimiento"];// "0001";
-        $tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
-        $empresa = $comprobante_procesar["empresa"][0];
+
+        $numero_documento = CerosIzquierda($encabezado->actual, 15);
+        $tipo_documento = "11"; // Código FEX según schema
+        $caja = "0001";
+        $testablecimiento = "1";
+        $tipo_establecimiento = CerosIzquierda($testablecimiento, 4);
+        $empresa = $comprobante_procesar["emisor"];
+
         $identificacion = [
-            "version"           => intval($encabezado["version"]),
-            "ambiente"          => $empresa["ambiente"],
+            "version"           => intval($encabezado->versionJson),
+            "ambiente"          => $encabezado->ambiente,
             "tipoDte"           => $tipo_documento,
-            "numeroControl"     => "DTE-" . $tipo_documento . "-" . $tipo_establecimiento . $caja . "-" . $numero_documento, //Cambiar
+            "numeroControl"     => "DTE-" . $tipo_documento . "-" . $tipo_establecimiento . $caja . "-" . $numero_documento,
             "codigoGeneracion"  => $uuid,
             "tipoModelo"        => 1,
             "tipoOperacion"     => 1,
             "tipoContingencia"  => null,
-            "motivoContigencia" => null,
-            "fecEmi"            => date('Y-m-d'), // "2022-07-23", //$encabezado["fecEmi"],    //Cambiar
-            "horEmi"            => $encabezado["horEmi"],      //Cambiar
-            "tipoMoneda"        => "USD"            //Cambiar
+            "motivoContin"      => null,
+            "fecEmi"            => date('Y-m-d'),
+            "horEmi"            => date("H:i:s"),
+            "tipoMoneda"        => "USD" // FEX siempre en USD
         ];
+
         $comprobante = [
             "identificacion" => $identificacion
         ];
 
-
+        $documentoRelacionado = null;
 
         $direccion_emisor = [
-            "departamento"  => $encabezado["departamento_emisor"],
-            "municipio"     => $encabezado["municipio_emisor"],
-            "complemento"   => $encabezado["complemento_emisor"]
+            "departamento"  => $emisor_data[0]->departamento,
+            "municipio"     => $emisor_data[0]->municipio,
+            "complemento"   => $emisor_data[0]->direccion
         ];
 
         $emisor = [
-            "nit"                   => $encabezado["nit_emisor"],
-            "nrc"                   => $encabezado["nrc_emisor"],
-            "nombre"                => $encabezado["nombre_empresa"],
-            "codActividad"          => $encabezado["codActividad"],
-            "descActividad"         => $encabezado["descActividad"],
-            "nombreComercial"       => $encabezado["nombreComercial"],
-            "tipoEstablecimiento"   => $encabezado["tipo_establecimiento"],
+            "nit"                   => str_replace('-','', $emisor_data[0]->nit),
+            "nrc"                   => str_replace('-','', $emisor_data[0]->ncr),
+            "nombre"                => trim($emisor_data[0]->nombre),
+            "codActividad"          => $emisor_data[0]->codActividad,
+            "descActividad"         => $emisor_data[0]->descActividad,
+            "nombreComercial"       => $emisor_data[0]->nombreComercial,
+            "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
-            "telefono"              => $encabezado["telefono"],
-            "correo"                => $encabezado["correo"],
-            "codEstableMH"          => null,
-            "codEstable"            => null,
-            "codPuntoVentaMH"       => null,
-            "codPuntoVenta"         => null,
-            "tipoItemExpor"         => 2, //Cambiar
-            "recintoFiscal"         => null, //Cambiar
-            "regimen"               => null //Cambiar
-
+            "telefono"              => $emisor_data[0]->telefono,
+            "codEstableMH"          => $emisor_data[0]->codEstableMH,
+            "codEstable"            => $emisor_data[0]->codEstable,
+            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
+            "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta,
+            "correo"                => $emisor_data[0]->correo,
+            // Campos específicos para FEX
+            "tipoItemExpor"         => 2, // 1=Bienes, 2=Servicios, 3=Otros
+            "recintoFiscal"         => null, // Solo para bienes/otros
+            "regimen"               => null  // Solo para bienes/otros
         ];
 
-
+        // Para FEX, el receptor es internacional - usar campos específicos
         $receptor = [
-            "nombre"                => $encabezado["nombre"],
-            "tipoDocumento"         => $encabezado["tipoDocumento"] ,
-            "numDocumento"          => $encabezado["numDocumento"],
-            "descActividad"         => $encabezado["descActividad_receptor"],
-            "nombreComercial"       => $encabezado["nombreComercial_receptor"],
-            "codPais"               => $encabezado["codPais_receptor"], //cambiar
-            "nombrePais"            => $encabezado["nomPais_receptor"], //cambiar
-            "complemento"           => $encabezado["complemento_receptor"], //cambiar
-            "tipoPersona"           => 2, //cambiar
-
+            "nombre"                => $cliente[0]->nombre,
+            "tipoDocumento"         => "03", // 03=Pasaporte para exportación
+            "numDocumento"          => str_replace("-","",$cliente[0]->nit), // Usar NIT como pasaporte
+            "codPais"               => "9905", // Código país destino (hardcode por ahora)
+            "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
+            "complemento"           => $cliente[0]->direccion, // Dirección internacional
+            "tipoPersona"           => $cliente[0]->tpersona ?? 2, // 1=Jurídica, 2=Natural
+            "descActividad"         => $cliente[0]->giro, // Usar giro como actividad
         ];
 
-        if ($encabezado["telefono_receptor"] != '') {
-            $receptor["telefono"] = $encabezado["telefono_receptor"];
+        // Agregar campos opcionales si existen
+        if ($cliente[0]->telefono != '') {
+            $receptor["telefono"] = $cliente[0]->telefono;
         }
-        if ($encabezado["correo_receptor"] != '') {
-            $receptor["correo"] = $encabezado["correo_receptor"];
-        }
-
-        $ventaTercero = null;
-        if (isset($comprobante_procesar["terceros"][0])) {
-            // dd($comprobante_procesar[2]);
-            $ventaTercero = [
-                "nit"       => $comprobante_procesar["terceros"][0]["nit"],
-                "nombre"    => $comprobante_procesar["terceros"][0]["nombre"],
-
-            ];
+        if ($cliente[0]->email != '') {
+            $receptor["correo"] = $cliente[0]->email;
         }
 
         $otrosDocumentos = null;
+
+        $ventaTercero = null;
+        if (isset($comprobante_procesar[3][0])) {
+            $ventaTercero = [
+                "nit"       => $comprobante_procesar[3][0]["nit"],
+                "nombre"    => $comprobante_procesar[3][0]["nombre"],
+            ];
+        }
 
         $codigos_tributos = [];
         $i = 0;
 
         foreach ($cuerpo as $item) {
-            # code...
-            //dd($item);
             $i += 1;
-            $tributos_properties_items_cuerpoDocumento = array();
 
-            if ($item["iva"] != 0 and count($codigos_tributos) == 0) {
-                $codigos_tributos = [
-                    "codigo"        =>  "20",
-                    "descripcion"   =>  "Impuesto al Valor Agregado 13%",
-                    "valor"         => (float)$item["iva"]
-                ];
-            } else {
-                if ($item["iva"] != 0 and count($codigos_tributos) > 0) {
-                    $iva =  $codigos_tributos["valor"] + $item["iva"];
-                    $codigos_tributos["valor"] = $iva;
-                }
-            }
-
-            $tributos_properties_items_cuerpoDocumento = ($item["iva"] != 0) ? "20" : "C3";
-
-            $properties_items_cuerpoDocumento = array();
+            // Para FEX, generalmente sin IVA (exento)
+            $tributos_properties_items_cuerpoDocumento = "C3"; // Exento para exportación
 
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i,
-                "cantidad"          => intval($item["cantidad"]),
-                "codigo"            => $item["id_producto"],
-                "uniMedida"         => intval($item["uniMedida"]),
-                "descripcion"       => $item["descripcion"],
-                "precioUni"         => round((float)($item["pre_unitario"]),2),
-                "montoDescu"        => (float)0.00,
-                "tributos"          => (is_null($item["tributos"]))? ["C3"] : explode(",", $item["tributos"]), //($item["gravado"] != 0) ? ["20"] : null,
-                "ventaGravada"      => (float)($item["gravado"]),
-                "noGravado"         => (float)$item["imp_int_det"]
-
-
+                "tipoItem"          => intval($item->tipo_item),
+                "numeroDocumento"   => null,
+                "cantidad"          => intval($item->cantidad),
+                "codigo"            => "P0".$item->id_producto,
+                "codTributo"        => null,
+                "uniMedida"         => intval($item->uniMedida),
+                "descripcion"       => $item->descripcion,
+                "precioUni"         => round((float)$item->precio_unitario, 2),
+                "montoDescu"        => 0.00,
+                "ventaNoSuj"        => (float)$item->no_sujetas,
+                "ventaExenta"       => (float)$item->exentas,
+                "ventaGravada"      => (float)$item->gravadas, // Sin IVA para exportación
+                "tributos"          => null,
+                "psv"               => (float)"0.00",
+                "noGravado"         => (float)$item->no_imponible,
+                "ivaItem"           => 0.00 // Sin IVA para exportación
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
@@ -1248,102 +1240,101 @@ if (!function_exists('fex')) {
 
         $properties_items_pagos = [];
         //contado
-        if ($encabezado["contado"] != 0) {
+        if ($totales["condicionOperacion"] == "01") {
             $properties_items_pagos[] = [
                 "codigo"        => "01",
-                "montoPago"     => (float)$encabezado["contado"],
+                "montoPago"     => round((float)($totales["totalPagar"]- $totales["reteRenta"]),2),
                 "referencia"    => null,
                 "plazo"         => null,
                 "periodo"       => null
             ];
         }
-
         //credito
-        if ($encabezado["credito"] != 0) {
+        if ($totales["condicionOperacion"] == "02") {
             $properties_items_pagos[] = [
                 "codigo"        => "13",
-                "montoPago"     => (float)$encabezado["credito"],
-                "referencia"    => "",
+                "montoPago"     => (float)"0.00",
+                "referencia"    => "Credito",
                 "plazo"         => "01",
-                "periodo"       => intval($encabezado["periodo"])
+                "periodo"       => 15
             ];
         }
-
         //tarjeta
-        if ($encabezado["tarjeta"] != 0) {
+        if ($totales["condicionOperacion"] == "03") {
             $properties_items_pagos[] = [
                 "codigo"        => "03",
-                "montoPago"     => (float)$encabezado["tarjeta"],
-                "referencia"    => $encabezado["referencia_tarjeta"],
+                "montoPago"     => round((float)($totales["totalPagar"]- $totales["reteRenta"]),2),
+                "referencia"    => "Otro",
                 "plazo"         => null,
                 "periodo"       => null
             ];
         }
-        /* if($encabezado["total_iva"] != 0){
-        $codigos_tributos= [
-            "codigo"        => "20",
-            "descripcion"   => "Impuesto al Valor Agregado 13",
-            "valor"         => (float)$encabezado["total_iva"]
-        ];
-        }*/
 
         $pagos = $properties_items_pagos;
-        if (count($codigos_tributos) > 0) {
-            if ($encabezado["tot_gravado"] * 0.13 <> $codigos_tributos["valor"]) {
-                $codigos_tributos["valor"] = round($encabezado["tot_gravado"] * 0.13,  2);
-                // $codigos_tributos["valor"] = bcdiv($encabezado["tot_gravado"] * 0.13,1,2);
-
-            }
-        }
-
-        // $codigos_tributos["valor"] = intval($codigos_tributos["valor"]/0.01);
 
         $resumen = [
-
-            "totalGravada"          => (float)$encabezado["tot_gravado"],
-            "descuento"             => (float)$encabezado["totalDescu"],
-            "porcentajeDescuento"   => (float)$encabezado["porcentajeDescuento"],
-            "totalDescu"            => (float)$encabezado["totalDescu"],
-            "seguro"                => (float)("0.00"),
-            "flete"                 => (float)("0.00"),
-            "montoTotalOperacion"   => round((float)($encabezado["subTotalVentas"] + $encabezado["total_iva"] +$encabezado["otrosTributos"]), 2), //(float)$encabezado["montoTotalOperacion"],
-            "totalNoGravado"        => (float)$encabezado["totalNoGravado"],
-            "totalPagar"            => (float)$encabezado["totalPagar"],
-            "totalLetras"           => $encabezado["total_letras"],
-            "condicionOperacion"    => (float)$encabezado["condicionOperacion"],
+            "totalNoSuj"            => (float)$totales["totalNoSuj"],
+            "totalExenta"           => (float)$totales["totalExenta"],
+            "totalGravada"          => round((float)$totales["totalGravada"], 2), // Sin IVA para exportación
+            "subTotalVentas"        => round((float)$totales["subTotal"], 2),
+            "descuNoSuj"            => (float)$totales["descuNoSuj"],
+            "descuExenta"           => (float)$totales["descuExenta"],
+            "descuGravada"          => (float)$totales["descuGravada"],
+            "porcentajeDescuento"   => (float)$totales["porcentajeDescuento"],
+            "totalDescu"            => (float)$totales["totalDescu"],
+            "tributos"              => $codigos_tributos,
+            "subTotal"              => round((float)$totales["subTotal"], 2),
+            "ivaRete1"              => (float)$totales["ivaRete1"],
+            "reteRenta"             => (float)$totales["reteRenta"],
+            "montoTotalOperacion"   => round((float)$totales["subTotal"], 2), // Sin IVA
+            "totalNoGravado"        => (float)$totales["totalNoGravado"],
+            "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
+            "totalLetras"           => $totales["totalLetras"],
+            "totalIva"              => 0.00, // Sin IVA para exportación
+            "saldoFavor"            => (float)$totales["saldoFavor"],
+            "condicionOperacion"    => (float)$totales["condicionOperacion"],
             "pagos"                 => $pagos,
-            "codIncoterms"          => null,
-            "descIncoterms"         => null,
             "numPagoElectronico"    => "",
-            "observaciones"         => ""
-
+            // Campos específicos para FEX
+            "seguro"                => 0.00,
+            "flete"                 => 0.00,
+            "codIncoterms"          => null,
+            "descIncoterms"         => null
         ];
 
+        $es_mayor = ($totales["totalPagar"] >= 200);
 
-
+        $extension = [
+            "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
+            "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
+            "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
+            "docuRecibe"    => ($es_mayor) ? str_replace("-", "", $cliente[0]->nit) : null,
+            "observaciones" => ($es_mayor) ? null : null,
+            "placaVehiculo" => ($es_mayor) ? null : null
+        ];
 
         $apendice[] = [
             "campo"         => "vendedor",
             "etiqueta"      => "Vendedor",
-            "valor"         => $encabezado["id_vendedor"]
+            "valor"         => $encabezado->hechopor
         ];
+
         $apendice[] = [
             "campo"         => "cliente",
             "etiqueta"      => "Cliente",
-            "valor"         => $encabezado["id_cliente"]
+            "valor"         => $cliente[0]->idcliente
         ];
 
-
-
-
+        $comprobante["documentoRelacionado"]     = $documentoRelacionado;
         $comprobante["emisor"]                   = $emisor;
         $comprobante["receptor"]                 = $receptor;
         $comprobante["otrosDocumentos"]          = $otrosDocumentos;
         $comprobante["ventaTercero"]             = $ventaTercero;
         $comprobante["cuerpoDocumento"]          = $cuerpoDocumento;
         $comprobante["resumen"]                  = $resumen;
-        $comprobante["apendice"]                 = $apendice;
-        //echo '<br>'. var_dump($comprobante) . '<br>';
+        $comprobante["extension"]                = $extension;
+        $comprobante["apendice"]                 = null;
+
         return ($comprobante);
     }
 }

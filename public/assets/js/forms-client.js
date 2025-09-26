@@ -3,6 +3,169 @@
  */
 
 "use strict";
+
+// Función global para manejar el tipo de persona
+function typeperson(type) {
+    $('#fields_with_option').css('display', '');
+    if (type == "N") {
+        $("#fields_natural").css("display", "");
+        $("#fields_juridico").css("display", "none");
+        $("#contribuyentelabel").css("display", "");
+        $("#extranjerolabel").css("display", "");
+        $("#siescontri").css("display", "none");
+        $("#nacimientof").css("display", "");
+        $("#siextranjeroduinit").css("display", "");
+    } else {
+        $("#contribuyentelabel").css("display", "none");
+        $("#extranjerolabel").css("display", "none");
+        $("#siescontri").css("display", "");
+    }
+    if (type == "J") {
+        $("#fields_juridico").css("display", "");
+        $("#fields_natural").css("display", "none");
+        $("#nacimientof").css("display", "none");
+    }
+}
+
+// Función global para validar campos requeridos
+function validateRequiredFields() {
+    try {
+        var tpersona = $("#tpersona").val();
+
+        if (!tpersona || tpersona === "0" || tpersona === "") {
+            $("#btnsavenewclient").prop("disabled", true);
+            showValidationMessage("Por favor seleccione un tipo de cliente");
+            return;
+        }
+
+        var email = $("#email").val() || "";
+        var tel1 = $("#tel1").val() || "";
+        var country = $("#country").val() || "";
+        var departament = $("#departament").val() || "";
+        var municipio = $("#municipio").val() || "";
+        var address = $("#address").val() || "";
+
+        if (!email || !tel1 || !country || !departament || !municipio || !address) {
+            $("#btnsavenewclient").prop("disabled", true);
+            showValidationMessage("Por favor complete todos los campos de contacto (email, teléfono, país, departamento, municipio y dirección)");
+            return;
+        }
+
+        if (tpersona === "N") {
+            var firstname = $("#firstname").val() || "";
+            var firstlastname = $("#firstlastname").val() || "";
+            var extranjero = $("#extranjero").is(":checked");
+
+            if (!firstname || !firstlastname) {
+                $("#btnsavenewclient").prop("disabled", true);
+                showValidationMessage("Por favor complete el primer nombre y primer apellido");
+                return;
+            }
+
+            if (extranjero) {
+                var pasaporte = $("#pasaporte").val() || "";
+                if (!pasaporte || pasaporte.trim() === "") {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    showValidationMessage("Por favor ingrese el número de pasaporte");
+                    return;
+                }
+            } else {
+                var nit = $("#nit").val() || "";
+                if (!nit || nit.trim() === "") {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    showValidationMessage("Por favor ingrese el número de DUI");
+                    return;
+                }
+            }
+
+            var contribuyente = $("#contribuyente").is(":checked");
+            if (contribuyente) {
+                var ncr = $("#ncr").val() || "";
+                var tipocontribuyente = $("#tipocontribuyente").val() || "";
+                var acteconomica = $("#acteconomica").val() || "";
+                if (!ncr || !tipocontribuyente || acteconomica === "0") {
+                    $("#btnsavenewclient").prop("disabled", true);
+                    return;
+                }
+            }
+        } else if (tpersona === "J") {
+            var comercial_name = $("#comercial_name").val() || "";
+            var name_contribuyente = $("#name_contribuyente").val() || "";
+            if (!comercial_name || !name_contribuyente) {
+                $("#btnsavenewclient").prop("disabled", true);
+                return;
+            }
+            var ncrJ = $("#ncr").val() || "";
+            var tipocontribuyenteJ = $("#tipocontribuyente").val() || "";
+            var acteconomicaJ = $("#acteconomica").val() || "";
+            if (!ncrJ || !tipocontribuyenteJ || acteconomicaJ === "0") {
+                $("#btnsavenewclient").prop("disabled", true);
+                return;
+            }
+        }
+
+        validateClientExists();
+    } catch (e) {
+        $("#btnsavenewclient").prop("disabled", true);
+    }
+}
+
+// Función para mostrar mensajes de validación
+function showValidationMessage(message) {
+    // Limpiar mensajes anteriores
+    $('.validation-message').remove();
+
+    // Crear y mostrar mensaje
+    var messageDiv = $('<div class="alert alert-warning validation-message" role="alert">' + message + '</div>');
+    $('#addNewClientForm').prepend(messageDiv);
+
+    // Ocultar mensaje después de 5 segundos
+    setTimeout(function() {
+        messageDiv.fadeOut(function() {
+            $(this).remove();
+        });
+    }, 5000);
+}
+
+// Función global para validar clientes existentes
+function validateClientExists() {
+    var key = "";
+    var tpersona = $("#tpersona").val();
+    var extranjero = $("#extranjero").is(":checked");
+    if (extranjero) {
+        key = $("#pasaporte").val();
+        tpersona = "E";
+    } else if (tpersona == "N") {
+        key = $("#nit").val();
+    } else if (tpersona == "J") {
+        key = $("#ncr").val();
+    }
+    if (!key || key.trim() === "") {
+        $("#btnsavenewclient").prop("disabled", true);
+        return;
+    }
+    $.ajax({
+        url: "/client/keyclient",
+        method: "POST",
+        data: {
+            num: key,
+            tpersona: tpersona,
+            company_id: $("#companyselected").val()
+        },
+        success: function (response) {
+            if (response && response.exists === true) {
+                $("#btnsavenewclient").prop("disabled", true);
+                showValidationMessage("Este cliente ya existe en el sistema");
+            } else {
+                $("#btnsavenewclient").prop("disabled", false);
+                // Limpiar mensajes de error cuando la validación es exitosa
+                $('.validation-message').remove();
+            }
+        },
+        error: function(){ $("#btnsavenewclient").prop("disabled", false); }
+    });
+}
+
 $(document).ready(function () {
     $("#btnsavenewclient").prop("disabled", true);
 
@@ -14,201 +177,112 @@ $(document).ready(function () {
     $("#tel1edit").inputmask("9999-9999");
     $("#tel2edit").inputmask("9999-9999");
 
-    // === Validaciones avanzadas (tomadas de RomaCopies) ===
-    function validateRequiredFields() {
-        try {
-            var tpersona = $("#tpersona").val();
 
-            if (!tpersona || tpersona === "0" || tpersona === "") {
-                $("#btnsavenewclient").prop("disabled", true);
-                return;
-            }
-
-            var email = $("#email").val() || "";
-            var tel1 = $("#tel1").val() || "";
-            var country = $("#country").val() || "";
-            var departament = $("#departament").val() || "";
-            var municipio = $("#municipio").val() || "";
-            var address = $("#address").val() || "";
-
-            if (!email || !tel1 || !country || !departament || !municipio || !address) {
-                $("#btnsavenewclient").prop("disabled", true);
-                return;
-            }
-
-            if (tpersona === "N") {
-                var firstname = $("#firstname").val() || "";
-                var firstlastname = $("#firstlastname").val() || "";
-                var extranjero = $("#extranjero").is(":checked");
-
-                if (!firstname || !firstlastname) {
-                    $("#btnsavenewclient").prop("disabled", true);
-                    return;
-                }
-
-                if (extranjero) {
-                    var pasaporte = $("#pasaporte").val() || "";
-                    if (!pasaporte) {
-                        $("#btnsavenewclient").prop("disabled", true);
-                        return;
-                    }
-                } else {
-                    var nit = $("#nit").val() || "";
-                    if (!nit) {
-                        $("#btnsavenewclient").prop("disabled", true);
-                        return;
-                    }
-                }
-
-                var contribuyente = $("#contribuyente").is(":checked");
-                if (contribuyente) {
-                    var ncr = $("#ncr").val() || "";
-                    var tipocontribuyente = $("#tipocontribuyente").val() || "";
-                    var acteconomica = $("#acteconomica").val() || "";
-                    if (!ncr || !tipocontribuyente || acteconomica === "0") {
-                        $("#btnsavenewclient").prop("disabled", true);
-                        return;
-                    }
-                }
-            } else if (tpersona === "J") {
-                var comercial_name = $("#comercial_name").val() || "";
-                var name_contribuyente = $("#name_contribuyente").val() || "";
-                if (!comercial_name || !name_contribuyente) {
-                    $("#btnsavenewclient").prop("disabled", true);
-                    return;
-                }
-                var ncrJ = $("#ncr").val() || "";
-                var tipocontribuyenteJ = $("#tipocontribuyente").val() || "";
-                var acteconomicaJ = $("#acteconomica").val() || "";
-                if (!ncrJ || !tipocontribuyenteJ || acteconomicaJ === "0") {
-                    $("#btnsavenewclient").prop("disabled", true);
-                    return;
-                }
-            }
-
-            validateClientExists();
-        } catch (e) {
-            $("#btnsavenewclient").prop("disabled", true);
-        }
-    }
-
-    function validateClientExists() {
-        var key = "";
+    $("#nit").change(function () {
+        var key = $("#nit").val();
         var tpersona = $("#tpersona").val();
-        var extranjero = $("#extranjero").is(":checked");
-        if (extranjero) {
-            key = $("#pasaporte").val();
-            tpersona = "E";
-        } else if (tpersona == "N") {
-            key = $("#nit").val();
-        } else if (tpersona == "J") {
-            key = $("#ncr").val();
-        }
+        var companyId = $("#companyselected").val();
+
         if (!key || key.trim() === "") {
             $("#btnsavenewclient").prop("disabled", true);
             return;
         }
+
         $.ajax({
-            url: "/client/keyclient/" + btoa(key) + "/" + btoa(tpersona),
-            method: "GET",
+            url: "/client/keyclient",
+            method: "POST",
+            data: {
+                num: key,
+                tpersona: tpersona,
+                company_id: companyId
+            },
             success: function (response) {
-                if (response && response.val === true) {
+                if (response && response.exists === true) {
+                    Swal.fire(
+                        "Alerta",
+                        "Cliente con este DUI ya se encuentra registrado, favor validar la información",
+                        "info"
+                    );
                     $("#btnsavenewclient").prop("disabled", true);
                 } else {
                     $("#btnsavenewclient").prop("disabled", false);
                 }
             },
-            error: function(){ $("#btnsavenewclient").prop("disabled", false); }
-        });
-    }
-
-    $("#nit").change(function () {
-        var key;
-        var tpersona = $("#tpersona").val();
-        if (tpersona == "N") {
-            key = $("#nit").val();
-        } else if (tpersona == "J") {
-            key = $("#ncr").val();
-        }
-        $.ajax({
-            url: "/client/keyclient/" + btoa(key) + "/" + btoa(tpersona),
-            method: "GET",
-            success: function (response) {
-                $.each(response, function (index, value) {
-                    if (index == "val") {
-                        if (value) {
-                            Swal.fire(
-                                "Alerta",
-                                "Cliente ya se encuentra ingresado, favor validar la información",
-                                "info"
-                            );
-                            $("#btnsavenewclient").prop("disabled", true);
-                        } else {
-                            $("#btnsavenewclient").prop("disabled", false);
-                        }
-                    }
-                });
-            },
+            error: function() {
+                $("#btnsavenewclient").prop("disabled", false);
+            }
         });
     });
     //si es extranjero
     $("#pasaporte").change(function () {
-        var key;
-        var tpersona = $("#tpersona").val();
-        var esextranjero = $('#extranjero').val();
-        if(esextranjero=='on'){
-            key = $("#pasaporte").val();
-            tpersona = "E";
-        } else if (tpersona == "N") {
-            key = $("#nit").val();
-        } else if (tpersona == "J") {
-            key = $("#ncr").val();
+        var key = $("#pasaporte").val();
+        var tpersona = "E"; // Siempre es E para extranjeros
+        var companyId = $("#companyselected").val();
+
+        if (!key || key.trim() === "") {
+            $("#btnsavenewclient").prop("disabled", true);
+            return;
         }
+
         $.ajax({
-            url: "/client/keyclient/" + btoa(key) + "/" + btoa(tpersona),
-            method: "GET",
-            success: function (response) {
-                $.each(response, function (index, value) {
-                    if (index == "val") {
-                        if (value) {
-                            Swal.fire(
-                                "Alerta",
-                                "Cliente ya se encuentra ingresado, favor validar la información",
-                                "info"
-                            );
-                            $("#btnsavenewclient").prop("disabled", true);
-                        } else {
-                            $("#btnsavenewclient").prop("disabled", false);
-                        }
-                    }
-                });
+            url: "/client/keyclient",
+            method: "POST",
+            data: {
+                num: key,
+                tpersona: tpersona,
+                company_id: companyId
             },
+            success: function (response) {
+                if (response && response.exists === true) {
+                    Swal.fire(
+                        "Alerta",
+                        "Cliente extranjero con este pasaporte ya se encuentra registrado, favor validar la información",
+                        "info"
+                    );
+                    $("#btnsavenewclient").prop("disabled", true);
+                } else {
+                    $("#btnsavenewclient").prop("disabled", false);
+                }
+            },
+            error: function() {
+                $("#btnsavenewclient").prop("disabled", false);
+            }
         });
     });
 
     $("#ncr").change(function () {
-        var key;
+        var key = $("#ncr").val();
         var tpersona = $("#tpersona").val();
-        if (tpersona == "N") {
-            key = $("#nit").val();
-        } else if (tpersona == "J") {
-            key = $("#ncr").val();
+        var companyId = $("#companyselected").val();
+
+        if (!key || key.trim() === "") {
+            $("#btnsavenewclient").prop("disabled", true);
+            return;
         }
+
         $.ajax({
-            url: "/client/keyclient/" + btoa(key) + "/" + btoa(tpersona),
-            method: "GET",
-            success: function (response) {
-                $.each(response, function (index, value) {
-                    if (index == "val") {
-                        if (value) {
-                            Swal.fire("Alerta", "Cliente ya se existe", "info");
-                            $("#btnsavenewclient").prop("disabled", true);
-                        } else {
-                            $("#btnsavenewclient").prop("disabled", false);
-                        }
-                    }
-                });
+            url: "/client/keyclient",
+            method: "POST",
+            data: {
+                num: key,
+                tpersona: tpersona,
+                company_id: companyId
             },
+            success: function (response) {
+                if (response && response.exists === true) {
+                    Swal.fire(
+                        "Alerta",
+                        "Cliente con este NCR ya se encuentra registrado, favor validar la información",
+                        "info"
+                    );
+                    $("#btnsavenewclient").prop("disabled", true);
+                } else {
+                    $("#btnsavenewclient").prop("disabled", false);
+                }
+            },
+            error: function() {
+                $("#btnsavenewclient").prop("disabled", false);
+            }
         });
     });
 
@@ -458,26 +532,6 @@ function getmunicipio(dep, type = "", selected) {
     }
 }
 
-function typeperson(type) {
-    $('#fields_with_option').css('display', '');
-    if (type == "N") {
-        $("#fields_natural").css("display", "");
-        $("#fields_juridico").css("display", "none");
-        $("#contribuyentelabel").css("display", "");
-        $("#extranjerolabel").css("display", "");
-        $("#siescontri").css("display", "none");
-        $("#nacimientof").css("display", "");
-    } else {
-        $("#contribuyentelabel").css("display", "none");
-        $("#extranjerolabel").css("display", "none");
-        $("#siescontri").css("display", "");
-    }
-    if (type == "J") {
-        $("#fields_juridico").css("display", "");
-        $("#fields_natural").css("display", "none");
-        $("#nacimientof").css("display", "none");
-    }
-}
 function typepersonedit(type) {
     if (type == "N") {
         $("#contribuyentelabeledit").css("display", "");
@@ -505,10 +559,16 @@ function esextranjero() {
     if ($("#extranjero").is(":checked")) {
         $("#siextranjero").css("display", "");
         $("#siextranjeroduinit").css("display", "none");
+        // Limpiar el campo NIT cuando se selecciona extranjero
+        $("#nit").val("");
     } else {
         $("#siextranjero").css("display", "none");
         $("#siextranjeroduinit").css("display", "");
+        // Limpiar el campo pasaporte cuando se deselecciona extranjero
+        $("#pasaporte").val("");
     }
+    // Revalidar campos requeridos
+    validateRequiredFields();
 }
 
 function escontriedit() {
@@ -739,7 +799,7 @@ function mask(inputField, separator, pattern, nums) {
         if (nums) {
             for (z = 0; z < val2.length; z++) {
                 if (isNaN(val2.charAt(z))) {
-                    letra = new RegExp(val2.charAt(z), "g");
+                    var letra = new RegExp(val2.charAt(z), "g");
                     val2 = val2.replace(letra, "");
                 }
             }

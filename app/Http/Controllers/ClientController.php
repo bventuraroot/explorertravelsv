@@ -6,6 +6,7 @@ use App\Models\Address;
 use App\Models\Client;
 use App\Models\Company;
 use App\Models\Phone;
+use App\Http\Requests\ClientRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -99,21 +100,95 @@ class ClientController extends Controller
         return response()->json($contribuyente);
     }
 
-    public function keyclient($num, $tpersona)
+    public function keyclient(Request $request)
     {
-        $tpersona = base64_decode($tpersona);
-        if($tpersona=="E"){
-            $cliente = Client::where('pasaporte', base64_decode($num))->first();
-        }else if ($tpersona == "N") {
-            $cliente = Client::where('nit', base64_decode($num))->first();
+        $num = $request->input('num');
+        $tpersona = $request->input('tpersona');
+        $companyId = $request->input('company_id');
+        $clientId = $request->input('client_id'); // Para edición
+
+        $cliente = null;
+        $message = '';
+
+        if ($tpersona == "E") {
+            // Extranjero - validar pasaporte
+            $query = Client::where('pasaporte', $num)
+                ->where('tpersona', 'E')
+                ->where('company_id', $companyId);
+
+            if ($clientId) {
+                $query->where('id', '!=', $clientId);
+            }
+
+            $cliente = $query->first();
+            $message = $cliente ? 'El pasaporte ya está registrado para otro extranjero en esta empresa.' : 'El pasaporte está disponible.';
+
+        } elseif ($tpersona == "N") {
+            // Persona natural - validar DUI (nit)
+            $query = Client::where('nit', $num)
+                ->where('tpersona', 'N')
+                ->where('company_id', $companyId);
+
+            if ($clientId) {
+                $query->where('id', '!=', $clientId);
+            }
+
+            $cliente = $query->first();
+            $message = $cliente ? 'El DUI ya está registrado para otra persona natural en esta empresa.' : 'El DUI está disponible.';
+
         } elseif ($tpersona == "J") {
-            $cliente = Client::where('ncr', base64_decode($num))->first();
+            // Persona jurídica - validar NIT
+            $query = Client::where('nit', $num)
+                ->where('tpersona', 'J')
+                ->where('company_id', $companyId);
+
+            if ($clientId) {
+                $query->where('id', '!=', $clientId);
+            }
+
+            $cliente = $query->first();
+            $message = $cliente ? 'El NIT ya está registrado para otra persona jurídica en esta empresa.' : 'El NIT está disponible.';
         }
-        if ($cliente) {
-            return response()->json(['val' => true, 'message' => 'El cliente ya existe']);
-        } else {
-            return response()->json(['val' => false, 'message' => 'El cliente no existe']);
+
+        return response()->json([
+            'val' => $cliente ? true : false,
+            'message' => $message,
+            'exists' => $cliente ? true : false
+        ]);
+    }
+
+    /**
+     * Validar NCR específicamente para personas jurídicas
+     */
+    public function validateNcr(Request $request)
+    {
+        $ncr = $request->input('ncr');
+        $companyId = $request->input('company_id');
+        $clientId = $request->input('client_id'); // Para edición
+
+        if (!$ncr || $ncr === 'N/A') {
+            return response()->json([
+                'val' => false,
+                'message' => 'NCR no proporcionado',
+                'exists' => false
+            ]);
         }
+
+        $query = Client::where('ncr', $ncr)
+            ->where('tpersona', 'J')
+            ->where('company_id', $companyId);
+
+        if ($clientId) {
+            $query->where('id', '!=', $clientId);
+        }
+
+        $cliente = $query->first();
+
+        return response()->json([
+            'val' => $cliente ? true : false,
+            'message' => $cliente ? 'El NCR ya está registrado para otra persona jurídica en esta empresa.' : 'El NCR está disponible.',
+            'exists' => $cliente ? true : false
+        ]);
     }
 
     public function getClientid($id)
@@ -158,7 +233,7 @@ class ClientController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ClientRequest $request)
     {
         DB::beginTransaction();
         try {
@@ -177,7 +252,7 @@ class ClientController extends Controller
             //dd($request);
             $client = new Client();
             $client->firstname = (is_null($request->firstname) ? 'N/A' : $request->firstname);
-            $client->secondname = (is_null($request->firstname) ? 'N/A' : $request->secondname);
+            $client->secondname = (is_null($request->secondname) ? 'N/A' : $request->secondname);
             $client->firstlastname = (is_null($request->firstlastname) ? 'N/A' : $request->firstlastname);
             $client->secondlastname = (is_null($request->secondlastname) ? 'N/A' : $request->secondlastname);
             $client->comercial_name = (is_null($request->comercial_name) ? 'N/A' : $request->comercial_name);
@@ -256,7 +331,7 @@ class ClientController extends Controller
      * @param  \App\Models\Client  $client
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Client $client)
+    public function update(ClientRequest $request, Client $client)
     {
         $id_user = auth()->user()->id;
         $phone = Phone::find($request->phoneeditid);

@@ -61,7 +61,8 @@ Route::group(['prefix' => 'client', 'as' => 'client.'], function(){
     Route::get('view/{client}', [CompanyController::class, 'show'])->name('view');
     Route::get('edit/{client}', [ClientController::class, 'edit'])->name('edit');
     Route::get('getClientid/{client}', [ClientController::class, 'getClientid'])->name('getClientid');
-    Route::get('keyclient/{num}/{tpersona}', [ClientController::class, 'keyclient'])->name('keyclient');
+    Route::post('keyclient', [ClientController::class, 'keyclient'])->name('keyclient');
+    Route::post('validate-ncr', [ClientController::class, 'validateNcr'])->name('validate.ncr');
     Route::get('gettypecontri/{client}', [ClientController::class, 'gettypecontri'])->name('gettypecontri');
     Route::patch('update', [ClientController::class, 'update'])->name('update');
     Route::get('create', [ClientController::class, 'create'])->name('create');
@@ -177,6 +178,7 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
     Route::group(['prefix' => 'debit-notes', 'as' => 'debit-notes.'], function(){
         Route::get('create', [SaleController::class, 'ndb'])->name('create');
     });
+
 
 Route::group(['prefix' => 'purchase', 'as' => 'purchase.'], function(){
         Route::get('index', [PurchaseController::class, 'index'])->name('index');

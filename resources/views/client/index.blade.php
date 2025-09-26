@@ -40,6 +40,7 @@ $configData = Helper::appClasses();
 @section('page-script')
 <script src="{{ asset('assets/js/app-client-list.js') }}"></script>
 <script src="{{ asset('assets/js/forms-client.js') }}"></script>
+<script src="{{ asset('assets/js/client-validation.js') }}"></script>
 @endsection
 
 @section('title', 'Clientes')
@@ -83,7 +84,11 @@ $configData = Helper::appClasses();
                     <td>{{ $client->name_contribuyente }} ( {{ $client->comercial_name }} )</td>
                     @break
                     @case('n')
-                    <td>{{ $client->firstname }} {{ $client->secondname }} {{ $client->firstlastname }} {{ $client->secondlastname }}</td>
+                    <td>{{ $client->firstname }} {{ $client->secondname }} {{ $client->firstlastname }} {{ $client->secondlastname }}
+                        @if($client->extranjero == '1')
+                        <small class="text-muted">(Extranjero)</small>
+                        @endif
+                    </td>
                     @break
                     @default
                     @endswitch
@@ -135,9 +140,37 @@ $configData = Helper::appClasses();
                         @endswitch
                     </td>
                     <td style="width: 16%">{{ $client->legal }}</td>
-                    <td>{{ $client->nit }}</td>
-                    <td>{{ $client->ncr }}</td>
-                    <td>{{ $client->pasaporte }}</td>
+                    <td>
+                        @switch( Str::lower($client->tpersona) )
+                        @case('j')
+                        {{ $client->ncr }}
+                        @break
+                        @case('n')
+                        @if($client->extranjero == '1')
+                        {{ $client->pasaporte }}
+                        @else
+                        {{ $client->nit }}
+                        @endif
+                        @break
+                        @default
+                        @endswitch
+                    </td>
+                    <td>
+                        @switch( Str::lower($client->tpersona) )
+                        @case('j')
+                        NRC
+                        @break
+                        @case('n')
+                        @if($client->extranjero == '1')
+                        PASAPORTE
+                        @else
+                        DUI
+                        @endif
+                        @break
+                        @default
+                        @endswitch
+                    </td>
+                    <td>-</td>
                     <td>Cel: {{ $client->phone }} <br> Fijo: {{ $client->phone_fijo }}</td>
                     <td>{{ $client->email }}</td>
                     <td>{{ Str::upper($client->pais . ', ' . $client->departamento . ', ' . $client->municipioname . ',
@@ -296,13 +329,15 @@ $configData = Helper::appClasses();
                 <div class="mb-3" id="siextranjeroduinit">
                     <label class="form-label" for="nit">DUI/NIT</label>
                     <input type="text" id="nit" class="form-control" placeholder="xxxxxxxx-x"
-                        onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nit" />
+                        onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nit"
+                        onblur="validateClientKey(this, document.getElementById('tpersona').value, document.getElementById('companyselected').value);" />
                 </div>
                 <div id="siextranjero" style="display: none;">
                     <div class="mb-3">
                         <label class="form-label" for="pasaporte">Pasaporte</label>
                         <input type="text" id="pasaporte" class="form-control" placeholder="xxxxxx-x"
-                            onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporte" />
+                            onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporte"
+                            onblur="validateClientKey(this, 'E', document.getElementById('companyselected').value);" />
                     </div>
                 </div>
                 <div class="mb-3">
@@ -330,7 +365,8 @@ $configData = Helper::appClasses();
                     <div class="mb-3">
                         <label class="form-label" for="ncr">NRC</label>
                         <input type="text" id="ncr" class="form-control" placeholder="xxxxxx-x" onkeyup="NRCMask(this);"
-                            maxlength="15" aria-label="ncr" name="ncr" />
+                            maxlength="15" aria-label="ncr" name="ncr"
+                            onblur="validateNcr(this, document.getElementById('companyselected').value);" />
                     </div>
                     <div class="mb-3">
                         <label for="tipocontribuyente" class="form-label">Tipo de contribuyente</label>
@@ -491,7 +527,8 @@ $configData = Helper::appClasses();
             <div class="mb-3" id="dui_fields">
                 <label class="form-label" for="nitedit">DUI/NIT</label>
                 <input type="text" id="nitedit" class="form-control" placeholder="xxxxxxxx-x"
-                    onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nitedit" />
+                    onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nitedit"
+                    onblur="validateClientKey(this, document.getElementById('tpersonaedit').value, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
             </div>
             <div id="siescontriedit" style="display: none;">
                 <div class="mb-3">
@@ -502,7 +539,8 @@ $configData = Helper::appClasses();
                 <div class="mb-3">
                     <label class="form-label" for="ncredit">NRC</label>
                     <input type="text" id="ncredit" class="form-control" onkeyup="NRCMask(this);" maxlength="15"
-                        placeholder="xxxxxx-x" aria-label="ncr" name="ncredit" />
+                        placeholder="xxxxxx-x" aria-label="ncr" name="ncredit"
+                        onblur="validateNcr(this, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
                 </div>
                 <div class="mb-3">
                     <label for="tipocontribuyenteedit" class="form-label">Tipo de contribuyente</label>
