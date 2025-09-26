@@ -580,6 +580,13 @@ function typepersonedit(type) {
         $("#contribuyentelabeledit").css("display", "block");
         $("#extranjerolabeledit").css("display", "block !important");
         $("#extranjerolabeledit").show();
+
+        // Asegurar que el padre esté visible
+        var parent = $("#extranjerolabeledit").parent();
+        if (parent.css("visibility") === "hidden") {
+            parent.css("visibility", "visible");
+        }
+
         $("#siescontriedit").css("display", "none");
         $("#dui_fields").css("display", "block");
         $("#pasaporte_fields_edit").css("display", "none");
@@ -709,6 +716,13 @@ function editClient(id) {
                         $("#extranjeroedit").prop("checked", true);
                         $("#extranjerolabeledit").css("display", "block !important");
                         $("#extranjerolabeledit").show();
+
+                        // Asegurar que el padre esté visible
+                        var parent = $("#extranjerolabeledit").parent();
+                        if (parent.css("visibility") === "hidden") {
+                            parent.css("visibility", "visible");
+                        }
+
                         // Asegurar que se muestre el campo de pasaporte
                         $("#pasaporte_fields_edit").css("display", "block");
                         $("#dui_fields").css("display", "none");
@@ -719,6 +733,13 @@ function editClient(id) {
                         $("#extranjeroedit").prop("checked", false);
                         $("#extranjerolabeledit").css("display", "block !important");
                         $("#extranjerolabeledit").show();
+
+                        // Asegurar que el padre esté visible
+                        var parent = $("#extranjerolabeledit").parent();
+                        if (parent.css("visibility") === "hidden") {
+                            parent.css("visibility", "visible");
+                        }
+
                         // Asegurar que se muestre el campo de DUI
                         $("#pasaporte_fields_edit").css("display", "none");
                         $("#dui_fields").css("display", "block");
@@ -784,6 +805,12 @@ function editClient(id) {
                     console.log("Parent element:", parent[0]);
                     console.log("Parent display:", parent.css("display"));
                     console.log("Parent visibility:", parent.css("visibility"));
+
+                    // Si el padre está oculto, mostrarlo
+                    if (parent.css("visibility") === "hidden") {
+                        parent.css("visibility", "visible");
+                        console.log("Parent visibility fixed to visible");
+                    }
 
                     // Verificar si hay algún CSS que esté ocultando el elemento
                     var computedStyle = window.getComputedStyle($("#extranjerolabeledit")[0]);
