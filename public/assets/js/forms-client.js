@@ -600,9 +600,13 @@ function typepersonedit(type) {
         if ($("#extranjeroedit").is(":checked")) {
             $("#dui_fields").css("display", "none");
             $("#pasaporte_fields_edit").css("display", "block");
+            $("#dui_fields").hide();
+            $("#pasaporte_fields_edit").show();
         } else {
             $("#dui_fields").css("display", "block");
             $("#pasaporte_fields_edit").css("display", "none");
+            $("#dui_fields").show();
+            $("#pasaporte_fields_edit").hide();
         }
 
         validarchecked();
@@ -742,6 +746,10 @@ function editClient(id) {
                         // Asegurar que se muestre el campo de pasaporte y se oculte el DUI
                         $("#pasaporte_fields_edit").css("display", "block");
                         $("#dui_fields").css("display", "none");
+
+                        // Forzar ocultación del campo DUI
+                        $("#dui_fields").hide();
+                        $("#pasaporte_fields_edit").show();
                     } else if (value == "0") {
                         $("#extranjeroedit").prop("checked", false);
                         $("#extranjerolabeledit").css("display", "block !important");
@@ -756,6 +764,10 @@ function editClient(id) {
                         // Asegurar que se muestre el campo de DUI y se oculte el pasaporte
                         $("#pasaporte_fields_edit").css("display", "none");
                         $("#dui_fields").css("display", "block");
+
+                        // Forzar ocultación del campo pasaporte
+                        $("#pasaporte_fields_edit").hide();
+                        $("#dui_fields").show();
                     }
                 }
                 if (index == "tpersona") {
@@ -874,6 +886,15 @@ function editClient(id) {
                     // Si el padre está oculto, mostrarlo
                     if (parent.css("visibility") === "hidden") {
                         parent.css("visibility", "visible");
+                    }
+
+                    // Asegurar que los campos correctos estén visibles
+                    if ($("#extranjeroedit").is(":checked")) {
+                        $("#dui_fields").hide();
+                        $("#pasaporte_fields_edit").show();
+                    } else {
+                        $("#dui_fields").show();
+                        $("#pasaporte_fields_edit").hide();
                     }
                 }
             }, 500);
