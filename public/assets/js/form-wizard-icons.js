@@ -1708,13 +1708,6 @@ function agregarfacdetails(corr) {
                 pricesaletotal += parseFloat(value.pricesale);
                 totaltemptotal += (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(value.pricesale))
                 + (parseFloat(value.detained13) - (parseFloat(value.renta) + (parseFloat(value.detained))));
-                var sumasl = 0;
-                var iva13l = 0;
-                var renta10l = 0;
-                var ivaretenidol = 0;
-                var ventasnosujetasl = 0;
-                var ventasexentasl = 0;
-                var ventatotall = 0;
                 var row =
                     '<tr id="pro' +
                     value.id +
@@ -1773,7 +1766,8 @@ function agregarfacdetails(corr) {
             });
 
             // Actualizar totales como Roma Copies
-            sumasl = totalsumas;
+            // SUMAS debe incluir gravadas + no sujetas + exentas
+            sumasl = totalsumas + nosujetatotal + exempttotal;
             iva13l = ivarete13total;
 
             $("#sumasl").html(
