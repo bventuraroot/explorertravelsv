@@ -1766,8 +1766,9 @@ function agregarfacdetails(corr) {
             });
 
             // Actualizar totales como Roma Copies
-            // SUMAS debe incluir gravadas + no sujetas + exentas
-            sumasl = totalsumas + nosujetatotal + exempttotal;
+            // SUMAS ya es el subtotal de ventas (gravadas + no sujetas + exentas)
+            // NO volver a sumar no_sujetas ni exentas aquí
+            sumasl = totalsumas;
             iva13l = ivarete13total;
 
             $("#sumasl").html(
