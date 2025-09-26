@@ -1742,70 +1742,62 @@ function agregarfacdetails(corr) {
                     value.id +
                     ')"><span class="ti ti-trash"></span></button></td></tr>';
                 $("#tblproduct tbody").append(row);
-
-                // Actualizar totales como Roma Copies
-                sumasl = totalsumas;
-                iva13l = ivarete13total;
-
-                $("#sumasl").html(
-                    sumasl.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#sumas").val(sumasl);
-                $("#13ival").html(
-                    iva13l.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#13iva").val(iva13l);
-                renta10l = rentatotal;
-                $("#10rental").html(
-                    renta10l.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#rentaretenido").val(renta10l);
-                ivaretenidol =  ivaretetotal;
-                $("#ivaretenidol").html(
-                    ivaretenidol.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#ivaretenido").val(ivaretenidol);
-                ventasnosujetasl =  nosujetatotal;
-                $("#ventasnosujetasl").html(
-                    ventasnosujetasl.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#ventasnosujetas").val(ventasnosujetasl);
-                ventasexentasl = exempttotal;
-                $("#ventasexentasl").html(
-                    ventasexentasl.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#ventasexentas").val(ventasexentasl);
-
-                // Calcular total general: sumas + IVA - retenciones (como Roma Copies)
-                ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
-                $("#ventatotall").html(
-                    ventatotall.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    })
-                );
-                $("#ventatotallhidden").val(ventatotall);
-                $("#ventatotal").val(ventatotall);
             });
+            // =============================
+            // Actualizar resumen una sola vez (evita NaN en borradores)
+            // Asegurar números válidos
+            totalsumas = parseFloat(totalsumas) || 0;
+            ivarete13total = parseFloat(ivarete13total) || 0;
+            rentatotal = parseFloat(rentatotal) || 0;
+            ivaretetotal = parseFloat(ivaretetotal) || 0;
+            nosujetatotal = parseFloat(nosujetatotal) || 0;
+            exempttotal = parseFloat(exempttotal) || 0;
 
+            // Actualizar totales como Roma Copies
+            sumasl = totalsumas;
+            iva13l = ivarete13total;
+
+            $("#sumasl").html(
+                sumasl.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#sumas").val(sumasl);
+
+            $("#13ival").html(
+                iva13l.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#13iva").val(iva13l);
+
+            renta10l = rentatotal;
+            $("#10rental").html(
+                renta10l.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#rentaretenido").val(renta10l);
+
+            ivaretenidol = ivaretetotal;
+            $("#ivaretenidol").html(
+                ivaretenidol.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#ivaretenido").val(ivaretenidol);
+
+            ventasnosujetasl = nosujetatotal;
+            $("#ventasnosujetasl").html(
+                ventasnosujetasl.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#ventasnosujetas").val(ventasnosujetasl);
+
+            ventasexentasl = exempttotal;
+            $("#ventasexentasl").html(
+                ventasexentasl.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#ventasexentas").val(ventasexentasl);
+
+            // Calcular total general: sumas + IVA - retenciones (como Roma Copies)
+            ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
+            $("#ventatotall").html(
+                ventatotall.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#ventatotallhidden").val(ventatotall);
+            $("#ventatotal").val(ventatotall);
 
         },
         failure: function (response) {
