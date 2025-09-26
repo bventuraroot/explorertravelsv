@@ -289,11 +289,11 @@ class SaleController extends Controller
             }
             //iva al fee - solo para ventas gravadas
             if ($tipoVenta === 'gravada') {
-                $feesiniva = round($fee / 1.13, 2);
-                $ivafee = round($fee - $feesiniva, 2);
+                $feesiniva = round($fee / 1.13, 8);
+                $ivafee = round($fee - $feesiniva, 8);
             } else {
                 // Para ventas exentas/no sujetas, el fee no tiene IVA
-                $feesiniva = round($fee, 2);
+                $feesiniva = round($fee, 8);
                 $ivafee = 0.00;
             }
 
@@ -301,14 +301,15 @@ class SaleController extends Controller
             $saledetails->sale_id = $idsale;
             $saledetails->product_id = $productid;
             $saledetails->amountp = $cantidad;
-            $saledetails->priceunit = round($priceunitariofac, 2);
-            $saledetails->pricesale = round($pricegravadafac, 2);
+            // Guardar con precisión 8 (BD 12,8)
+            $saledetails->priceunit = round($priceunitariofac, 8);
+            $saledetails->pricesale = round($pricegravadafac, 8);
 
             // Asignar valores según el tipo de venta (como en Roma Copies)
             if ($tipoVenta === 'gravada') {
                 $saledetails->nosujeta = 0.00;
                 $saledetails->exempt = 0.00;
-                $saledetails->detained13 = round($ivafac, 2);
+                $saledetails->detained13 = round($ivafac, 8);
             } elseif ($tipoVenta === 'exenta') {
                 $saledetails->nosujeta = 0.00;
                 $saledetails->exempt = $priceexenta; // El precio total ya incluye IVA

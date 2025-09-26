@@ -867,6 +867,13 @@ function calculateFromPriceWithIva() {
     }
 }
 
+// Enlazar eventos para que el usuario ingrese "Precio de Venta (Con IVA)" y se calcule automáticamente
+if (typeof $ !== 'undefined') {
+    $(document).on('input change', '#precioConIva, #cantidad, #fee, #typesale', function () {
+        calculateFromPriceWithIva();
+    });
+}
+
 function searchproduct(idpro) {
     // Mostrar campos adicionales para productos de viajes/tickets
     // Se puede modificar esta lógica según las necesidades del negocio
@@ -1655,12 +1662,15 @@ function agregarfacdetails(corr) {
                 var isNoSujeto = parseFloat(value.nosujeta) > 0;
 
                 if(typedoc=='3'){
-                    // CRÉDITO FISCAL: igual que Roma Copies
+                    // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
+                    var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
                     if(isGravado) {
-                        preciogravadas = parseFloat(value.pricesale); // Sin IVA
-                        var iva13Line = parseFloat(preciogravadas * 0.13);
+                        preciogravadas = parseFloat(value.pricesale); // Sin IVA (solo producto)
+                        // IVA de la línea = 13% de (producto sin IVA + fee sin IVA)
+                        var baseIvaLinea = preciogravadas + feeSinIvaLinea;
+                        var iva13Line = parseFloat(baseIvaLinea * 0.13);
                         ivarete13total += iva13Line;
-                        // Mostrar en tabla precio unitario SIN IVA (CCF trabaja sin IVA en unidad)
+                        // Mostrar en tabla precio unitario SIN IVA (sin fee)
                         preciounitario = parseFloat(value.priceunit);
                     } else {
                         preciogravadas = 0;
@@ -1668,7 +1678,8 @@ function agregarfacdetails(corr) {
                         // Para exenta/no sujeta también mostrar sin IVA
                         preciounitario = parseFloat(value.priceunit);
                     }
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + iva13Line);
+                    // Total de la fila = (no sujetas + exentas) + (gravadas sin IVA + fee sin IVA) + IVA calculado
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + (parseFloat(preciogravadas) + feeSinIvaLinea) + iva13Line);
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
