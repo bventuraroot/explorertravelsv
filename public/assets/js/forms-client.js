@@ -140,10 +140,10 @@ function validateClientExists() {
     } else if (tpersona == "J") {
         key = $("#ncr").val();
     }
-    
+
     // Quitar guiones y espacios para validación
     key = key.replace(/[- ]/g, '');
-    
+
     if (!key || key.trim() === "") {
         $("#btnsavenewclient").prop("disabled", true);
         return;
@@ -186,7 +186,7 @@ $(document).ready(function () {
         var key = $("#nit").val().replace(/[- ]/g, ''); // Quitar guiones
         var tpersona = $("#tpersona").val();
         var companyId = $("#companyselected").val();
-        
+
         if (!key || key.trim() === "") {
             $("#btnsavenewclient").prop("disabled", true);
             return;
@@ -258,7 +258,7 @@ $(document).ready(function () {
         var key = $("#ncr").val().replace(/[- ]/g, ''); // Quitar guiones
         var tpersona = $("#tpersona").val();
         var companyId = $("#companyselected").val();
-        
+
         if (!key || key.trim() === "") {
             $("#btnsavenewclient").prop("disabled", true);
             return;

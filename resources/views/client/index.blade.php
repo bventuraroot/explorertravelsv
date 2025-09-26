@@ -549,7 +549,7 @@ $configData = Helper::appClasses();
             <div class="mb-3" id="pasaporte_fields_edit" style="display: none;">
                 <label class="form-label" for="pasaporteedit">Pasaporte</label>
                 <input type="text" id="pasaporteedit" class="form-control" placeholder="Número de Pasaporte"
-                    onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporteedit" 
+                    onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporteedit"
                     onblur="validateClientKey(this, 'E', document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
             </div>
             <div id="siescontriedit" style="display: none;">
