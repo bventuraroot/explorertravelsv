@@ -587,6 +587,15 @@ function typepersonedit(type) {
             parent.css("visibility", "visible");
         }
 
+        // Forzar tamaño del elemento
+        var element = $("#extranjerolabeledit")[0];
+        if (element) {
+            element.style.width = "auto";
+            element.style.height = "auto";
+            element.style.minWidth = "200px";
+            element.style.minHeight = "40px";
+        }
+
         $("#siescontriedit").css("display", "none");
         $("#dui_fields").css("display", "block");
         $("#pasaporte_fields_edit").css("display", "none");
@@ -723,6 +732,15 @@ function editClient(id) {
                             parent.css("visibility", "visible");
                         }
 
+                        // Forzar tamaño del elemento
+                        var element = $("#extranjerolabeledit")[0];
+                        if (element) {
+                            element.style.width = "auto";
+                            element.style.height = "auto";
+                            element.style.minWidth = "200px";
+                            element.style.minHeight = "40px";
+                        }
+
                         // Asegurar que se muestre el campo de pasaporte
                         $("#pasaporte_fields_edit").css("display", "block");
                         $("#dui_fields").css("display", "none");
@@ -810,6 +828,10 @@ function editClient(id) {
                         element.style.opacity = "1";
                         element.style.position = "relative";
                         element.style.zIndex = "9999";
+                        element.style.width = "auto";
+                        element.style.height = "auto";
+                        element.style.minWidth = "200px";
+                        element.style.minHeight = "40px";
                     }
 
                     // Verificar si el elemento padre está oculto
