@@ -651,7 +651,7 @@ if (!function_exists('fac')) {
             "descActividad"         => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $cliente[0]->descActividad,
 
         ];
-        //dd($receptor);
+        dd($receptor);
 
         if ($cliente[0]->codPais == '9300') {
 
