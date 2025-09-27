@@ -358,40 +358,31 @@ if (!function_exists('convertir_json')) {
 
             switch ($tipo_comprobante) {
                 case '03': //CRF
-                    \Log::info('convertir_json - Procesando CRF');
                     $retorno = crf($compro, $uuid_generado);
                     break;
                 case '01': //FAC
-                    \Log::info('convertir_json - Procesando FAC');
                     $retorno = fac($compro, $uuid_generado);
                     break;
                 case '05':  //NCR
-                    \Log::info('convertir_json - Procesando NCR');
                     $retorno = ncr($compro, $uuid_generado);; // ncr($compro, $uuid_generado);
                     break;
                 case '06':  //NDB
-                    \Log::info('convertir_json - Procesando NDB');
                     $retorno = ndb($compro, $uuid_generado);;
                     break;
                 case '08':  //CLQ
-                    \Log::info('convertir_json - Procesando CLQ');
                     $retorno = []; //clq($compro, $uuid_generado);
                     break;
                 case '11':  //FEX
-                    \Log::info('convertir_json - Procesando FEX');
                     $retorno = fex($compro, $uuid_generado);
                     break;
                 case '14':  //FSE
-                    \Log::info('convertir_json - Procesando FSE');
                     $retorno = fse($compro, $uuid_generado);
                     break;
                 case '99':
-                    \Log::info('convertir_json - Procesando FAN');
                     $retorno = fan($compro, $uuid_generado);
                     break;
 
                 default:
-                    \Log::warning('convertir_json - Tipo de comprobante no reconocido: ' . $tipo_comprobante);
                     $retorno = [];
                     break;
             }
