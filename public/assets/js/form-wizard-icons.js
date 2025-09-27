@@ -350,7 +350,7 @@ function agregarp() {
             });
         } else {
             // Para otros documentos: lógica normal
-            pricegravada = parseFloat((price * cantidad)+fee);
+            pricegravada = parseFloat((price * cantidad) + (fee * cantidad));
             iva13temp = 0.00;
         }
         totaltempgravado = parseFloat(pricegravada);
@@ -378,8 +378,8 @@ function agregarp() {
         var feeSinIva = feeConIva / 1.13;
         priceunitariofee = parseFloat(price) + feeSinIva;
     } else {
-        // Para otros documentos: precio unitario incluye fee
-        priceunitariofee = price + (fee/cantidad);
+        // Para otros documentos: precio unitario incluye fee por unidad
+        priceunitariofee = price + fee;
     }
     var totaltemptotal = parseFloat(
     ($.isNumeric(pricegravada)? pricegravada: 0) +
@@ -560,10 +560,15 @@ function agregarp() {
 
                     console.log("DEBUG NUEVO PRODUCTO FINAL - totalGravadas:", totalGravadas, "totalIva:", totalIva);
                 } else {
-                    // Para otros documentos, sumar normalmente
+                    // Para otros documentos, calcular correctamente:
+                    // SUMAS = subtotal de productos (sin IVA ni retenciones)
                     sumasl = sumas + totaltemp;
+
+                    // IVA solo para documentos que lo requieren
                     if(typedoc==6 || typedoc==7 || typedoc==8){
                         iva13l=0.00;
+                    } else {
+                        iva13l = iva13 + iva13temp;
                     }
                 }
 
@@ -623,8 +628,9 @@ function agregarp() {
                     // Para Crédito Fiscal, calcular total como suma de gravadas + IVA
                     ventatotall = sumasl + iva13l;
                 } else {
-                    // Para otros documentos, sumar normalmente
-                    ventatotall = parseFloat(ventatotaltotal) + parseFloat(totaltemptotal);
+                    // Para otros documentos, calcular correctamente:
+                    // SUMAS (subtotal) + IVA - retenciones
+                    ventatotall = sumasl + iva13l - ivaretenidol - renta10l;
                 }
                 $("#ventatotall").html(
                     parseFloat(ventatotall).toLocaleString("en-US", {
