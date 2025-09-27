@@ -386,14 +386,9 @@ if (!function_exists('convertir_json')) {
                     $retorno = [];
                     break;
             }
-
-            \Log::info('convertir_json - Procesamiento completado exitosamente');
             return $retorno;
 
         } catch (\Exception $e) {
-            \Log::error('convertir_json - Error en línea ' . $e->getLine() . ': ' . $e->getMessage());
-            \Log::error('convertir_json - Archivo: ' . $e->getFile());
-            \Log::error('convertir_json - Trace: ' . $e->getTraceAsString());
             throw $e;
         }
     }
@@ -668,18 +663,9 @@ if (!function_exists('crf')) {
         $comprobante["apendice"]                 = $apendice;
         //echo '<br>'. var_dump($comprobante) . '<br>';
         //dd($comprobante);
-
-        \Log::info('fac - Procesamiento completado exitosamente');
         return ($comprobante);
-
-        } catch (\Exception $e) {
-            \Log::error('fac - Error en línea ' . $e->getLine() . ': ' . $e->getMessage());
-            \Log::error('fac - Archivo: ' . $e->getFile());
-            \Log::error('fac - Trace: ' . $e->getTraceAsString());
-            throw $e;
-        }
     }
-}
+
 
 if (!function_exists('ncr')) {
     function ncr($comprobante_procesar, $uuid_generado)
