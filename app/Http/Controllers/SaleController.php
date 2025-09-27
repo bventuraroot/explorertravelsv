@@ -1708,6 +1708,7 @@ class SaleController extends Controller
             //dd($url_envio);
             try {
                 $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
+                dd($response_enviado);
             } catch (\Throwable $th) {
                 //return 'entro aqui';
                 $error  = [
