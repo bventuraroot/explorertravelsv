@@ -62,6 +62,28 @@ if (!function_exists('FEstatus')) {
     }
 }
 
+if (!function_exists('getClienteDocumento')) {
+    /**
+     * Obtiene el documento del cliente aplicando la lógica de validación
+     * @param object $cliente Cliente object
+     * @return string|null Documento formateado o null
+     */
+    function getClienteDocumento($cliente)
+    {
+        // Si el NIT está vacío, null o 'N/A', retornar null
+        if ($cliente->nit == '' || is_null($cliente->nit) || $cliente->nit == 'N/A') {
+            // Si es extranjero, usar pasaporte
+        if ($cliente->extranjero == 1) {
+            return str_replace("-", "", $cliente->pasaporte);
+        }else{
+            return null;
+        }
+        }
+        // Si no es extranjero y tiene NIT válido, usar el NIT
+        return str_replace("-", "", $cliente->nit);
+    }
+}
+
 if (!function_exists('Frol')) {
     function Frol($rol)
     {
@@ -344,7 +366,7 @@ if (!function_exists('crf')) {
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
         $receptor = [
-            "nit"                   => str_replace("-", "", $cliente[0]->nit),
+            "nit"                   => getClienteDocumento($cliente[0]),
             "nrc"                   => str_replace("-", "", $cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => $codeActivity,
@@ -519,7 +541,7 @@ if (!function_exists('crf')) {
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
-            "docuRecibe"    => ($es_mayor) ? str_replace("-", "", $cliente[0]->nit) : null,
+            "docuRecibe"    => ($es_mayor) ? getClienteDocumento($cliente[0]) : null,
             "observaciones" => ($es_mayor) ? null : null,
             "placaVehiculo" => ($es_mayor) ? null : null
         ];
@@ -622,7 +644,7 @@ if (!function_exists('fac')) {
 
         $receptor = [
             "tipoDocumento"         => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? $cliente[0]->tipoDocumento : "36",
-            "numDocumento"          => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? str_replace("-","",$cliente[0]->numDocumento) : str_replace("-", "", $cliente[0]->nit),
+            "numDocumento"          => getClienteDocumento($cliente[0]),
             "nrc"                   => ($cliente[0]->ncr == 'N/A' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == '' or $cliente[0]->ncr == '0') ? null : str_replace("-","",$cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $codeActivity,
@@ -901,7 +923,7 @@ if (!function_exists('fan')) {
             "numDocResponsable"     => "05095294-8", ///$encabezado["docuEntrega"],
             "nombreSolicita"        => $cliente[0]->nombre,
             "tipDocSolicita"        => "36",
-            "numDocSolicita"        => str_replace('-','', $cliente[0]->numDocumento)
+            "numDocSolicita"        => getClienteDocumento($cliente[0])
 
        ];
 
@@ -1175,7 +1197,7 @@ if (!function_exists('fex')) {
         $receptor = [
             "nombre"                => $cliente[0]->nombre,
             "tipoDocumento"         => "03", // 03=Pasaporte para exportación
-            "numDocumento"          => str_replace("-","",$cliente[0]->nit), // Usar NIT como pasaporte
+            "numDocumento"          => getClienteDocumento($cliente[0]), // Usar función helper para documento
             "codPais"               => "9905", // Código país destino (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
@@ -1315,7 +1337,7 @@ if (!function_exists('fex')) {
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
-            "docuRecibe"    => ($es_mayor) ? str_replace("-", "", $cliente[0]->nit) : null,
+            "docuRecibe"    => ($es_mayor) ? getClienteDocumento($cliente[0]) : null,
             "observaciones" => ($es_mayor) ? null : null,
             "placaVehiculo" => ($es_mayor) ? null : null
         ];
@@ -1422,7 +1444,7 @@ if (!function_exists('ncr')) {
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
         $receptor = [
-            "nit"                   => str_replace("-", "", $cliente[0]->nit),
+            "nit"                   => getClienteDocumento($cliente[0]),
             "nrc"                   => str_replace("-", "", $cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre_cliente,
             "codActividad"          => $codeActivity,
@@ -1597,7 +1619,7 @@ if (!function_exists('ncr')) {
             "nombEntrega"   => ($es_mayor) ? $encabezado["NombreUsuario"] : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado["docUser"]) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre_cliente : null,
-            "docuRecibe"    => ($es_mayor) ? str_replace("-", "", $cliente[0]->nit) : null,
+            "docuRecibe"    => ($es_mayor) ? getClienteDocumento($cliente[0]) : null,
             "observaciones" => ($es_mayor) ? null : null,
             //"placaVehiculo" => ($es_mayor) ? null : null
             // "placaVehiculo" => ($es_mayor) ? $encabezado["placaVehiculo"] : null
@@ -1700,7 +1722,7 @@ if (!function_exists('fse')) {
         //dd($cliente);
         $sujetoExcluido = [
             "tipoDocumento"         => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) ) ? $cliente[0]->tipoDocumento : "36",
-            "numDocumento"          => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr)) ? str_replace("-","",$cliente[0]->numDocumento) : str_replace("-", "", $cliente[0]->nit),
+            "numDocumento"          => getClienteDocumento($cliente[0]),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '') ? null : $codeActivity,
             "descActividad"         => ($cliente[0]->descActividad == '') ? null : $cliente[0]->descActividad,
