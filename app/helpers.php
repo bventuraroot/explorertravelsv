@@ -62,6 +62,52 @@ if (!function_exists('FEstatus')) {
     }
 }
 
+if (!function_exists('detectarTipoDocumento')) {
+    /**
+     * Detecta el tipo de documento basándose en la longitud de caracteres
+     * @param string $documento Documento sin guiones
+     * @param object $cliente Cliente object
+     * @return string Código del tipo de documento
+     */
+    function detectarTipoDocumento($documento, $cliente)
+    {
+        if (empty($documento)) {
+            return null;
+        }
+
+        $longitud = strlen($documento);
+
+        // Si es extranjero, siempre es pasaporte (código 03)
+        if ($cliente->extranjero == 1) {
+            return "03"; // Pasaporte
+        }
+
+        // Detectar por longitud
+        switch ($longitud) {
+            case 9:
+                // DUI tiene 9 dígitos (código 13)
+                return "13"; // DUI
+            case 14:
+                // NIT tiene 14 dígitos (código 36)
+                return "36"; // NIT
+            default:
+                // Para otros casos, verificar si contiene solo números
+                if (ctype_digit($documento)) {
+                    // Si tiene 9 dígitos, es DUI
+                    if ($longitud == 9) {
+                        return "13"; // DUI
+                    }
+                    // Si tiene 14 dígitos, es NIT
+                    if ($longitud == 14) {
+                        return "36"; // NIT
+                    }
+                }
+                // Si no coincide con los patrones conocidos, asumir NIT por defecto
+                return "36"; // NIT por defecto
+        }
+    }
+}
+
 if (!function_exists('getClienteDocumento')) {
     /**
      * Obtiene el documento del cliente aplicando la lógica de validación
@@ -73,14 +119,40 @@ if (!function_exists('getClienteDocumento')) {
         // Si el NIT está vacío, null o 'N/A', retornar null
         if ($cliente->nit == '' || is_null($cliente->nit) || $cliente->nit == 'N/A') {
             // Si es extranjero, usar pasaporte
-        if ($cliente->extranjero == 1) {
-            return str_replace("-", "", $cliente->pasaporte);
-        }else{
-            return null;
-        }
+            if ($cliente->extranjero == 1) {
+                return str_replace("-", "", $cliente->pasaporte);
+            }else{
+                return null;
+            }
         }
         // Si no es extranjero y tiene NIT válido, usar el NIT
         return str_replace("-", "", $cliente->nit);
+    }
+}
+
+if (!function_exists('getClienteDocumentoConTipo')) {
+    /**
+     * Obtiene el documento del cliente con detección automática del tipo
+     * @param object $cliente Cliente object
+     * @return array Array con 'documento' y 'tipoDocumento'
+     */
+    function getClienteDocumentoConTipo($cliente)
+    {
+        $documento = getClienteDocumento($cliente);
+
+        if (empty($documento)) {
+            return [
+                'documento' => null,
+                'tipoDocumento' => null
+            ];
+        }
+
+        $tipoDocumento = detectarTipoDocumento($documento, $cliente);
+
+        return [
+            'documento' => $documento,
+            'tipoDocumento' => $tipoDocumento
+        ];
     }
 }
 
@@ -642,9 +714,11 @@ if (!function_exists('fac')) {
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
 
+        $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
+
         $receptor = [
-            "tipoDocumento"         => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? $cliente[0]->tipoDocumento : "36",
-            "numDocumento"          => getClienteDocumento($cliente[0]),
+            "tipoDocumento"         => $documentoInfo['tipoDocumento'],
+            "numDocumento"          => $documentoInfo['documento'],
             "nrc"                   => ($cliente[0]->ncr == 'N/A' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == '' or $cliente[0]->ncr == '0') ? null : str_replace("-","",$cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $codeActivity,
@@ -922,8 +996,8 @@ if (!function_exists('fan')) {
             "tipDocResponsable"    => "13",
             "numDocResponsable"     => "05095294-8", ///$encabezado["docuEntrega"],
             "nombreSolicita"        => $cliente[0]->nombre,
-            "tipDocSolicita"        => "36",
-            "numDocSolicita"        => getClienteDocumento($cliente[0])
+            "tipDocSolicita"        => getClienteDocumentoConTipo($cliente[0])['tipoDocumento'],
+            "numDocSolicita"        => getClienteDocumentoConTipo($cliente[0])['documento']
 
        ];
 
@@ -1194,10 +1268,12 @@ if (!function_exists('fex')) {
         ];
 
         // Para FEX, el receptor es internacional - usar campos específicos
+        $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
+
         $receptor = [
             "nombre"                => $cliente[0]->nombre,
-            "tipoDocumento"         => "03", // 03=Pasaporte para exportación
-            "numDocumento"          => getClienteDocumento($cliente[0]), // Usar función helper para documento
+            "tipoDocumento"         => $documentoInfo['tipoDocumento'], // Detección automática del tipo
+            "numDocumento"          => $documentoInfo['documento'], // Usar función helper para documento
             "codPais"               => "9905", // Código país destino (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
@@ -1720,9 +1796,11 @@ if (!function_exists('fse')) {
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
         //dd($cliente);
+        $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
+
         $sujetoExcluido = [
-            "tipoDocumento"         => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) ) ? $cliente[0]->tipoDocumento : "36",
-            "numDocumento"          => getClienteDocumento($cliente[0]),
+            "tipoDocumento"         => $documentoInfo['tipoDocumento'],
+            "numDocumento"          => $documentoInfo['documento'],
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '') ? null : $codeActivity,
             "descActividad"         => ($cliente[0]->descActividad == '') ? null : $cliente[0]->descActividad,
