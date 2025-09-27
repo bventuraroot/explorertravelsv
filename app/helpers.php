@@ -8,6 +8,7 @@ use App\Models\Product;
 use PhpParser\Node\Stmt\Foreach_;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
@@ -319,6 +320,12 @@ if (!function_exists('convertir_json')) {
         $compro = $compro_procesar;
         //dd(is_array($compro));
         //dd($compro["documento"][0]["tipodocumento"]);
+
+        // Debugging para identificar el problema
+        Log::info('convertir_json - Iniciando', [
+            'codTransaccion' => $codTransaccion,
+            'tipo_documento' => isset($compro["documento"][0]) ? $compro["documento"][0]->tipodocumento : 'NO_DEFINIDO'
+        ]);
         if ($codTransaccion=="02") {
             $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
         } else if($codTransaccion=="05") {
