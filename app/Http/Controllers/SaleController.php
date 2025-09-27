@@ -1611,7 +1611,15 @@ class SaleController extends Controller
         $respuesta = [];
         $comprobante_electronico = [];
         //return $comprobante_electronico;
-        $comprobante_electronico = convertir_json($comprobante, $codTransaccion);
+        try {
+            $comprobante_electronico = convertir_json($comprobante, $codTransaccion);
+        } catch (\Exception $e) {
+            Log::error('Error en convertir_json: ' . $e->getMessage());
+            Log::error('Línea: ' . $e->getLine());
+            Log::error('Archivo: ' . $e->getFile());
+            Log::error('Trace: ' . $e->getTraceAsString());
+            throw $e;
+        }
         //return $comprobante_electronico;
         if ($codTransaccion == "02" || $codTransaccion == "05") {
             $tipo_documento = $comprobante["documento"][0]["tipodocumento"];
