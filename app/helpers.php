@@ -116,33 +116,17 @@ if (!function_exists('getClienteDocumento')) {
      */
     function getClienteDocumento($cliente)
     {
-        try {
-            \Log::info('getClienteDocumento - Iniciando', [
-                'cliente_nit' => $cliente->nit ?? 'NO_DEFINIDO',
-                'cliente_extranjero' => $cliente->extranjero ?? 'NO_DEFINIDO',
-                'cliente_pasaporte' => $cliente->pasaporte ?? 'NO_DEFINIDO'
-            ]);
-
-            // Si el NIT está vacío, null o 'N/A', retornar null
-            if ($cliente->nit == '' || is_null($cliente->nit) || $cliente->nit == 'N/A') {
-                \Log::info('getClienteDocumento - NIT vacío, verificando si es extranjero');
-                // Si es extranjero, usar pasaporte
-                if ($cliente->extranjero == 1) {
-                    \Log::info('getClienteDocumento - Es extranjero, usando pasaporte: ' . $cliente->pasaporte);
-                    return str_replace("-", "", $cliente->pasaporte);
-                }else{
-                    \Log::info('getClienteDocumento - No es extranjero, retornando null');
-                    return null;
-                }
+        // Si el NIT está vacío, null o 'N/A', retornar null
+        if ($cliente->nit == '' || is_null($cliente->nit) || $cliente->nit == 'N/A') {
+            // Si es extranjero, usar pasaporte
+            if ($cliente->extranjero == 1) {
+                return str_replace("-", "", $cliente->pasaporte);
+            }else{
+                return null;
             }
-            // Si no es extranjero y tiene NIT válido, usar el NIT
-            \Log::info('getClienteDocumento - Usando NIT: ' . $cliente->nit);
-            return str_replace("-", "", $cliente->nit);
-        } catch (\Exception $e) {
-            \Log::error('getClienteDocumento - Error en línea ' . $e->getLine() . ': ' . $e->getMessage());
-            \Log::error('getClienteDocumento - Archivo: ' . $e->getFile());
-            throw $e;
         }
+        // Si no es extranjero y tiene NIT válido, usar el NIT
+        return str_replace("-", "", $cliente->nit);
     }
 }
 
@@ -331,66 +315,52 @@ if (!function_exists('enviar_correo_prueba')) {
 if (!function_exists('convertir_json')) {
     function convertir_json($compro_procesar, $codTransaccion="01")
     {
-        try {
-            //var_dump($compro_procesar);
-            $compro = $compro_procesar;
-            //dd(is_array($compro));
-            //dd($compro["documento"][0]["tipodocumento"]);
-
-            \Log::info('convertir_json - Iniciando procesamiento', [
-                'codTransaccion' => $codTransaccion,
-                'tipo_documento' => isset($compro["documento"][0]) ? (is_array($compro["documento"][0]) ? $compro["documento"][0]["tipodocumento"] : $compro["documento"][0]->tipodocumento) : 'NO_DEFINIDO'
-            ]);
-
-            if ($codTransaccion=="02") {
-                $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
-            } else if($codTransaccion=="05") {
-                $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
-            } else {
-                $tipo_comprobante = $compro["documento"][0]->tipodocumento;
-            }
-            //dd($tipo_comprobante);
-            $retorno = [];
-            $uuid_generado = strtoupper(Str::uuid()->toString());
-            //$retorno=[$compro, $uuid_generado];
-
-            \Log::info('convertir_json - Tipo de comprobante detectado: ' . $tipo_comprobante);
-
-            switch ($tipo_comprobante) {
-                case '03': //CRF
-                    $retorno = crf($compro, $uuid_generado);
-                    break;
-                case '01': //FAC
-                    $retorno = fac($compro, $uuid_generado);
-                    break;
-                case '05':  //NCR
-                    $retorno = ncr($compro, $uuid_generado);; // ncr($compro, $uuid_generado);
-                    break;
-                case '06':  //NDB
-                    $retorno = ndb($compro, $uuid_generado);;
-                    break;
-                case '08':  //CLQ
-                    $retorno = []; //clq($compro, $uuid_generado);
-                    break;
-                case '11':  //FEX
-                    $retorno = fex($compro, $uuid_generado);
-                    break;
-                case '14':  //FSE
-                    $retorno = fse($compro, $uuid_generado);
-                    break;
-                case '99':
-                    $retorno = fan($compro, $uuid_generado);
-                    break;
-
-                default:
-                    $retorno = [];
-                    break;
-            }
-            return $retorno;
-
-        } catch (\Exception $e) {
-            throw $e;
+        //var_dump($compro_procesar);
+        $compro = $compro_procesar;
+        //dd(is_array($compro));
+        //dd($compro["documento"][0]["tipodocumento"]);
+        if ($codTransaccion=="02") {
+            $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
+        } else if($codTransaccion=="05") {
+            $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
+        } else {
+            $tipo_comprobante = $compro["documento"][0]->tipodocumento;
         }
+        //dd($tipo_comprobante);
+        $retorno = [];
+        $uuid_generado = strtoupper(Str::uuid()->toString());
+        //$retorno=[$compro, $uuid_generado];
+        switch ($tipo_comprobante) {
+            case '03': //CRF
+                $retorno = crf($compro, $uuid_generado);
+                break;
+            case '01': //FAC
+                $retorno = fac($compro, $uuid_generado);
+                break;
+            case '05':  //NCR
+                $retorno = ncr($compro, $uuid_generado);; // ncr($compro, $uuid_generado);
+                break;
+            case '06':  //NDB
+                $retorno = ndb($compro, $uuid_generado);;
+                break;
+            case '08':  //CLQ
+                $retorno = []; //clq($compro, $uuid_generado);
+                break;
+            case '11':  //FEX
+                $retorno = fex($compro, $uuid_generado);
+                break;
+            case '14':  //FSE
+                $retorno = fse($compro, $uuid_generado);
+                break;
+            case '99':
+                $retorno = fan($compro, $uuid_generado);
+                break;
+
+            default:
+                $retorno = [];
+                break;
+        }
+        return $retorno;
     }
 }
 
@@ -665,23 +635,28 @@ if (!function_exists('crf')) {
         //dd($comprobante);
         return ($comprobante);
     }
+}
 
+if (!function_exists('fac')) {
+    function fac($comprobante_procesar, $uuid_generado){
 
-if (!function_exists('ncr')) {
-    function ncr($comprobante_procesar, $uuid_generado)
-    { //dd();
+        $comprobante = [];
         $encabezado = $comprobante_procesar["documento"][0];
         $emisor_data = $comprobante_procesar["emisor"];
         $cliente = $comprobante_procesar["cliente"];
+        $totales = $comprobante_procesar["totales"];
+        //dd($emisor_data);
         //dd($encabezado);
         $cuerpo = $comprobante_procesar["detalle"];
         //dd($cuerpo);
         $uuid = $uuid_generado;
-        $numero_documento = CerosIzquierda($encabezado["nu_doc"], 15);
-        $tipo_documento = $encabezado["tipoDteOriginal"];
+        $numero_documento = CerosIzquierda($encabezado->actual, 15);
+        $tipo_documento = $encabezado->tipodocumento;
+        //dd($encabezado);
         $caja = "0001";
-        $tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
-        $empresa = $encabezado;
+        $testablecimiento = "1";
+        $tipo_establecimiento = CerosIzquierda($testablecimiento,4);//$encabezado["tipo_establecimiento"], 4);
+        $empresa = $comprobante_procesar["emisor"];
         $identificacion = [
             "version"           => intval($encabezado->versionJson),
             "ambiente"          => $encabezado->ambiente,
