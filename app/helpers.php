@@ -720,9 +720,13 @@ if (!function_exists('fac')) {
             {$codeActivity = '0' . $cliente[0]->codActividad;}
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
-
+        if($cliente[0]->extranjero == 1){
+            $tipoDocumento = "03";
+        }else{
+            $tipoDocumento = ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? $cliente[0]->tipoDocumento : "36";
+        }
         $receptor = [
-            "tipoDocumento"         => ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? $cliente[0]->tipoDocumento : "36",
+            "tipoDocumento"         => $tipoDocumento,
             "numDocumento"          => getClienteDocumento($cliente[0]),
             "nrc"                   => ($cliente[0]->ncr == 'N/A' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == '' or $cliente[0]->ncr == '0') ? null : str_replace("-","",$cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
