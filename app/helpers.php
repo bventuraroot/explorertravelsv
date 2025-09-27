@@ -715,7 +715,7 @@ if (!function_exists('fac')) {
         }
 
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
-
+        dd($documentoInfo);
         $receptor = [
             "tipoDocumento"         => $documentoInfo['tipoDocumento'],
             "numDocumento"          => $documentoInfo['documento'],
