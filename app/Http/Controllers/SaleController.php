@@ -1722,7 +1722,12 @@ class SaleController extends Controller
 
                 // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
                 if ($response_enviado->status() == 401) {
-                    Log::warning('Token no autorizado (401), regenerando token y reintentando envío 2 vez...');
+                    Log::warning('Token no autorizado (401), esperando 2 segundos antes del segundo intento...');
+
+                    // Esperar 2 segundos antes del segundo intento
+                    sleep(3);
+
+                    Log::warning('Regenerando token y reintentando envío 2 vez...');
 
                     // Limpiar sesión para forzar nueva autenticación
                     Session::forget($id_empresa);
@@ -1741,7 +1746,12 @@ class SaleController extends Controller
 
                         // Si el segundo intento también falla con 401, intentar una tercera vez
                         if($response_enviado->status() == 401){
-                            Log::warning('Token no autorizado (401), regenerando token y reintentando envío 3 vez...');
+                            Log::warning('Token no autorizado (401), esperando 3 segundos antes del tercer intento...');
+
+                            // Esperar 3 segundos antes del tercer intento
+                            sleep(3);
+
+                            Log::warning('Regenerando token y reintentando envío 3 vez...');
 
                             // Limpiar sesión nuevamente
                             Session::forget($id_empresa);
