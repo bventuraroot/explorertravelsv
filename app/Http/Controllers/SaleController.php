@@ -1791,7 +1791,7 @@ class SaleController extends Controller
                     ]);
                 }
 
-                dd($response_enviado);
+                //dd($response_enviado);
             } catch (\Throwable $th) {
                 //return 'entro aqui';
                 $error  = [
