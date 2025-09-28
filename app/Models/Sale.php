@@ -26,7 +26,8 @@ class Sale extends Model
         'json',
         'doc_related',
         'id_contingencia',
-        'codigoGeneracion'
+        'codigoGeneracion',
+        'motivo'
     ];
 
     protected $casts = [

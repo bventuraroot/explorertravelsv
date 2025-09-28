@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\ContingenciasController;
+use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\MunicipalityController;
 use App\Http\Controllers\CountryController;
@@ -170,9 +171,18 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
 
     });
 
-    // Rutas para notas de crédito y débito
+    // Rutas para notas de crédito
     Route::group(['prefix' => 'credit-notes', 'as' => 'credit-notes.'], function(){
-        Route::get('create', [SaleController::class, 'ncr'])->name('create');
+        Route::get('/', [CreditNoteController::class, 'index'])->name('index');
+        Route::get('create', [CreditNoteController::class, 'create'])->name('create');
+        Route::post('store', [CreditNoteController::class, 'store'])->name('store');
+        Route::get('show/{creditNote}', [CreditNoteController::class, 'show'])->name('show');
+        Route::get('edit/{creditNote}', [CreditNoteController::class, 'edit'])->name('edit');
+        Route::put('update/{creditNote}', [CreditNoteController::class, 'update'])->name('update');
+        Route::delete('destroy/{creditNote}', [CreditNoteController::class, 'destroy'])->name('destroy');
+        Route::get('print/{creditNote}', [CreditNoteController::class, 'print'])->name('print');
+        Route::post('send-email/{creditNote}', [CreditNoteController::class, 'sendEmail'])->name('send-email');
+        Route::get('get-sale-products/{sale}', [CreditNoteController::class, 'getSaleProducts'])->name('get-sale-products');
     });
 
     Route::group(['prefix' => 'debit-notes', 'as' => 'debit-notes.'], function(){

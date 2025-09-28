@@ -60,10 +60,21 @@
             ]
         },
         {
-            "url": "/sale/index",
             "name": "Ventas",
             "icon": "menu-icon fa-solid fa-dollar",
-            "slug": "sale.index"
+            "slug": "sale.index",
+            "submenu": [
+                {
+                    "url": "/sale/index",
+                    "name": "Facturas",
+                    "slug": "sale.index"
+                },
+                {
+                    "url": "/credit-notes",
+                    "name": "Notas de Crédito",
+                    "slug": "credit-notes.index"
+                }
+            ]
         },
         {
             "url": "/purchase/index",
