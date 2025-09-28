@@ -1736,9 +1736,10 @@ class SaleController extends Controller
 
                     // Regenerar token
                     $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
-                    dd("Token Result",$tokenResult, Session::get($id_empresa), Session::get($id_empresa . '_fecha'));
+                    //dd("Token Result",$tokenResult, Session::get($id_empresa), Session::get($id_empresa . '_fecha'));
                     if ($tokenResult == 'OK') {
                         $token = Session::get($id_empresa);
+                        dd("Token Result",$token);
                         Log::info('Nuevo token generado, reintentando envío...');
 
                         // Intentar de nuevo con el nuevo token
