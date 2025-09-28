@@ -510,7 +510,6 @@ class SaleController extends Controller
                 ->where('docs.id_empresa', '=', $salesave->company_id)
                 ->select('docs.actual', 'docs.id')
                 ->get();
-                dd($newCorr);
             $salesave->nu_doc = $newCorr[0]->actual;
             $salesave->save();
 
