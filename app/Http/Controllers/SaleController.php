@@ -1727,7 +1727,7 @@ class SaleController extends Controller
                 ]);
 
                 $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-
+                dd("Primer intento",$response_enviado);
                 // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
                 if ($response_enviado->status() == 401) {
                     Log::warning('Token no autorizado (401), regenerando token...');
