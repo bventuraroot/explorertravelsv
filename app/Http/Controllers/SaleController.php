@@ -1725,9 +1725,7 @@ class SaleController extends Controller
                     'comprobante_size' => strlen(json_encode($comprobante_enviar)),
                     'ambiente' => $ambiente ?? 'NO_DEFINIDO'
                 ]);
-
                 $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-                dd("Primer intento",$response_enviado);
                 // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
                 if ($response_enviado->status() == 401) {
                     Log::warning('Token no autorizado (401), regenerando token...');
@@ -1738,7 +1736,7 @@ class SaleController extends Controller
 
                     // Regenerar token
                     $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
-
+                    dd("Token Result",$tokenResult, Session::get($id_empresa), Session::get($id_empresa . '_fecha'));
                     if ($tokenResult == 'OK') {
                         $token = Session::get($id_empresa);
                         Log::info('Nuevo token generado, reintentando envío...');
