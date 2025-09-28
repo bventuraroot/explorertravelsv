@@ -500,9 +500,9 @@ class SaleController extends Controller
     {
         DB::beginTransaction();
         try {
-            dd($corr, $amount);
             $amount = substr($amount, 1);
             $salesave = Sale::find(base64_decode($corr));
+            dd($salesave);
             $salesave->totalamount = $amount;
             $salesave->typesale = 1; // finalizar venta como en RomaCopies
             //buscar el correlativo actual
