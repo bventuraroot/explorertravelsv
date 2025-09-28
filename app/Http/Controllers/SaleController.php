@@ -538,7 +538,6 @@ class SaleController extends Controller
             SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
                 )
                 ->get();
-                dd($detailsbd);
             //detalle de montos de la factura
             $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - ($detailsbd[0]->rentarete + $detailsbd[0]->ivarete));
             $totales = [
@@ -731,6 +730,7 @@ class SaleController extends Controller
                 "totales"   => $totales,
                 "cliente"   => $cliente
             ];
+            dd($comprobante);
             // Verificar si la emisión de DTE está habilitada para esta empresa
             if (Config::isDteEmissionEnabled($idempresa)) {
                 $contingencia = [];
