@@ -502,7 +502,6 @@ class SaleController extends Controller
         try {
             $amount = substr($amount, 1);
             $salesave = Sale::find(base64_decode($corr));
-            dd($salesave);
             $salesave->totalamount = $amount;
             $salesave->typesale = 1; // finalizar venta como en RomaCopies
             //buscar el correlativo actual
@@ -511,6 +510,7 @@ class SaleController extends Controller
                 ->where('docs.id_empresa', '=', $salesave->company_id)
                 ->select('docs.actual', 'docs.id')
                 ->get();
+                dd($newCorr);
             $salesave->nu_doc = $newCorr[0]->actual;
             $salesave->save();
 
