@@ -1739,12 +1739,12 @@ class SaleController extends Controller
                     //dd("Token Result",$tokenResult, Session::get($id_empresa), Session::get($id_empresa . '_fecha'));
                     if ($tokenResult == 'OK') {
                         $token = Session::get($id_empresa);
-                        dd("Token Result",$token);
+                        //dd("Token Result",$token);
                         Log::info('Nuevo token generado, reintentando envío...');
 
                         // Intentar de nuevo con el nuevo token
                         $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-                        dd($response_enviado);
+                        dd("Segundo intento",$response_enviado);
                         Log::info('Segundo intento - Respuesta del envío a MH', [
                             'status_code' => $response_enviado->status(),
                             'response_body' => $response_enviado->body()
