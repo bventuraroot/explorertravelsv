@@ -320,12 +320,7 @@ if (!function_exists('convertir_json')) {
         $compro = $compro_procesar;
         //dd(is_array($compro));
         //dd($compro["documento"][0]["tipodocumento"]);
-
-        // Debugging para identificar el problema
-        Log::info('convertir_json - Iniciando', [
-            'codTransaccion' => $codTransaccion,
-            'tipo_documento' => isset($compro["documento"][0]) ? $compro["documento"][0]->tipodocumento : 'NO_DEFINIDO'
-        ]);
+        dd($compro["documento"][0]["tipodocumento"], $compro["documento"][0]->tipodocumento);
         if ($codTransaccion=="02") {
             $tipo_comprobante = $compro["documento"][0]["tipodocumento"];
         } else if($codTransaccion=="05") {
