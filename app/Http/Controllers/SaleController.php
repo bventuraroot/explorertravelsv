@@ -500,6 +500,7 @@ class SaleController extends Controller
     {
         DB::beginTransaction();
         try {
+            dd($corr, $amount);
             $amount = substr($amount, 1);
             $salesave = Sale::find(base64_decode($corr));
             $salesave->totalamount = $amount;
