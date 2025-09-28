@@ -1683,6 +1683,17 @@ class SaleController extends Controller
         if ($this->getTokenMH($id_empresa, $validacion_usuario, $url_credencial, $url_credencial) == "OK") {
             // return 'paso validacion';
             $token = Session::get($id_empresa);
+
+            // Debugging para el token
+            Log::info('Token obtenido para envío', [
+                'id_empresa' => $id_empresa,
+                'token_length' => strlen($token),
+                'token_preview' => substr($token, 0, 20) . '...',
+                'url_envio' => $url_envio
+            ]);
+
+            //dd(["token" => $token, "url_envio" => $url_envio, "id_empresa" => $id_empresa]);
+
             //$ambiente = $comprobante["documento"][0]->ambiente;
             //dd($documento[0]);
             //return ["token" => $token];
@@ -1707,7 +1718,49 @@ class SaleController extends Controller
             //dd($comprobante_enviar);
             //dd($url_envio);
             try {
+                // Debugging antes del envío
+                Log::info('Enviando documento a MH', [
+                    'url_envio' => $url_envio,
+                    'token_length' => strlen($token),
+                    'comprobante_size' => strlen(json_encode($comprobante_enviar)),
+                    'ambiente' => $ambiente ?? 'NO_DEFINIDO'
+                ]);
+
                 $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
+
+                // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
+                if ($response_enviado->status() == 401) {
+                    Log::warning('Token no autorizado (401), regenerando token...');
+
+                    // Limpiar sesión para forzar nueva autenticación
+                    Session::forget($id_empresa);
+                    Session::forget($id_empresa . '_fecha');
+
+                    // Regenerar token
+                    $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
+
+                    if ($tokenResult == 'OK') {
+                        $token = Session::get($id_empresa);
+                        Log::info('Nuevo token generado, reintentando envío...');
+
+                        // Intentar de nuevo con el nuevo token
+                        $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
+
+                        Log::info('Segundo intento - Respuesta del envío a MH', [
+                            'status_code' => $response_enviado->status(),
+                            'response_body' => $response_enviado->body()
+                        ]);
+                    } else {
+                        Log::error('Error al regenerar token: ' . $tokenResult);
+                    }
+                } else {
+                    // Debugging después del envío exitoso
+                    Log::info('Respuesta del envío a MH', [
+                        'status_code' => $response_enviado->status(),
+                        'response_body' => $response_enviado->body()
+                    ]);
+                }
+
                 dd($response_enviado);
             } catch (\Throwable $th) {
                 //return 'entro aqui';
@@ -1812,8 +1865,15 @@ class SaleController extends Controller
 
         $response_usuario = Http::asForm()->post($url_seguridad, $credenciales);
 
+        // Debugging para la autenticación
+        Log::info('Respuesta de autenticación MH', [
+            'status_code' => $response_usuario->status(),
+            'response_body' => $response_usuario->body(),
+            'url_seguridad' => $url_seguridad,
+            'credenciales_user' => $credenciales['user'] ?? 'NO_DEFINIDO'
+        ]);
 
-        //return ["mensaje" => $response_usuario, 'credenciales' => $credenciales];
+        //dd(["mensaje" => $response_usuario, 'credenciales' => $credenciales]);
         $objValidacion = json_decode($response_usuario, true);
 
         //dd($objValidacion);
