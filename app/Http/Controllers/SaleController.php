@@ -1745,7 +1745,7 @@ class SaleController extends Controller
 
                         // Intentar de nuevo con el nuevo token
                         $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-
+                        dd($response_enviado);
                         Log::info('Segundo intento - Respuesta del envío a MH', [
                             'status_code' => $response_enviado->status(),
                             'response_body' => $response_enviado->body()
