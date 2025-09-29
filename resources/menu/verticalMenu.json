@@ -73,6 +73,11 @@
                     "url": "/credit-notes",
                     "name": "Notas de Crédito",
                     "slug": "credit-notes.index"
+                },
+                {
+                    "url": "/debit-notes",
+                    "name": "Notas de Débito",
+                    "slug": "debit-notes.index"
                 }
             ]
         },

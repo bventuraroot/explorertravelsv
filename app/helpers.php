@@ -1207,7 +1207,6 @@ if (!function_exists('clq')) {
 if (!function_exists('fex')) {
     function fex($comprobante_procesar, $uuid_generado)
     {
-        dd($comprobante_procesar);
         $comprobante = [];
         $encabezado = $comprobante_procesar["documento"][0];
         $emisor_data = $comprobante_procesar["emisor"];

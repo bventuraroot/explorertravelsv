@@ -6,6 +6,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\ContingenciasController;
 use App\Http\Controllers\CreditNoteController;
+use App\Http\Controllers\DebitNoteController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\MunicipalityController;
 use App\Http\Controllers\CountryController;
@@ -185,8 +186,18 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('get-sale-products/{sale}', [CreditNoteController::class, 'getSaleProducts'])->name('get-sale-products');
     });
 
+    // Rutas para notas de débito
     Route::group(['prefix' => 'debit-notes', 'as' => 'debit-notes.'], function(){
-        Route::get('create', [SaleController::class, 'ndb'])->name('create');
+        Route::get('/', [DebitNoteController::class, 'index'])->name('index');
+        Route::get('create', [DebitNoteController::class, 'create'])->name('create');
+        Route::post('store', [DebitNoteController::class, 'store'])->name('store');
+        Route::get('show/{debitNote}', [DebitNoteController::class, 'show'])->name('show');
+        Route::get('edit/{debitNote}', [DebitNoteController::class, 'edit'])->name('edit');
+        Route::put('update/{debitNote}', [DebitNoteController::class, 'update'])->name('update');
+        Route::delete('destroy/{debitNote}', [DebitNoteController::class, 'destroy'])->name('destroy');
+        Route::get('print/{debitNote}', [DebitNoteController::class, 'print'])->name('print');
+        Route::post('send-email/{debitNote}', [DebitNoteController::class, 'sendEmail'])->name('send-email');
+        Route::get('get-sale-products/{sale}', [DebitNoteController::class, 'getSaleProducts'])->name('get-sale-products');
     });
 
 
