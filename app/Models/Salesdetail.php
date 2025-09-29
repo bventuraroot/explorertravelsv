@@ -19,6 +19,7 @@ class Salesdetail extends Model
         'exempt',
         'detained',
         'detained13',
+        'renta',
         'fee',
         'feeiva',
         'reserva',
@@ -33,6 +34,7 @@ class Salesdetail extends Model
     protected $casts = [
         'fee' => 'decimal:8',
         'feeiva' => 'decimal:8',
+        'renta' => 'decimal:8',
         'priceunit' => 'decimal:8',
         'pricesale' => 'decimal:8',
         'nosujeta' => 'decimal:8',

@@ -297,6 +297,11 @@ class CreditNoteController extends Controller
                     'nosujeta' => $tipoVenta === 'nosujeta' ? $subtotal : 0,
                     'detained13' => $tipoVenta === 'gravada' ? $subtotal * 0.13 : 0,
                     'detained' => 0,
+                    'renta' => 0, // Campo requerido
+                    'fee' => 0, // Campo requerido
+                    'feeiva' => 0, // Campo requerido
+                    'reserva' => 0, // Campo requerido
+                    'user_id' => Auth::id(),
                 ]);
                 $detalle->save();
             }
@@ -708,6 +713,11 @@ class CreditNoteController extends Controller
                 'nosujeta' => $tipoVenta === 'nosujeta' ? $subtotal : 0,
                 'detained13' => $tipoVenta === 'gravada' ? $subtotal * 0.13 : 0,
                 'detained' => 0,
+                'renta' => 0, // Campo requerido
+                'fee' => 0, // Campo requerido
+                'feeiva' => 0, // Campo requerido
+                'reserva' => 0, // Campo requerido
+                'user_id' => Auth::id(),
             ]);
             $detalle->save();
         }
