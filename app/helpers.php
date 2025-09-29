@@ -1286,11 +1286,11 @@ if (!function_exists('fex')) {
             //"nombreComercial"       => null, // Usar función helper para documento
             "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
-            "codPais"               => "9320", // Código país destino (hardcode por ahora)
+            "codPais"               => "US", // Código país destino (hardcode por ahora)
             //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
-            "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
+            "tipoPersona"           => 2, // 1=Jurídica, 2=Natural
             "descActividad"         => $descActividad, // Usar giro como actividad
         ];
         //dd($receptor);
@@ -1312,7 +1312,7 @@ if (!function_exists('fex')) {
             ];
         }
 
-        $codigos_tributos = ["C3"];
+        $codigos_tributos = strval(["C3"]);
         $i = 0;
 
         foreach ($cuerpo as $item) {
@@ -1322,16 +1322,16 @@ if (!function_exists('fex')) {
             $iva_calculadofac = round(($item->iva/$item->cantidad),2);
             $ventagravada = round((float)($item->gravadas + $item->iva), 2);
             $properties_items_cuerpoDocumento = [
-                "numItem"           => $i,
-                "cantidad"          => intval($item->cantidad),
+                "numItem"           => intval($i),
+                "cantidad"          => floatval($item->cantidad),
                 "codigo"            => "P0".$item->id_producto,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)$item->precio_unitario, 2), // FEX sin IVA
+                "precioUni"         => round((float)$item->precio_unitario+$iva_calculadofac, 2), // FEX sin IVA
                 "montoDescu"        => 0.00,
-                "ventaGravada"      => $ventagravada, // Sin IVA para exportación
+                "ventaGravada"      => floatval($ventagravada), // Sin IVA para exportación
                 "tributos"          => $codigos_tributos,
-                "noGravado"         => (float)$item->no_imponible,
+                "noGravado"         => floatval($item->no_imponible),
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
@@ -1389,12 +1389,12 @@ if (!function_exists('fex')) {
             "porcentajeDescuento"   => (float)$totales["porcentajeDescuento"],
             "totalDescu"            => (float)$totales["totalDescu"],
             "seguro"                => null,
-            "flete"                  =>null,
+            "flete"                  => null,
             "montoTotalOperacion"   => round((float)$totales["subTotal"], 2), // Sin IVA
             "totalNoGravado"        => (float)$totales["totalNoGravado"],
             "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
             "totalLetras"           => $totales["totalLetras"],
-            "condicionOperacion"    => (float)$totales["condicionOperacion"],
+            "condicionOperacion"    => intval($totales["condicionOperacion"]),
             "pagos"                 => $pagos,
             "numPagoElectronico"    => null,
             "codIncoterms"          => null,
@@ -1419,11 +1419,11 @@ if (!function_exists('fex')) {
             "valor"         => $encabezado->hechopor
         ];
 
-        $apendice[] = [
+        /*$apendice[] = [
             "campo"         => "cliente",
             "etiqueta"      => "Cliente",
             "valor"         => $cliente[0]->idcliente
-        ];
+        ];*/
 
         //$comprobante["documentoRelacionado"]     = $documentoRelacionado;
         $comprobante["identificacion"]            =$identificacion;
@@ -1434,7 +1434,7 @@ if (!function_exists('fex')) {
         $comprobante["cuerpoDocumento"]          = $cuerpoDocumento;
         $comprobante["resumen"]                  = $resumen;
         //$comprobante["extension"]                = $extension;
-        $comprobante["apendice"]                 = null;
+        $comprobante["apendice"]                 = $apendice;
         //dd($comprobante);
         return ($comprobante);
     }
