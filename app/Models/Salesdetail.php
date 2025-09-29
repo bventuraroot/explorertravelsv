@@ -40,4 +40,20 @@ class Salesdetail extends Model
         'detained' => 'decimal:8',
         'detained13' => 'decimal:8',
     ];
+
+    /**
+     * Relación con el producto
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Relación con la venta
+     */
+    public function sale()
+    {
+        return $this->belongsTo(Sale::class);
+    }
 }
