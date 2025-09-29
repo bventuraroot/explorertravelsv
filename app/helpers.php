@@ -1404,20 +1404,21 @@ if (!function_exists('fex')) {
 
         $es_mayor = ($totales["totalPagar"] >= 200);
 
-        $extension = [
+        /*$extension = [
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
             "docuRecibe"    => ($es_mayor) ? getClienteDocumento($cliente[0]) : null,
             "observaciones" => ($es_mayor) ? null : null,
             "placaVehiculo" => ($es_mayor) ? null : null
-        ];
+        ];*/
 
         $apendice[] = [
             "campo"         => "vendedor",
             "etiqueta"      => "Vendedor",
             "valor"         => $encabezado->hechopor
         ];
+        dd($apendice);
 
         /*$apendice[] = [
             "campo"         => "cliente",
