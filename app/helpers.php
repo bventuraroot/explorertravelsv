@@ -1257,17 +1257,16 @@ if (!function_exists('fex')) {
             "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
             "telefono"              => $emisor_data[0]->telefono,
-            "codEstableMH"          => $emisor_data[0]->codEstableMH ?? "0001",
-            "codEstable"            => $emisor_data[0]->codEstable ?? "0001",
-            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH ?? "0001",
-            "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta ?? "PV01",
+            "codEstableMH"          => $emisor_data[0]->codEstableMH,
+            "codEstable"            => $emisor_data[0]->codEstable,
+            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
+            "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta,
             "correo"                => $emisor_data[0]->correo,
             // Campos específicos para FEX
             "tipoItemExpor"         => 2, // 1=Bienes, 2=Servicios, 3=Otros
-            "recintoFiscal"         => null, // Solo para bienes/otros
-            "regimen"               => null  // Solo para bienes/otros
+            "recintoFiscal"         => NULL, // Solo para bienes/otros
+            "regimen"               => NULL  // Solo para bienes/otros
         ];
-        dd($emisor);
         // Para FEX, el receptor es internacional - usar campos específicos
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
         if($cliente[0]->extranjero == 1){
@@ -1285,13 +1284,15 @@ if (!function_exists('fex')) {
             "nombre"                => $cliente[0]->nombre,
             "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
             "numDocumento"          => getClienteDocumento($cliente[0]),
-            "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
+            "nombreComercial"       => NULL, // Usar función helper para documento
+            //"nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
             "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
             "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
             "descActividad"         => $descActividad, // Usar giro como actividad
         ];
+        dd($receptor);
         // Agregar campos opcionales si existen
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
