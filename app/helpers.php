@@ -1284,7 +1284,7 @@ if (!function_exists('fex')) {
             "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
             "numDocumento"          => getClienteDocumento($cliente[0]),
             //"nombreComercial"       => null, // Usar función helper para documento
-            //"nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
+            "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
             "codPais"               => "US", // Código país destino (hardcode por ahora)
             //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
