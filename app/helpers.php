@@ -1285,9 +1285,9 @@ if (!function_exists('fex')) {
             "numDocumento"          => getClienteDocumento($cliente[0]),
             //"nombreComercial"       => null, // Usar función helper para documento
             "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
-            //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
-            "codPais"               => "US", // Código país destino (hardcode por ahora)
-            //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
+            "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
+            //"codPais"               => "US", // Código país destino (hardcode por ahora)
+            "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
             "tipoPersona"           => 2, // 1=Jurídica, 2=Natural
