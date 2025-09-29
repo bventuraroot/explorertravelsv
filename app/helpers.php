@@ -1254,8 +1254,7 @@ if (!function_exists('fex')) {
             "codActividad"          => $emisor_data[0]->codActividad,
             "descActividad"         => $emisor_data[0]->descActividad,
             "nombreComercial"       => $emisor_data[0]->nombreComercial,
-            "tipoEstablecimiento"   => "m0001",
-            //"tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
+            "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
             "telefono"              => $emisor_data[0]->telefono,
             "codEstableMH"          => $emisor_data[0]->codEstableMH ?? "0001",
@@ -1268,7 +1267,7 @@ if (!function_exists('fex')) {
             "recintoFiscal"         => null, // Solo para bienes/otros
             "regimen"               => null  // Solo para bienes/otros
         ];
-
+        dd($emisor);
         // Para FEX, el receptor es internacional - usar campos específicos
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
         if($cliente[0]->extranjero == 1){
