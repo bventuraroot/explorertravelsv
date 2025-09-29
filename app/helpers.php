@@ -1231,7 +1231,7 @@ if (!function_exists('fex')) {
             "tipoModelo"        => 1,
             "tipoOperacion"     => 1,
             "tipoContingencia"  => null,
-            "motivoContingencia"=> null,
+            "motivoContigencia" => null,
             "fecEmi"            => date('Y-m-d'),
             "horEmi"            => date("H:i:s"),
             "tipoMoneda"        => "USD" // FEX siempre en USD
