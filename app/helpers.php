@@ -1416,7 +1416,6 @@ if (!function_exists('fex')) {
             "etiqueta"      => "Vendedor",
             "valor"         => $encabezado->hechopor
         ];
-        dd($apendice);
 
         /*$apendice[] = [
             "campo"         => "cliente",
