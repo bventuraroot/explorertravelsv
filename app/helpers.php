@@ -1335,7 +1335,6 @@ if (!function_exists('fex')) {
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
         }
-        dd($items_cuerpoDocumento);
         $cuerpoDocumento = $items_cuerpoDocumento;
 
         $properties_items_tributo_resumen = [
