@@ -176,7 +176,7 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
     Route::group(['prefix' => 'credit-notes', 'as' => 'credit-notes.'], function(){
         Route::get('/', [CreditNoteController::class, 'index'])->name('index');
         Route::get('create', [CreditNoteController::class, 'create'])->name('create');
-        Route::post('store', [CreditNoteController::class, 'store'])->name('store');
+        Route::post('store/{sale_id}', [SaleController::class, 'ncr'])->name('store');
         Route::get('show/{creditNote}', [CreditNoteController::class, 'show'])->name('show');
         Route::get('edit/{creditNote}', [CreditNoteController::class, 'edit'])->name('edit');
         Route::put('update/{creditNote}', [CreditNoteController::class, 'update'])->name('update');
