@@ -1295,7 +1295,7 @@ if (!function_exists('fex')) {
             "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
             "descActividad"         => $descActividad, // Usar giro como actividad
         ];
-        dd($receptor);
+        dd($cliente);
         // Agregar campos opcionales si existen
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
