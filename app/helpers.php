@@ -1312,7 +1312,7 @@ if (!function_exists('fex')) {
             ];
         }*/
 
-        $codigos_tributos = strval(["C3"]);
+        $codigos_tributos = ["C3"];
         $i = 0;
 
         foreach ($cuerpo as $item) {
