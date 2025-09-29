@@ -241,7 +241,7 @@ $(function () {
     $('.filter-select').on('change', function () {
         var column = $(this).data('column');
         var value = $(this).val();
-        
+
         if (dt_debit_notes_table.length) {
             dt_debit_notes.column(column).search(value).draw();
         }
@@ -301,7 +301,7 @@ $(function () {
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMessage = xhr.responseJSON.message;
                         }
-                        
+
                         Swal.fire({
                             title: 'Error',
                             text: errorMessage,

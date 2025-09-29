@@ -2019,6 +2019,9 @@ class SaleController extends Controller
             case '05':
                 $rptComprobante = 'pdf.ncr';
                 break;
+            case '06':
+                $rptComprobante = 'pdf.ndb';
+                break;
 
             default:
                 # code...
@@ -2100,6 +2103,9 @@ class SaleController extends Controller
                 break;
             case '05':
                 $rptComprobante = 'pdf.ncr';
+                break;
+            case '06':
+                $rptComprobante = 'pdf.ndb';
                 break;
 
             default:
