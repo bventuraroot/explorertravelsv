@@ -1286,7 +1286,7 @@ if (!function_exists('fex')) {
             //"nombreComercial"       => null, // Usar función helper para documento
             "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
-            "codPais"               => "US", // Código país destino (hardcode por ahora)
+            "codPais"               => "9320", // Código país destino (hardcode por ahora)
             //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
