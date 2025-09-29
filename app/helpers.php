@@ -1380,9 +1380,9 @@ if (!function_exists('fex')) {
         }
 
         $pagos = $properties_items_pagos;
-
+        $totalGravada = round((float)$totales["totalGravada"]+ $totales["totalIva"], 2);
         $resumen = [
-            "totalGravada"          => round((float)$totales["totalGravada"], 2),
+            "totalGravada"          => $totalGravada,
             "descuento"             => (float)$totales["totalDescu"],
             "porcentajeDescuento"   => (float)$totales["porcentajeDescuento"],
             "totalDescu"            => (float)$totales["totalDescu"],
