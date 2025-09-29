@@ -907,17 +907,31 @@ class SaleController extends Controller
         //
     }
 
-    public function ncr($id_sale = null)
+    public function ncr($id_sale)
     {
-        // Si no se pasa id_sale como parámetro de ruta, intentar obtenerlo de la consulta
-        if ($id_sale === null) {
-            $id_sale = request('sale_id');
+        // La nota de crédito SOLO puede venir del formulario
+        if (!request()->isMethod('post') || !request()->has('productos')) {
+            return redirect()->back()
+                ->with('error', 'Acceso no autorizado. La nota de crédito debe crearse desde el formulario.');
         }
 
-        // Si el id_sale viene codificado en base64, decodificarlo
-        if ($id_sale && !is_numeric($id_sale)) {
-            $id_sale = base64_decode($id_sale);
+        // Validar que el ID de venta sea válido
+        if (!$id_sale || !is_numeric($id_sale)) {
+            return redirect()->back()
+                ->with('error', 'ID de venta inválido.');
         }
+
+        DB::beginTransaction();
+        try {
+            $request = request();
+
+            // Obtener la venta original
+            $saleOriginal = Sale::where('id', $id_sale)
+                ->where('typesale', 1)
+                ->where('state', 1)
+                ->firstOrFail();
+            $idempresa = $saleOriginal->company_id;
+            $createdby = $saleOriginal->user_id;
 
         $qfactura = "SELECT
                         *,
@@ -996,6 +1010,9 @@ class SaleController extends Controller
                         INNER JOIN economicactivities econo ON clie.economicactivity_id=econo.id
                         WHERE s.id = $id_sale";
         $factura = DB::select(DB::raw($qfactura));
+        if (empty($factura)) {
+            return redirect()->back()->with('error', 'No se encontró la venta original.');
+        }
         $qdoc = "SELECT
                 a.id id_doc,
                 a.`type` id_tipo_doc,
@@ -1027,6 +1044,9 @@ class SaleController extends Controller
                 INNER JOIN ambientes e ON d.ambiente=e.id
                 WHERE a.`type`= 'NCR'";
         $doc = DB::select(DB::raw($qdoc));
+        if (empty($doc)) {
+            return redirect()->back()->with('error', 'No se encontró configuración de documento NCR (typedocuments/docs/config/ambientes).');
+        }
         $qfacturadet = "SELECT
                         *,
                         det.id id_factura_det,
