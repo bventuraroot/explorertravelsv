@@ -1329,7 +1329,7 @@ if (!function_exists('fex')) {
                 "precioUni"         => round((float)($item->precio_unitario + $iva_calculadofac), 2),
                 "montoDescu"        => 0.00,
                 "ventaGravada"      => $ventagravada, // Sin IVA para exportación
-                "tributos"          => null,
+                "tributos"          => $codigos_tributos,
                 "noGravado"         => (float)$item->no_imponible,
             ];
 
