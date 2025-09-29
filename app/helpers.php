@@ -1388,11 +1388,11 @@ if (!function_exists('fex')) {
             "totalDescu"            => (float)$totales["totalDescu"],
             "seguro"                => 0.00,
             "flete"                  => 0.00,
-            "montoTotalOperacion"   => round((float)$totales["subTotal"], 2), // Sin IVA
+            "montoTotalOperacion"   => $totalGravada, // Sin IVA
             "totalNoGravado"        => (float)$totales["totalNoGravado"],
             "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
             "totalLetras"           => $totales["totalLetras"],
-            "condicionOperacion"    => $totalGravada,
+            "condicionOperacion"    => intval($totales["condicionOperacion"]),
             "pagos"                 => $pagos,
             "numPagoElectronico"    => null,
             "codIncoterms"          => null,
