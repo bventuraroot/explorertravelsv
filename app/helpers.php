@@ -1264,8 +1264,8 @@ if (!function_exists('fex')) {
             "correo"                => $emisor_data[0]->correo,
             // Campos específicos para FEX
             "tipoItemExpor"         => 2, // 1=Bienes, 2=Servicios, 3=Otros
-            "recintoFiscal"         => NULL, // Solo para bienes/otros
-            "regimen"               => NULL  // Solo para bienes/otros
+            "recintoFiscal"         => "NULL", // Solo para bienes/otros
+            "regimen"               => "NULL"  // Solo para bienes/otros
         ];
         // Para FEX, el receptor es internacional - usar campos específicos
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
