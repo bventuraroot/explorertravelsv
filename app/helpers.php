@@ -1300,8 +1300,8 @@ if (!function_exists('fex')) {
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
         }
-        if ($cliente[0]->email != '') {
-            $receptor["correo"] = $cliente[0]->email;
+        if ($cliente[0]->correo != '') {
+            $receptor["correo"] = $cliente[0]->correo;
         }
 
         $otrosDocumentos = null;
