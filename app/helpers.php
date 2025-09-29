@@ -1280,6 +1280,7 @@ if (!function_exists('fex')) {
         }else{
             $tipoPersona = 1;
         }
+        dd($cliente[0]->codActividad,$cliente[0]->descActividad);
         if($cliente[0]->codActividad != '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A'){
             if(is_null($cliente[0]->descActividad)){
                 $descActividad = "";
