@@ -812,9 +812,9 @@ class SaleController extends Controller
             $salesave->save();
             $exit = 1;
             DB::commit();
-            return response()->json(array(
-                "res" => $exit
-            ));
+            //return response()->json(array(
+               // "res" => $exit
+            //));
         } catch (\Exception $e) {
             DB::rollBack();
 
