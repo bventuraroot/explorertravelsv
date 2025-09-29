@@ -1293,7 +1293,7 @@ if (!function_exists('fex')) {
             "tipoPersona"           => 2, // 1=Jurídica, 2=Natural
             "descActividad"         => $descActividad, // Usar giro como actividad
         ];
-        dd($receptor);
+        //dd($receptor);
         // Agregar campos opcionales si existen
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
@@ -1305,12 +1305,12 @@ if (!function_exists('fex')) {
         $otrosDocumentos = null;
 
         $ventaTercero = null;
-        if (isset($comprobante_procesar[3][0])) {
+        /*if (isset($comprobante_procesar[3][0])) {
             $ventaTercero = [
                 "nit"       => $comprobante_procesar[3][0]["nit"],
                 "nombre"    => $comprobante_procesar[3][0]["nombre"],
             ];
-        }
+        }*/
 
         $codigos_tributos = strval(["C3"]);
         $i = 0;
@@ -1336,7 +1336,7 @@ if (!function_exists('fex')) {
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
         }
-        //dd($items_cuerpoDocumento);
+        dd($items_cuerpoDocumento);
         $cuerpoDocumento = $items_cuerpoDocumento;
 
         $properties_items_tributo_resumen = [
