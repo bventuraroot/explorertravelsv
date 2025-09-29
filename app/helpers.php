@@ -1310,7 +1310,7 @@ if (!function_exists('fex')) {
             ];
         }
 
-        $codigos_tributos = ["20"];
+        $codigos_tributos = ["C3"];
         $i = 0;
 
         foreach ($cuerpo as $item) {
@@ -1334,7 +1334,7 @@ if (!function_exists('fex')) {
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
         }
-        dd($items_cuerpoDocumento);
+        //dd($items_cuerpoDocumento);
         $cuerpoDocumento = $items_cuerpoDocumento;
 
         $properties_items_tributo_resumen = [
