@@ -1231,7 +1231,7 @@ if (!function_exists('fex')) {
             "tipoModelo"        => 1,
             "tipoOperacion"     => 1,
             "tipoContingencia"  => null,
-            "motivoContigencia" => null,
+            "motivoContingencia" => null,
             "fecEmi"            => date('Y-m-d'),
             "horEmi"            => date("H:i:s"),
             "tipoMoneda"        => "USD" // FEX siempre en USD
@@ -1257,10 +1257,10 @@ if (!function_exists('fex')) {
             "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
             "telefono"              => $emisor_data[0]->telefono,
-            "codEstableMH"          => $emisor_data[0]->codEstableMH,
-            "codEstable"            => $emisor_data[0]->codEstable,
-            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
-            "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta,
+            "codEstableMH"          => $emisor_data[0]->codEstableMH ?? "0001",
+            "codEstable"            => $emisor_data[0]->codEstable ?? "0001",
+            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH ?? "0001",
+            "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta ?? "PV01",
             "correo"                => $emisor_data[0]->correo,
             // Campos específicos para FEX
             "tipoItemExpor"         => 2, // 1=Bienes, 2=Servicios, 3=Otros
@@ -1325,7 +1325,7 @@ if (!function_exists('fex')) {
                 "codigo"            => "P0".$item->id_producto,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)($item->precio_unitario + $iva_calculadofac), 2),
+                "precioUni"         => round((float)$item->precio_unitario, 2), // FEX sin IVA
                 "montoDescu"        => 0.00,
                 "ventaGravada"      => $ventagravada, // Sin IVA para exportación
                 "tributos"          => $codigos_tributos,
