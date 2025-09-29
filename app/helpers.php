@@ -1281,6 +1281,9 @@ if (!function_exists('fex')) {
             $tipoPersona = 1;
         }
         if($cliente[0]->codActividad != '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A'){
+            if(is_null($cliente[0]->descActividad)){
+                $descActividad = "";
+            }
             $descActividad = $cliente[0]->descActividad;
         }else{
             $descActividad = "";
