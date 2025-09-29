@@ -81,8 +81,8 @@
                             <div class="row mb-2">
                                 <div class="col-4"><strong>Nombre:</strong></div>
                                 <div class="col-8">
-                                    {{ $debitNote->client->tpersona == 'N' ? 
-                                        $debitNote->client->firstname . ' ' . $debitNote->client->firstlastname : 
+                                    {{ $debitNote->client->tpersona == 'N' ?
+                                        $debitNote->client->firstname . ' ' . $debitNote->client->firstlastname :
                                         $debitNote->client->nameClient }}
                                 </div>
                             </div>
@@ -234,7 +234,7 @@
                                             @php
                                                 $subtotal = $detalle->amountp * $detalle->pricesale;
                                                 $iva = $detalle->detained13;
-                                                
+
                                                 if ($detalle->exempt > 0) {
                                                     $subtotalExento += $subtotal;
                                                 } elseif ($detalle->nosujeta > 0) {

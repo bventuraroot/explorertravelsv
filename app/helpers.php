@@ -1238,9 +1238,7 @@ if (!function_exists('fex')) {
             "tipoMoneda"        => "USD" // FEX siempre en USD
         ];
 
-        $comprobante = [
-            "identificacion" => $identificacion
-        ];
+        //$comprobante = [            "identificacion" => $identificacion        ];
 
         $documentoRelacionado = null;
 
@@ -1432,6 +1430,7 @@ if (!function_exists('fex')) {
         ];
 
         //$comprobante["documentoRelacionado"]     = $documentoRelacionado;
+        $comprobante["identificacion"]            =$identificacion;
         $comprobante["emisor"]                   = $emisor;
         $comprobante["receptor"]                 = $receptor;
         $comprobante["otrosDocumentos"]          = $otrosDocumentos;

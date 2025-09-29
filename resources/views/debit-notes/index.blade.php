@@ -237,21 +237,21 @@ function deleteDebitNote(debitNoteId) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/debit-notes/destroy/${debitNoteId}`;
-            
+
             // Agregar token CSRF
             const csrfField = document.createElement('input');
             csrfField.type = 'hidden';
             csrfField.name = '_token';
             csrfField.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             form.appendChild(csrfField);
-            
+
             // Agregar método DELETE
             const methodField = document.createElement('input');
             methodField.type = 'hidden';
             methodField.name = '_method';
             methodField.value = 'DELETE';
             form.appendChild(methodField);
-            
+
             document.body.appendChild(form);
             form.submit();
         }

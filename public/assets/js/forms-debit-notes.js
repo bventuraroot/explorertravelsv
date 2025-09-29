@@ -47,7 +47,7 @@ $(function () {
     // Validación y envío del formulario
     form.on('submit', function (e) {
         e.preventDefault();
-        
+
         clearErrors();
 
         // Validaciones específicas para notas de débito
@@ -124,7 +124,7 @@ $(function () {
             },
             success: function(response) {
                 hideLoading();
-                
+
                 Swal.fire({
                     title: '¡Éxito!',
                     text: 'Nota de débito creada exitosamente.',
@@ -149,21 +149,21 @@ $(function () {
             },
             error: function(xhr) {
                 hideLoading();
-                
+
                 // Re-habilitar campos deshabilitados
                 $('.product-checkbox').each(function() {
                     $(this).closest('tr').find('input, select').prop('disabled', false);
                 });
 
                 var errorMessage = 'Error al crear la nota de débito.';
-                
+
                 if (xhr.responseJSON) {
                     if (xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     } else if (xhr.responseJSON.errors) {
                         var errors = xhr.responseJSON.errors;
                         var errorText = '';
-                        
+
                         Object.keys(errors).forEach(function(key) {
                             if (Array.isArray(errors[key])) {
                                 errorText += errors[key].join('\n') + '\n';
@@ -171,7 +171,7 @@ $(function () {
                                 errorText += errors[key] + '\n';
                             }
                         });
-                        
+
                         errorMessage = errorText || errorMessage;
                     }
                 } else if (xhr.responseText) {
@@ -182,7 +182,7 @@ $(function () {
                         // Si no es JSON válido, usar mensaje por defecto
                     }
                 }
-                
+
                 showError(errorMessage, 'Error al Crear Nota de Débito');
             }
         });
@@ -276,7 +276,7 @@ $(function () {
 
     // Confirmar salida si hay cambios
     var formModified = false;
-    
+
     form.find('input, select, textarea').on('change input', function() {
         formModified = true;
     });
