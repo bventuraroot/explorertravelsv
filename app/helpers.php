@@ -1217,9 +1217,9 @@ if (!function_exists('fex')) {
         $uuid = $uuid_generado;
 
         $numero_documento = CerosIzquierda($encabezado->actual, 15);
-        $tipo_documento = "11"; // Código FEX según schema
+        $tipo_documento = $encabezado->tipodocumento; // Código FEX según schema
         $caja = "0001";
-        $testablecimiento = "1";
+        $testablecimiento = $emisor_data[0]->tipoEstablecimiento;
         $tipo_establecimiento = CerosIzquierda($testablecimiento, 4);
         $empresa = $comprobante_procesar["emisor"];
 
@@ -1273,16 +1273,30 @@ if (!function_exists('fex')) {
 
         // Para FEX, el receptor es internacional - usar campos específicos
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
-
+        if($cliente[0]->extranjero == 1){
+            $tipoDocumento = "03";
+        }else{
+            $tipoDocumento = ($cliente[0]->ncr == '' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == 'N/A') ? $cliente[0]->tipoDocumento : "36";
+        }
+        if($cliente[0]->tpersona == 'N'){
+            $tipoPersona = 2;
+        }else{
+            $tipoPersona = 1;
+        }
+        if($cliente[0]->codActividad != '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A'){
+            $descActividad = $cliente[0]->descActividad;
+        }else{
+            $descActividad = null;
+        }
         $receptor = [
             "nombre"                => $cliente[0]->nombre,
-            "tipoDocumento"         => $documentoInfo['tipoDocumento'], // Detección automática del tipo
-            "numDocumento"          => $documentoInfo['documento'], // Usar función helper para documento
-            "codPais"               => "9905", // Código país destino (hardcode por ahora)
-            "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
+            "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
+            "numDocumento"          => getClienteDocumento($cliente[0]), // Usar función helper para documento
+            "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
+            "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
-            "tipoPersona"           => $cliente[0]->tpersona ?? 2, // 1=Jurídica, 2=Natural
-            "descActividad"         => $cliente[0]->giro, // Usar giro como actividad
+            "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
+            "descActividad"         => $descActividad, // Usar giro como actividad
         ];
 
         // Agregar campos opcionales si existen
@@ -1311,25 +1325,19 @@ if (!function_exists('fex')) {
 
             // Para FEX, generalmente sin IVA (exento)
             $tributos_properties_items_cuerpoDocumento = "C3"; // Exento para exportación
-
+            $iva_calculadofac = round(($item->iva/$item->cantidad),2);
+            $ventagravada = round((float)($item->gravadas + $item->iva), 2);
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i,
-                "tipoItem"          => intval($item->tipo_item),
-                "numeroDocumento"   => null,
                 "cantidad"          => intval($item->cantidad),
                 "codigo"            => "P0".$item->id_producto,
-                "codTributo"        => null,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)$item->precio_unitario, 2),
+                "precioUni"         => round((float)($item->precio_unitario + $iva_calculadofac), 2),
                 "montoDescu"        => 0.00,
-                "ventaNoSuj"        => (float)$item->no_sujetas,
-                "ventaExenta"       => (float)$item->exentas,
-                "ventaGravada"      => (float)$item->gravadas, // Sin IVA para exportación
+                "ventaGravada"      => $ventagravada, // Sin IVA para exportación
                 "tributos"          => null,
-                "psv"               => (float)"0.00",
                 "noGravado"         => (float)$item->no_imponible,
-                "ivaItem"           => 0.00 // Sin IVA para exportación
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
@@ -1382,33 +1390,22 @@ if (!function_exists('fex')) {
         $pagos = $properties_items_pagos;
 
         $resumen = [
-            "totalNoSuj"            => (float)$totales["totalNoSuj"],
-            "totalExenta"           => (float)$totales["totalExenta"],
-            "totalGravada"          => round((float)$totales["totalGravada"], 2), // Sin IVA para exportación
-            "subTotalVentas"        => round((float)$totales["subTotal"], 2),
-            "descuNoSuj"            => (float)$totales["descuNoSuj"],
-            "descuExenta"           => (float)$totales["descuExenta"],
-            "descuGravada"          => (float)$totales["descuGravada"],
+            "totalGravada"          => round((float)$totales["totalGravada"], 2),
+            "descuento"             => (float)$totales["totalDescu"],
             "porcentajeDescuento"   => (float)$totales["porcentajeDescuento"],
             "totalDescu"            => (float)$totales["totalDescu"],
-            "tributos"              => $codigos_tributos,
-            "subTotal"              => round((float)$totales["subTotal"], 2),
-            "ivaRete1"              => (float)$totales["ivaRete1"],
-            "reteRenta"             => (float)$totales["reteRenta"],
+            "seguro"                => null,
+            "flete"                  =>null,
             "montoTotalOperacion"   => round((float)$totales["subTotal"], 2), // Sin IVA
             "totalNoGravado"        => (float)$totales["totalNoGravado"],
             "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
             "totalLetras"           => $totales["totalLetras"],
-            "totalIva"              => 0.00, // Sin IVA para exportación
-            "saldoFavor"            => (float)$totales["saldoFavor"],
             "condicionOperacion"    => (float)$totales["condicionOperacion"],
             "pagos"                 => $pagos,
-            "numPagoElectronico"    => "",
-            // Campos específicos para FEX
-            "seguro"                => 0.00,
-            "flete"                 => 0.00,
+            "numPagoElectronico"    => null,
             "codIncoterms"          => null,
-            "descIncoterms"         => null
+            "descIncoterms"         => null,
+            "observaciones"         => null
         ];
 
         $es_mayor = ($totales["totalPagar"] >= 200);
@@ -1434,14 +1431,14 @@ if (!function_exists('fex')) {
             "valor"         => $cliente[0]->idcliente
         ];
 
-        $comprobante["documentoRelacionado"]     = $documentoRelacionado;
+        //$comprobante["documentoRelacionado"]     = $documentoRelacionado;
         $comprobante["emisor"]                   = $emisor;
         $comprobante["receptor"]                 = $receptor;
         $comprobante["otrosDocumentos"]          = $otrosDocumentos;
         $comprobante["ventaTercero"]             = $ventaTercero;
         $comprobante["cuerpoDocumento"]          = $cuerpoDocumento;
         $comprobante["resumen"]                  = $resumen;
-        $comprobante["extension"]                = $extension;
+        //$comprobante["extension"]                = $extension;
         $comprobante["apendice"]                 = null;
         dd($comprobante);
         return ($comprobante);
