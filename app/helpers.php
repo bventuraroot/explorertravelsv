@@ -1312,7 +1312,7 @@ if (!function_exists('fex')) {
             ];
         }*/
 
-        $codigos_tributos = [strval("C3")];
+        $codigos_tributos = ["C3"]; // Array directo para FEX exento
         $i = 0;
         foreach ($cuerpo as $item) {
             $i += 1;
@@ -1386,8 +1386,8 @@ if (!function_exists('fex')) {
             "descuento"             => (float)$totales["totalDescu"],
             "porcentajeDescuento"   => (float)$totales["porcentajeDescuento"],
             "totalDescu"            => (float)$totales["totalDescu"],
-            "seguro"                => null,
-            "flete"                  => null,
+            "seguro"                => 0.00,
+            "flete"                  => 0.00,
             "montoTotalOperacion"   => round((float)$totales["subTotal"], 2), // Sin IVA
             "totalNoGravado"        => (float)$totales["totalNoGravado"],
             "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
@@ -1433,7 +1433,7 @@ if (!function_exists('fex')) {
         $comprobante["resumen"]                  = $resumen;
         //$comprobante["extension"]                = $extension;
         $comprobante["apendice"]                 = $apendice;
-        dd($comprobante);
+        //dd($comprobante);
         return ($comprobante);
     }
 }
