@@ -1438,7 +1438,7 @@ if (!function_exists('fex')) {
         $comprobante["resumen"]                  = $resumen;
         //$comprobante["extension"]                = $extension;
         $comprobante["apendice"]                 = null;
-        dd($comprobante);
+        //dd($comprobante);
         return ($comprobante);
     }
 }
