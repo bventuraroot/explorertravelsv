@@ -1280,6 +1280,7 @@ if (!function_exists('fex')) {
         }else{
             $tipoPersona = 1;
         }
+        $descActividad = "Actividad no declarada";
         $receptor = [
             "nombre"                => $cliente[0]->nombre,
             "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
@@ -1288,9 +1289,10 @@ if (!function_exists('fex')) {
             "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
             "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
-            "tipoPersona"           => "NA", // 1=Jurídica, 2=Natural
-            "descActividad"         => "NA", // Usar giro como actividad
+            "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
+            "descActividad"         => $descActividad, // Usar giro como actividad
         ];
+        dd($receptor);
         // Agregar campos opcionales si existen
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
