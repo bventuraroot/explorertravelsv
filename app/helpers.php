@@ -1392,7 +1392,7 @@ if (!function_exists('fex')) {
             "totalNoGravado"        => (float)$totales["totalNoGravado"],
             "totalPagar"            => round((float)($totales["totalPagar"] - $totales["reteRenta"]),2),
             "totalLetras"           => $totales["totalLetras"],
-            "condicionOperacion"    => intval($totales["condicionOperacion"]),
+            "condicionOperacion"    => $totalGravada,
             "pagos"                 => $pagos,
             "numPagoElectronico"    => null,
             "codIncoterms"          => null,
