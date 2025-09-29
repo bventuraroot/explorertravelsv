@@ -1257,15 +1257,14 @@ if (!function_exists('fex')) {
             "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
             "telefono"              => $emisor_data[0]->telefono,
+            "correo"                => $emisor_data[0]->correo,
             "codEstableMH"          => $emisor_data[0]->codEstableMH,
             "codEstable"            => $emisor_data[0]->codEstable,
             "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
             "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta,
-            "correo"                => $emisor_data[0]->correo,
-            // Campos específicos para FEX
             "tipoItemExpor"         => 2, // 1=Bienes, 2=Servicios, 3=Otros
-            "recintoFiscal"         => "NULL", // Solo para bienes/otros
-            "regimen"               => "NULL"  // Solo para bienes/otros
+            "recintoFiscal"         => NULL, // Solo para bienes/otros
+            "regimen"               => NULL  // Solo para bienes/otros
         ];
         // Para FEX, el receptor es internacional - usar campos específicos
         $documentoInfo = getClienteDocumentoConTipo($cliente[0]);
@@ -1284,10 +1283,10 @@ if (!function_exists('fex')) {
             "nombre"                => $cliente[0]->nombre,
             "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
             "numDocumento"          => getClienteDocumento($cliente[0]),
-            "nombreComercial"       => NULL, // Usar función helper para documento
+            //"nombreComercial"       => null, // Usar función helper para documento
             //"nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
-            "codPais"               => "9450", // Código país destino (hardcode por ahora)
+            "codPais"               => "US", // Código país destino (hardcode por ahora)
             //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
