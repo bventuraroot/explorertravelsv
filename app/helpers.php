@@ -1315,7 +1315,18 @@ if (!function_exists('fex')) {
 
         foreach ($cuerpo as $item) {
             $i += 1;
-
+            if ($item->iva != 0 and count($codigos_tributos) == 0) {
+                $codigos_tributos = [
+                    "codigo"        =>  "20",
+                    "descripcion"   =>  "Impuesto al Valor Agregado 13%",
+                    "valor"         => round((float)$item->iva, 2)
+                ];
+            } else {
+                if ($item->iva != 0 and count($codigos_tributos) > 0) {
+                    $iva = round((float)($codigos_tributos["valor"] + $item->iva), 2);
+                    $codigos_tributos["valor"] = (float)$iva;
+                }
+            }
             // Para FEX, generalmente sin IVA (exento)
             $tributos_properties_items_cuerpoDocumento = "C3"; // Exento para exportación
             $iva_calculadofac = round(($item->iva/$item->cantidad),2);
