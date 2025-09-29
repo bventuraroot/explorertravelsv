@@ -1286,13 +1286,15 @@ if (!function_exists('fex')) {
             "numDocumento"          => getClienteDocumento($cliente[0]),
             "nombreComercial"       => NULL, // Usar función helper para documento
             //"nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
-            "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
-            "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
+            //"codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
+            "codPais"               => "9450", // Código país destino (hardcode por ahora)
+            //"nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
+            "nombrePais"            => "Estados Unidos", // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
             "tipoPersona"           => $tipoPersona, // 1=Jurídica, 2=Natural
             "descActividad"         => $descActividad, // Usar giro como actividad
         ];
-        dd($receptor);
+        //dd($receptor);
         // Agregar campos opcionales si existen
         if ($cliente[0]->telefono != '') {
             $receptor["telefono"] = $cliente[0]->telefono;
