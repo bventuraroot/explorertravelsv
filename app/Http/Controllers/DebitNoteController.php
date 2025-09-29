@@ -174,16 +174,15 @@ class DebitNoteController extends Controller
                 ->firstOrFail();
 
             // Verificar si la emisión de DTE está habilitada para esta empresa
-            $configCompany = Config::where('company_id', $request->company_id)->first();
-            $dteHabilitado = $configCompany && $configCompany->emision_dte;
-
-            if ($dteHabilitado) {
+            if (Config::isDteEmissionEnabled($request->company_id)) {
                 // 1. Preparar datos de la nota de débito para enviar a Hacienda SIN crear registros
                 $datosNotaDebito = $this->prepararDatosParaHacienda($request, $saleOriginal);
 
                 // 2. Enviar a Hacienda para validación
                 $saleController = new \App\Http\Controllers\SaleController();
+                Log::info('Enviando datos de nota de débito a Hacienda', ['datos' => $datosNotaDebito]);
                 $respuestaHacienda = $saleController->Enviar_Hacienda($datosNotaDebito, "06");
+                Log::info('Respuesta de Hacienda para nota de débito', ['respuesta' => $respuestaHacienda]);
 
                 // 3. Si Hacienda rechaza, no crear nada
                 if ($respuestaHacienda["codEstado"] == "03") {

@@ -158,16 +158,15 @@ class CreditNoteController extends Controller
                 ->firstOrFail();
 
             // Verificar si la emisión de DTE está habilitada para esta empresa
-            $configCompany = Config::where('company_id', $request->company_id)->first();
-            $dteHabilitado = $configCompany && $configCompany->emision_dte;
-
-            if ($dteHabilitado) {
+            if (Config::isDteEmissionEnabled($request->company_id)) {
                 // 1. Preparar datos de la nota de crédito para enviar a Hacienda SIN crear registros
                 $datosNotaCredito = $this->prepararDatosParaHacienda($request, $saleOriginal);
 
                 // 2. Enviar a Hacienda para validación
                 $saleController = new \App\Http\Controllers\SaleController();
+                Log::info('Enviando datos de nota de crédito a Hacienda', ['datos' => $datosNotaCredito]);
                 $respuestaHacienda = $saleController->Enviar_Hacienda($datosNotaCredito, "05");
+                Log::info('Respuesta de Hacienda para nota de crédito', ['respuesta' => $respuestaHacienda]);
 
                 // 3. Si Hacienda rechaza, no crear nada
                 if ($respuestaHacienda["codEstado"] == "03") {
