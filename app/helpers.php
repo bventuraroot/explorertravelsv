@@ -1231,7 +1231,7 @@ if (!function_exists('fex')) {
             "tipoModelo"        => 1,
             "tipoOperacion"     => 1,
             "tipoContingencia"  => null,
-            "motivoContin"      => null,
+            "motivoContingencia"=> null,
             "fecEmi"            => date('Y-m-d'),
             "horEmi"            => date("H:i:s"),
             "tipoMoneda"        => "USD" // FEX siempre en USD
@@ -1283,12 +1283,13 @@ if (!function_exists('fex')) {
         if($cliente[0]->codActividad != '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A'){
             $descActividad = $cliente[0]->descActividad;
         }else{
-            $descActividad = null;
+            $descActividad = "";
         }
         $receptor = [
             "nombre"                => $cliente[0]->nombre,
             "tipoDocumento"         => $tipoDocumento, // Detección automática del tipo
-            "numDocumento"          => getClienteDocumento($cliente[0]), // Usar función helper para documento
+            "numDocumento"          => getClienteDocumento($cliente[0]),
+            "nombreComercial"       => $cliente[0]->nombre, // Usar función helper para documento
             "codPais"               => $cliente[0]->codPais, // Código país destino (hardcode por ahora)
             "nombrePais"            => $cliente[0]->nombrePais, // Nombre país (hardcode por ahora)
             "complemento"           => $cliente[0]->direccion, // Dirección internacional
