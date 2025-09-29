@@ -1314,7 +1314,7 @@ if (!function_exists('fex')) {
 
         $codigos_tributos = ["C3"];
         $i = 0;
-
+        dd($cuerpo);
         foreach ($cuerpo as $item) {
             $i += 1;
             // Para FEX, generalmente sin IVA (exento)
