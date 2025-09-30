@@ -900,6 +900,7 @@ if (!function_exists('fac')) {
             "numPagoElectronico"    => ""
         ];
         $es_mayor = ($totales["totalPagar"] >= 200);
+        dd($es_mayor);
         $extension = [
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
