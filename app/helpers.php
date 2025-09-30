@@ -1514,7 +1514,7 @@ if (!function_exists('ncr')) {
             else{ $codeActivity = $cliente[0]->codActividad; }
         }
         $receptor = [
-            "nit"                   => getClienteDocumento($cliente[0]),
+            "nit"                   => str_replace("-", "", $cliente[0]->nit),
             "nrc"                   => str_replace("-", "", $cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre_cliente,
             "codActividad"          => $codeActivity,
@@ -1567,6 +1567,18 @@ if (!function_exists('ncr')) {
 
             $tributos_properties_items_cuerpoDocumento = ($item->iva != 0) ? "20" : "C3";
 
+            // Lógica condicional para ventaGravada e ivaItem
+            if($item->no_sujetas > 0){
+                $ventagravada = 0;
+                $ivaItem = 0;
+            }else if($item->exentas > 0){
+                $ventagravada = 0;
+                $ivaItem = 0;
+            }else{
+                $ventagravada = round((float)($item->gravadas + $item->iva), 2);
+                $ivaItem = round((float)$item->iva, 2);
+            }
+
             $properties_items_cuerpoDocumento = array();
 
             $properties_items_cuerpoDocumento = [
@@ -1584,8 +1596,9 @@ if (!function_exists('ncr')) {
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => (float)($item->descuento),
                 "ventaExenta"       => (float)($item->exentas),
-                "ventaGravada"      => round((float)($item->gravadas),2),
+                "ventaGravada"      => $ventagravada,
                 "tributos"          => ($item->gravadas != 0) ? ["20"] : null,
+                "ivaItem"           => $ivaItem
                 //"psv"               => (float)"0.00",
                 //"noGravado"         => (float)$item["no_imponible"]
             ];
@@ -1671,7 +1684,7 @@ if (!function_exists('ncr')) {
             "subTotal"              => (float)$encabezado["subTotal"],
             "ivaPerci1"             => (float)$encabezado["ivaPerci1"],
             "ivaRete1"              => (float)$encabezado["ivaRete1"],
-            "reteRenta"             => (float)$encabezado["reteRenta"],
+            "reteRenta"             => round((float)$encabezado["reteRenta"],2),
             "montoTotalOperacion"   => round((float)($encabezado["subTotalVentas"] + $encabezado["total_iva"]), 2), //(float)$encabezado["montoTotalOperacion"],
             //"totalNoGravado"        => (float)$encabezado["totalNoGravado"],
             //"totalPagar"            => (float)$encabezado["totalPagar"],
@@ -1689,7 +1702,7 @@ if (!function_exists('ncr')) {
             "nombEntrega"   => ($es_mayor) ? $encabezado["NombreUsuario"] : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado["docUser"]) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre_cliente : null,
-            "docuRecibe"    => ($es_mayor) ? getClienteDocumento($cliente[0]) : null,
+            "docuRecibe"    => ($es_mayor) ? str_replace("-", "", $cliente[0]->nit) : null,
             "observaciones" => ($es_mayor) ? null : null,
             //"placaVehiculo" => ($es_mayor) ? null : null
             // "placaVehiculo" => ($es_mayor) ? $encabezado["placaVehiculo"] : null

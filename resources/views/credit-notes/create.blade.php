@@ -35,7 +35,7 @@
             </h5>
         </div>
 
-        <form id="creditNoteForm" action="{{ route('credit-notes.store', ['sale_id' => $sale->id ?? 0]) }}" method="POST">
+        <form id="creditNoteForm" action="{{ route('credit-notes.store', ['sale_id' => $sale->id ?? 0]) }}" method="POST"> 
             @csrf
             <input type="hidden" id="redirectToSales" value="{{ route('sale.index') }}">
 
