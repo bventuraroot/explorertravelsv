@@ -887,7 +887,7 @@ if (!function_exists('fac')) {
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
             "docuRecibe"    => ($es_mayor) ? (
                 // Si el NIT está vacío, null o 'N/A', retornar null
-                (strlen($cliente[0]->nit) == 0 || is_null($cliente[0]->nit) || $cliente[0]->nit == 'N/A') ? (
+                (strlen($cliente[0]->nit) > 0 || is_null($cliente[0]->nit) || $cliente[0]->nit == 'N/A') ? (
                     // Si es extranjero, usar pasaporte
                     ($cliente[0]->extranjero == 1) ?
                         str_replace("-", "", $cliente[0]->pasaporte) :
