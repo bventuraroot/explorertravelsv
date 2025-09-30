@@ -734,6 +734,13 @@ if (!function_exists('fac')) {
         if ($cliente[0]->codPais == '9300' && $cliente[0]->extranjero == 0) {
 
             $receptor["direccion"] = $direccion_receptor;
+        }else if ($cliente[0]->extranjero == 1) {
+            $direccion_receptor = [
+                "departamento"  => null,
+                "municipio"     => null,
+                "complemento"   => null
+            ];
+            $receptor["direccion"] = $direccion_receptor;
         }
         //dd($cliente);
         if ($cliente[0]->telefono != '') {
