@@ -985,7 +985,7 @@ if (!function_exists('fan')) {
             "selloRecibido"         => $encabezado["selloRecibidoOriginal"],
             "numeroControl"         => $encabezado["id_doc"],
             "fecEmi"                => $encabezado["fecEmiOriginal"],
-            "montoIva"              => (float)($encabezado["total_iva"]),
+            "montoIva"              => round((float)($encabezado["total_iva"]), 2),
             "codigoGeneracionR"     => null,
             "tipoDocumento"         => $docInfo['tipoDocumento'] ?? null,
             "numDocumento"          => $docInfo['documento'] ?? null,
