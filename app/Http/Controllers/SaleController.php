@@ -1729,7 +1729,8 @@ class SaleController extends Controller
         36 tipoDocumentoCliente,
         d.code codPais,
         d.name nombrePais,
-        0 siempre_retiene_renta
+        0 siempre_retiene_renta,
+        a.extranjero
     FROM clients a
     INNER JOIN economicactivities b ON a.economicactivity_id=b.id
     INNER JOIN addresses c ON a.address_id=c.id
