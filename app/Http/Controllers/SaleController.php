@@ -911,6 +911,7 @@ class SaleController extends Controller
 
     public function ncr($id_sale)
     {
+        for($i = 0; $i < 50; $i++){
         // La nota de crédito SOLO puede venir del formulario
         if (!request()->isMethod('post') || !request()->has('productos')) {
             return redirect()->back()
@@ -1437,8 +1438,8 @@ class SaleController extends Controller
             if (request()->ajax()) {
                 return response('1');
             }
-            return redirect()->route('sale.index')
-                ->with('success', 'Nota de crédito creada y enviada a Hacienda exitosamente.');
+            //return redirect()->route('sale.index')
+                //->with('success', 'Nota de crédito creada y enviada a Hacienda exitosamente.');
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Error creando nota de crédito: ' . $e->getMessage());
@@ -1455,6 +1456,7 @@ class SaleController extends Controller
                 ->withInput()
                 ->with('error', 'Error al procesar la nota de crédito. Revisa los logs para más detalles.');
         }
+    }
     }
 
     /**
