@@ -500,7 +500,6 @@ class SaleController extends Controller
 
     public function createdocument($corr, $amount)
     {
-        for($i=0; $i<=100; $i++){
         DB::beginTransaction();
         try {
             $amount = substr($amount, 1);
@@ -814,9 +813,9 @@ class SaleController extends Controller
             $salesave->save();
             $exit = 1;
             DB::commit();
-            //return response()->json(array(
-               // "res" => $exit
-            //));
+            return response()->json(array(
+               "res" => $exit
+            ));
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -831,7 +830,6 @@ class SaleController extends Controller
 
             return response()->json(['error' => 'No se pudo procesar el documento', 'message' => $e->getMessage()], 500);
         }
-    }
     }
 
     public function getdetailsdoc($corr)
