@@ -879,7 +879,7 @@ if (!function_exists('fac')) {
             "pagos"                 => $pagos,
             "numPagoElectronico"    => ""
         ];
-
+        dd(strlen($cliente[0]->nit));
         $es_mayor = ($totales["totalPagar"] >= 200);
         $extension = [
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
