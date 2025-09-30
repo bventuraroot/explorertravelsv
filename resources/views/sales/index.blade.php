@@ -393,11 +393,19 @@
                                         </div>
                                     @endswitch
                                 </td>
-                                @if ($sale->estadoHacienda=='PROCESADO')
-                                <td style="color: green; font-weight: bold; font-size: 0.8rem;">{{ $sale->id_doc }}</td>
-                                @else
-                                <td>{{ $sale->id }}</td>
-                                @endif
+                                @php
+                                    $esAnulado = ($sale->state == 0);
+                                    $mostrarId = $sale->id;
+                                    if (!$esAnulado && $sale->estadoHacienda=='PROCESADO' && !empty($sale->id_doc)) {
+                                        $mostrarId = $sale->id_doc;
+                                    }
+                                @endphp
+                                <td style="{{ (!$esAnulado && $sale->estadoHacienda=='PROCESADO') ? 'color: green; font-weight: bold; font-size: 0.8rem;' : '' }}">
+                                    {{ $mostrarId }}
+                                    @if($esAnulado && !empty($sale->codigoGeneracion))
+                                        <div class="small text-danger mt-1">CG: {{ $sale->codigoGeneracion }}</div>
+                                    @endif
+                                </td>
 
                                 <td>{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
                                 <td>{{ $sale->document_name }}</td>

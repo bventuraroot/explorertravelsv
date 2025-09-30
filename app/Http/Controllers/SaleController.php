@@ -37,10 +37,25 @@ class SaleController extends Controller
         $rolResult = DB::select($rolQuery, [$id_user]);
         $isAdmin = !empty($rolResult) && ($rolResult[0]->role_id == 1 || $rolResult[0]->role_id == 2);
 
+        // Subconsulta: último DTE de emisión (no invalidación) por venta
+        $dteEmisionSub = DB::table('dte')
+            ->select(
+                'dte.sale_id',
+                'dte.tipoDte',
+                'dte.estadoHacienda',
+                'dte.id_doc',
+                'dte.company_name',
+                'dte.codigoGeneracion'
+            )
+            ->whereIn('dte.codTransaction', ['01','05','06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoinSub($dteEmisionSub, 'dte_emis', function ($join) {
+                $join->on('dte_emis.sale_id', '=', 'sales.id');
+            })
             ->where('sales.typesale', '<>', '3')
             ->select(
                 'sales.*',
@@ -51,10 +66,11 @@ class SaleController extends Controller
                 'clients.tpersona',
                 'clients.email as mailClient',
                 'companies.name AS company_name',
-                'dte.tipoDte',
-                'dte.estadoHacienda',
-                'dte.id_doc',
-                'dte.company_name',
+                'dte_emis.tipoDte',
+                'dte_emis.estadoHacienda',
+                'dte_emis.id_doc',
+                'dte_emis.company_name',
+                DB::raw('dte_emis.codigoGeneracion as codigoGeneracion'),
                 DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'),
                 DB::raw('(SELECT COUNT(*) FROM sales nc INNER JOIN typedocuments tdnc ON nc.typedocument_id = tdnc.id WHERE nc.doc_related = sales.id AND tdnc.type = "NCR" AND nc.state = 1) AS tiene_nota_credito'),
                 DB::raw('(SELECT COUNT(*) FROM sales nd INNER JOIN typedocuments tdnd ON nd.typedocument_id = tdnd.id WHERE nd.doc_related = sales.id AND tdnd.type = "NDB" AND nd.state = 1) AS tiene_nota_debito'),
