@@ -977,6 +977,8 @@ if (!function_exists('fan')) {
         ];
 
         //dd($encabezado);
+        // Determinar documento/tipo del cliente (soporta extranjeros con pasaporte)
+        $docInfo = getClienteDocumentoConTipo($cliente[0]);
         $documento = [
             "tipoDte"               => $encabezado["tipoDteOriginal"],
             "codigoGeneracion"      => $encabezado["codigoGeneracionOriginal"],
@@ -985,8 +987,8 @@ if (!function_exists('fan')) {
             "fecEmi"                => $encabezado["fecEmiOriginal"],
             "montoIva"              => (float)($encabezado["total_iva"]),
             "codigoGeneracionR"     => null,
-            "tipoDocumento"         => "36",
-            "numDocumento"          => $encabezado["numDocumento"],
+            "tipoDocumento"         => $docInfo['tipoDocumento'] ?? null,
+            "numDocumento"          => $docInfo['documento'] ?? null,
             "nombre"                => $encabezado["nombre"],
 
         ];
@@ -1596,7 +1598,7 @@ if (!function_exists('ncr')) {
                 "codTributo"        => null,
                 "uniMedida"         => 99,
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)($item->precio_unitario),2), 
+                "precioUni"         => round((float)($item->precio_unitario),2),
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => round((float)($item->descuento),2),
                 "ventaExenta"       => round((float)($item->exentas),2),

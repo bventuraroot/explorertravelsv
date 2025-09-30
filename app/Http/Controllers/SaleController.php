@@ -1704,17 +1704,17 @@ class SaleController extends Controller
             ];
             $querycliente = "SELECT
         a.id idcliente,
-        a.nit,
-        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
+        IF(a.nit = '00000000-0', NULL, a.nit) as nit,
+        IF(a.ncr = 'N/A' or a.ncr = '0' or a.ncr is null, NULL, CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED)) AS ncr,
         CASE
             WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
             WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
         END AS nombre,
-        b.code codActividad,
-        b.name descActividad,
+        IF(b.code = 0, NULL, b.code) AS codActividad,
+        IF(b.code = 0, NULL, b.name) AS descActividad,
         CASE
             WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
-            WHEN a.tpersona = 'J' THEN COALESCE(a.comercial_name, '')
+            WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
         END AS nombreComercial,
         a.email correo,
         f.code departamento,
@@ -1724,14 +1724,12 @@ class SaleController extends Controller
         1 id_tipo_contribuyente,
         a.tipoContribuyente id_clasificacion_tributaria,
         0 siempre_retiene,
-        36 tipoDocumento,
-        a.nit numDocumento,
-        36 tipoDocumentoCliente,
         d.code codPais,
         d.name nombrePais,
         0 siempre_retiene_renta,
         a.extranjero,
-        a.pasaporte
+        a.pasaporte,
+        a.tpersona
     FROM clients a
     INNER JOIN economicactivities b ON a.economicactivity_id=b.id
     INNER JOIN addresses c ON a.address_id=c.id
@@ -1741,7 +1739,20 @@ class SaleController extends Controller
     LEFT JOIN municipalities g ON c.municipality_id=g.id
     WHERE a.id = $anular->client_id";
             $cliente = DB::select(DB::raw($querycliente));
-            //dd($cliente);
+            // Determinar tipo y número de documento del cliente
+            $tipoDocumentoCliente = '36';
+            $numDocumentoCliente = null;
+            if (!empty($cliente)) {
+                $cli = $cliente[0];
+                if (isset($cli->extranjero) && intval($cli->extranjero) === 1) {
+                    $tipoDocumentoCliente = '03';
+                    $numDocumentoCliente = isset($cli->pasaporte) ? str_replace('-', '', $cli->pasaporte) : null;
+                } else if (!empty($cli->nit)) {
+                    $tipoDocumentoCliente = '36';
+                    $numDocumentoCliente = str_replace('-', '', $cli->nit);
+                }
+            }
+
             $documento[0] = [
                 "tipodocumento"         => 99,
                 "nu_doc"                => $invalidacion[0]->numero_factura,
@@ -1756,8 +1767,8 @@ class SaleController extends Controller
                 "selloRecibidoOriginal"     => $invalidacion[0]->selloRecibido,
                 "fecEmiOriginal"            => date('Y-m-d', strtotime($invalidacion[0]->fhRecibido)),
                 "total_iva"                 => $invalidacion[0]->iva,
-                "tipoDocumento"             => $invalidacion[0]->type_document,
-                "numDocumento"              => $invalidacion[0]->nit,
+                "tipoDocumento"             => $tipoDocumentoCliente,
+                "numDocumento"              => $numDocumentoCliente,
                 "nombre"                    => $invalidacion[0]->anombrede,
                 "versionjson"               => 2,
                 "id_empresa"                => $invalidacion[0]->id_empresa,
