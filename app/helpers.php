@@ -1597,8 +1597,8 @@ if (!function_exists('ncr')) {
                 "ventaNoSuj"        => (float)($item->descuento),
                 "ventaExenta"       => (float)($item->exentas),
                 "ventaGravada"      => $ventagravada,
-                "tributos"          => ($item->gravadas != 0) ? ["20"] : null
-                //"ivaItem"           => $ivaItem
+                "tributos"          => ($item->gravadas != 0) ? ["20"] : null,
+                "ivaItem"           => $ivaItem
                 //"psv"               => (float)"0.00",
                 //"noGravado"         => (float)$item["no_imponible"]
             ];
