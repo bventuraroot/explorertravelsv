@@ -1702,7 +1702,6 @@ class SaleController extends Controller
                 "pagos" => null,
                 "totalIva" => (float)$detailsbd[0]->iva
             ];
-            dd($totales);
             $querycliente = "SELECT
         a.id idcliente,
         a.nit,
@@ -1740,7 +1739,7 @@ class SaleController extends Controller
     INNER JOIN municipalities g ON c.municipality_id=g.id
     WHERE a.id = $anular->client_id";
             $cliente = DB::select(DB::raw($querycliente));
-
+            dd($cliente);
             $documento[0] = [
                 "tipodocumento"         => 99,
                 "nu_doc"                => $invalidacion[0]->numero_factura,
