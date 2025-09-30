@@ -1803,10 +1803,18 @@ class SaleController extends Controller
 
             $respuesta = $this->Enviar_Hacienda($comprobante, "02");
             if ($respuesta["codEstado"] == "03") {
+                Log::warning('Invalidación rechazada por MH', [
+                    'sale_id' => $idFactura,
+                    'respuesta' => $respuesta
+                ]);
                 return response()->json([
                     'success' => false,
-                    'message' => $respuesta['descripcionMsg'],
-                    'code' => $respuesta["codEstado"]
+                    'message' => $respuesta['descripcionMsg'] ?? 'Documento rechazado por Hacienda',
+                    'code' => $respuesta["codEstado"] ?? null,
+                    'descripcionMsg' => $respuesta['descripcionMsg'] ?? null,
+                    'codigoMsg' => $respuesta['codigoMsg'] ?? null,
+                    'clasificaMsg' => $respuesta['clasificaMsg'] ?? null,
+                    'observacionesMsg' => $respuesta['observacionesMsg'] ?? null,
                 ], 400);
             }
             $comprobante["json"] = $respuesta;
@@ -1853,6 +1861,9 @@ class SaleController extends Controller
                     'res' => 1
                 ], 200);
             } else {
+                Log::error('Falló guardado de invalidación', [
+                    'sale_id' => $idFactura,
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al invalidar el documento',
@@ -1860,6 +1871,11 @@ class SaleController extends Controller
                 ], 500);
             }
         } catch (\Exception $e) {
+            Log::error('Excepción en invalidación', [
+                'sale_id' => $idFactura ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno del servidor: ' . $e->getMessage(),
