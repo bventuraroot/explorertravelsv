@@ -1775,6 +1775,7 @@ class SaleController extends Controller
             ];
 
             $respuesta = $this->Enviar_Hacienda($comprobante, "02");
+            dd($respuesta);
             if ($respuesta["codEstado"] == "03") {
                 return response()->json([
                     'success' => false,
