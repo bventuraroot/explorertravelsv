@@ -1827,7 +1827,7 @@ class SaleController extends Controller
         //return $comprobante_electronico;
         try {
             $comprobante_electronico = convertir_json($comprobante, $codTransaccion);
-            //dd($comprobante_electronico);
+            dd($comprobante_electronico);
         } catch (\Exception $e) {
             Log::error('Error en convertir_json: ' . $e->getMessage());
             Log::error('Línea: ' . $e->getLine());
