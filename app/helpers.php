@@ -948,6 +948,8 @@ if (!function_exists('getClienteDocumentoValidado')) {
         // Limpiar el NIT de espacios en blanco
         $nitLimpio = trim($cliente->nit ?? '');
 
+        dd($nitLimpio);
+
         // Si el NIT está vacío, null, 'N/A' o solo espacios en blanco
         if (empty($nitLimpio) || $nitLimpio == 'N/A' || strlen($nitLimpio) == 0) {
             // Si es extranjero, usar pasaporte
