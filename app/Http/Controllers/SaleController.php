@@ -1601,7 +1601,6 @@ class SaleController extends Controller
         LEFT JOIN ambientes am ON CONCAT('0',b.ambiente_id)=am.cod
         WHERE a.id = $idFactura";
             $invalidacion = DB::select(DB::raw($queryinvalidacion));
-            dd($invalidacion);
             $queryemisor = "SELECT
         a.nit,
         CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
@@ -1631,7 +1630,7 @@ class SaleController extends Controller
         INNER JOIN municipalities g ON d.municipality_id=g.id
         WHERE a.id=$anular->company_id";
             $emisor = DB::select(DB::raw($queryemisor));
-
+            dd($emisor);
             $queryproducto = "SELECT
         c.id id_producto,
         CASE
