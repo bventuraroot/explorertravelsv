@@ -1852,7 +1852,7 @@ class SaleController extends Controller
         //return $comprobante_electronico;
         try {
             $comprobante_electronico = convertir_json($comprobante, $codTransaccion);
-            dd($comprobante_electronico);
+            //dd($comprobante_electronico);
         } catch (\Exception $e) {
             throw $e;
         }
