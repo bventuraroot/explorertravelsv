@@ -1601,7 +1601,7 @@ class SaleController extends Controller
         LEFT JOIN ambientes am ON CONCAT('0',b.ambiente_id)=am.cod
         WHERE a.id = $idFactura";
             $invalidacion = DB::select(DB::raw($queryinvalidacion));
-
+            dd($invalidacion);
             $queryemisor = "SELECT
         a.nit,
         CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
