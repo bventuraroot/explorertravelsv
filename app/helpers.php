@@ -1575,7 +1575,7 @@ if (!function_exists('ncr')) {
                 $ventagravada = 0;
                 $ivaItem = 0;
             }else{
-                $ventagravada = round((float)($item->gravadas + $item->iva), 2);
+                $ventagravada = round((float)($item->gravadas), 2);
                 $ivaItem = round((float)$item->iva, 2);
             }
 
@@ -1590,7 +1590,7 @@ if (!function_exists('ncr')) {
                 "codTributo"        => null,
                 "uniMedida"         => 99,
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)($item->precio_unitario+$item->iva),2),
+                "precioUni"         => round((float)($item->precio_unitario),2),
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => round((float)($item->descuento),2),
                 "ventaExenta"       => round((float)($item->exentas),2),
