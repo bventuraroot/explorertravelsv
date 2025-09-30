@@ -1015,7 +1015,7 @@ if (!function_exists('fan')) {
         $comprobante["motivo"]      = $motivo;
 
         //$comprobante2 = [];
-        //dd($comprobante);
+        dd($comprobante);
         return ($comprobante);
     }
 }
