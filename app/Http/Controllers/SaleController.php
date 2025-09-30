@@ -1366,7 +1366,7 @@ class SaleController extends Controller
 
             // Enviar a Hacienda
         $respuesta = $this->Enviar_Hacienda($comprobante, "05");
-        dd($respuesta);
+        //dd($respuesta);
         if ($respuesta["codEstado"] == "03") {
                 // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
                 $dtecreate = $this->crearDteConError($doc, $emisor, $respuesta, $comprobante, $nfactura, $createdby);
