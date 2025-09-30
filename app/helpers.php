@@ -215,6 +215,7 @@ if (!function_exists('get_name_departamento')) {
         return null; // Si no se encuentra el departamento, devuelve null
     }
 }
+
 if (!function_exists('get_name_municipio')) {
     function get_name_municipio($id) {
         // Usando find() para obtener el municipio por su ID
@@ -638,25 +639,6 @@ if (!function_exists('crf')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('fac')) {
     function fac($comprobante_procesar, $uuid_generado){
@@ -900,12 +882,19 @@ if (!function_exists('fac')) {
             "numPagoElectronico"    => ""
         ];
         $es_mayor = ($totales["totalPagar"] >= 200);
-        dd($es_mayor);
         $extension = [
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre : null,
-            "docuRecibe"    => ($es_mayor) ? getClienteDocumentoValidado($cliente[0]) : null,
+            "docuRecibe"    => ($es_mayor) ? (
+                // Limpiar el NIT de espacios en blanco
+                (empty(trim($cliente[0]->nit ?? '')) || trim($cliente[0]->nit ?? '') == 'N/A') ? (
+                    // Si es extranjero, usar pasaporte
+                    (isset($cliente[0]->extranjero) && $cliente[0]->extranjero == 1) ?
+                        str_replace("-", "", trim($cliente[0]->pasaporte ?? '')) :
+                        null
+                ) : str_replace("-", "", trim($cliente[0]->nit ?? ''))
+            ) : null,
             "observaciones" => ($es_mayor) ? null : null,
             "placaVehiculo" => ($es_mayor) ? null : null
         ];
@@ -940,31 +929,6 @@ if (!function_exists('fac')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Limpiar el NIT de espacios en blanco
-        $nitLimpio = trim($cliente->nit ?? '');
-
-        dd($nitLimpio);
-
-        // Si el NIT está vacío, null, 'N/A' o solo espacios en blanco
-        if (empty($nitLimpio) || $nitLimpio == 'N/A' || strlen($nitLimpio) == 0) {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                $pasaporteLimpio = trim($cliente->pasaporte ?? '');
-                return !empty($pasaporteLimpio) ? str_replace("-", "", $pasaporteLimpio) : null;
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $nitLimpio);
-    }
-}
 
 if (!function_exists('fan')) {
     function fan($comprobante_procesar, $uuid_generado){
@@ -1053,25 +1017,6 @@ if (!function_exists('fan')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('clq')) {
     function clq($comprobante_procesar, $uuid_generado)
@@ -1262,25 +1207,6 @@ if (!function_exists('clq')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('fex')) {
     function fex($comprobante_procesar, $uuid_generado)
@@ -1516,25 +1442,6 @@ if (!function_exists('fex')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('ncr')) {
     function ncr($comprobante_procesar, $uuid_generado)
@@ -1798,7 +1705,15 @@ if (!function_exists('ncr')) {
             "nombEntrega"   => ($es_mayor) ? $encabezado["NombreUsuario"] : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado["docUser"]) : null,
             "nombRecibe"    => ($es_mayor) ? $cliente[0]->nombre_cliente : null,
-            "docuRecibe"    => ($es_mayor) ? getClienteDocumentoValidado($cliente[0]) : null,
+            "docuRecibe"    => ($es_mayor) ? (
+                // Limpiar el NIT de espacios en blanco
+                (empty(trim($cliente[0]->nit ?? '')) || trim($cliente[0]->nit ?? '') == 'N/A') ? (
+                    // Si es extranjero, usar pasaporte
+                    (isset($cliente[0]->extranjero) && $cliente[0]->extranjero == 1) ?
+                        str_replace("-", "", trim($cliente[0]->pasaporte ?? '')) :
+                        null
+                ) : str_replace("-", "", trim($cliente[0]->nit ?? ''))
+            ) : null,
             "observaciones" => ($es_mayor) ? null : null,
             //"placaVehiculo" => ($es_mayor) ? null : null
             // "placaVehiculo" => ($es_mayor) ? $encabezado["placaVehiculo"] : null
@@ -1828,25 +1743,6 @@ if (!function_exists('ncr')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('fse')) {
     function fse($comprobante_procesar, $uuid_generado)
@@ -2065,25 +1961,6 @@ if (!function_exists('fse')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 
 if (!function_exists('ndb')) {
     function ndb($comprobante_procesar, $uuid_generado)
@@ -2366,25 +2243,6 @@ if (!function_exists('ndb')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
 if (! function_exists('subfijo')) {
     function subfijo($xx)
     { // esta función regresa un subfijo para la cifra
@@ -2399,6 +2257,7 @@ if (! function_exists('subfijo')) {
         return $xsub;
     }
 }
+
 if (!function_exists('numeroletras')) {
     function numeroletras($xcifra)
     {
@@ -2537,6 +2396,7 @@ if (!function_exists('numeroletras')) {
         return trim($xcadena);
     }
 }
+
 if (! function_exists('numtoletras')) {
     function numtoletras($xcifra)
     {
@@ -2995,22 +2855,3 @@ if (!function_exists('ndb')) {
     }
 }
 
-/**
- * Obtener el documento del cliente validando NIT y pasaporte para extranjeros
- */
-if (!function_exists('getClienteDocumentoValidado')) {
-    function getClienteDocumentoValidado($cliente)
-    {
-        // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
-            // Si es extranjero, usar pasaporte
-            if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
-            }
-            return null;
-        }
-
-        // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
-    }
-}
