@@ -1656,7 +1656,6 @@ class SaleController extends Controller
         WHERE a.id=$idFactura";
             $producto = DB::select(DB::raw($queryproducto));
             $detalle = $producto;
-            dd($detalle);
             $detailsbd = Salesdetail::where('sale_id', '=', $idFactura)
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
@@ -1703,7 +1702,7 @@ class SaleController extends Controller
                 "pagos" => null,
                 "totalIva" => (float)$detailsbd[0]->iva
             ];
-
+            dd($totales);
             $querycliente = "SELECT
         a.id idcliente,
         a.nit,
