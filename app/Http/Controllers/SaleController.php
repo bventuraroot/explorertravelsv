@@ -1435,8 +1435,8 @@ class SaleController extends Controller
             if (request()->ajax()) {
                 return response('1');
             }
-            //return redirect()->route('sale.index')
-                //->with('success', 'Nota de crédito creada y enviada a Hacienda exitosamente.');
+            return redirect()->route('sale.index')
+                ->with('success', 'Nota de crédito creada y enviada a Hacienda exitosamente.');
         } catch (Exception $e) {
             DB::rollBack();
             Log::error('Error creando nota de crédito: ' . $e->getMessage());
