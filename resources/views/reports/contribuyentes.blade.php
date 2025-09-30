@@ -196,7 +196,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         <?php echo $sale['dateF']; ?>
                     </td>
                     <td
-                        style="font-size: 10px; text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        style="font-size: 9px; text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         <?php echo ($sale['numeroControl'] ?? '-') ?><br>
                         <small><?php echo ($sale['codigoGeneracion'] ?? '-') ?></small>
                     </td>
