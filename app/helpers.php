@@ -945,17 +945,21 @@ if (!function_exists('fac')) {
 if (!function_exists('getClienteDocumentoValidado')) {
     function getClienteDocumentoValidado($cliente)
     {
-        // Si el NIT está vacío, null o 'N/A'
-        if (strlen($cliente->nit) == 0 || $cliente->nit == 'N/A') {
+        // Limpiar el NIT de espacios en blanco
+        $nitLimpio = trim($cliente->nit ?? '');
+
+        // Si el NIT está vacío, null, 'N/A' o solo espacios en blanco
+        if (empty($nitLimpio) || $nitLimpio == 'N/A' || strlen($nitLimpio) == 0) {
             // Si es extranjero, usar pasaporte
             if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
-                return str_replace("-", "", $cliente->pasaporte ?? '');
+                $pasaporteLimpio = trim($cliente->pasaporte ?? '');
+                return !empty($pasaporteLimpio) ? str_replace("-", "", $pasaporteLimpio) : null;
             }
             return null;
         }
 
         // Si tiene NIT válido, usarlo
-        return str_replace("-", "", $cliente->nit);
+        return str_replace("-", "", $nitLimpio);
     }
 }
 
