@@ -695,9 +695,9 @@ if (!function_exists('fac')) {
             "tipoEstablecimiento"   => $emisor_data[0]->tipoEstablecimiento,
             "direccion"             => $direccion_emisor,
             "telefono"              => $emisor_data[0]->telefono,
-            "codEstableMH"          => $emisor_data[0]->codEstableMH,
+            //"codEstableMH"          => $emisor_data[0]->codEstableMH,
             "codEstable"            => $emisor_data[0]->codEstable,
-            "codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
+            //"codPuntoVentaMH"       => $emisor_data[0]->codPuntoVentaMH,
             "codPuntoVenta"         => $emisor_data[0]->codPuntoVenta,
             "correo"                => $emisor_data[0]->correo,
         ];
@@ -1015,7 +1015,7 @@ if (!function_exists('fan')) {
         $comprobante["motivo"]      = $motivo;
 
         //$comprobante2 = [];
-        dd($comprobante);
+        //dd($comprobante);
         return ($comprobante);
     }
 }
