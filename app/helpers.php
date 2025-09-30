@@ -946,7 +946,7 @@ if (!function_exists('getClienteDocumentoValidado')) {
     function getClienteDocumentoValidado($cliente)
     {
         // Si el NIT está vacío, null o 'N/A'
-        if (empty($cliente->nit) || $cliente->nit == 'N/A') {
+        if (strlen($cliente->nit) == 0 || $cliente->nit == 'N/A') {
             // Si es extranjero, usar pasaporte
             if (isset($cliente->extranjero) && $cliente->extranjero == 1) {
                 return str_replace("-", "", $cliente->pasaporte ?? '');
