@@ -730,7 +730,7 @@ if (!function_exists('fac')) {
         ];
         //dd($receptor);
 
-        if ($cliente[0]->codPais == '9300' or $cliente[0]->extranjero = 0) {
+        if ($cliente[0]->codPais == '9300' && $cliente[0]->extranjero = 0) {
 
             $receptor["direccion"] = $direccion_receptor;
         }
