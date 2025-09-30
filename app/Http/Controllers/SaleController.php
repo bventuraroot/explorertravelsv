@@ -1630,7 +1630,6 @@ class SaleController extends Controller
         INNER JOIN municipalities g ON d.municipality_id=g.id
         WHERE a.id=$anular->company_id";
             $emisor = DB::select(DB::raw($queryemisor));
-            dd($emisor);
             $queryproducto = "SELECT
         c.id id_producto,
         CASE
@@ -1657,7 +1656,7 @@ class SaleController extends Controller
         WHERE a.id=$idFactura";
             $producto = DB::select(DB::raw($queryproducto));
             $detalle = $producto;
-
+            dd($detalle);
             $detailsbd = Salesdetail::where('sale_id', '=', $idFactura)
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
