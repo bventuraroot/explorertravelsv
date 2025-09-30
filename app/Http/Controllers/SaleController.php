@@ -1092,107 +1092,54 @@ class SaleController extends Controller
                 $cantidadBasePrecio = $detalleData['cantidadBasePrecio'];
                 $tipoVenta = $detalleData['tipoVenta'];
 
-                // 1) Línea por disminución de cantidad (si aplica)
-                if ($cantidadDisminuir > 0) {
-                    $cantidadNC = $cantidadDisminuir;
-                    $precioNC = $precioOriginal;
-                    $subtotal = $cantidadNC * $precioNC;
+                // Crear UNA sola línea por producto modificado
+                $cantidadNC = $cantidadDisminuir; // cantidad a disminuir del formulario
+                $precioNC = $precioOriginal; // precio original
+                $subtotal = $cantidadNC * $precioNC;
 
-                    $detalle = new Salesdetail();
-                    $detalle->sale_id = $nfactura->id;
-                    $detalle->product_id = $productoData['product_id'];
-                    $detalle->amountp = $cantidadNC;
-                    $detalle->priceunit = $precioNC;
-                    $detalle->description = $productoOriginal->description;
-                    $detalle->renta = 0; // Campo requerido
-                    $detalle->fee = 0; // Campo requerido
-                    $detalle->feeiva = 0; // Campo requerido
-                    $detalle->reserva = 0; // Campo requerido
-                    $detalle->ruta = $productoOriginal->ruta ?? null;
-                    $detalle->destino = $productoOriginal->destino ?? null;
-                    $detalle->linea = $productoOriginal->linea ?? null;
-                    $detalle->canal = $productoOriginal->canal ?? null;
-                    $detalle->user_id = Auth::id();
+                $detalle = new Salesdetail();
+                $detalle->sale_id = $nfactura->id;
+                $detalle->product_id = $productoData['product_id'];
+                $detalle->amountp = $cantidadNC;
+                $detalle->priceunit = $precioNC;
+                $detalle->description = $productoOriginal->description;
+                $detalle->renta = 0; // Campo requerido
+                $detalle->fee = 0; // Campo requerido
+                $detalle->feeiva = 0; // Campo requerido
+                $detalle->reserva = 0; // Campo requerido
+                $detalle->ruta = $productoOriginal->ruta ?? null;
+                $detalle->destino = $productoOriginal->destino ?? null;
+                $detalle->linea = $productoOriginal->linea ?? null;
+                $detalle->canal = $productoOriginal->canal ?? null;
+                $detalle->user_id = Auth::id();
 
-                    if ($tipoVenta === 'gravada') {
-                        $detalle->pricesale = $subtotal;
-                        $detalle->detained13 = $subtotal * 0.13;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = 0;
-                    } elseif ($tipoVenta === 'exenta') {
-                        $detalle->pricesale = 0;
-                        $detalle->detained13 = 0;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = $subtotal;
-                        $detalle->nosujeta = 0;
-                    } elseif ($tipoVenta === 'no_sujeta') {
-                        $detalle->pricesale = 0;
-                        $detalle->detained13 = 0;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = $subtotal;
-                    } else {
-                        // Por defecto, tratar como gravada
-                        $detalle->pricesale = $subtotal;
-                        $detalle->detained13 = $subtotal * 0.13;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = 0;
-                    }
-                    $detalle->save();
+                if ($tipoVenta === 'gravada') {
+                    $detalle->pricesale = $subtotal;
+                    $detalle->detained13 = $subtotal * 0.13;
+                    $detalle->detained = null; // Campo nullable
+                    $detalle->exempt = 0;
+                    $detalle->nosujeta = 0;
+                } elseif ($tipoVenta === 'exenta') {
+                    $detalle->pricesale = 0;
+                    $detalle->detained13 = 0;
+                    $detalle->detained = null; // Campo nullable
+                    $detalle->exempt = $subtotal;
+                    $detalle->nosujeta = 0;
+                } elseif ($tipoVenta === 'no_sujeta') {
+                    $detalle->pricesale = 0;
+                    $detalle->detained13 = 0;
+                    $detalle->detained = null; // Campo nullable
+                    $detalle->exempt = 0;
+                    $detalle->nosujeta = $subtotal;
+                } else {
+                    // Por defecto, tratar como gravada
+                    $detalle->pricesale = $subtotal;
+                    $detalle->detained13 = $subtotal * 0.13;
+                    $detalle->detained = null; // Campo nullable
+                    $detalle->exempt = 0;
+                    $detalle->nosujeta = 0;
                 }
-
-                // 2) Línea por disminución de precio (si aplica)
-                if ($diferenciaPrecio > 0 && $cantidadBasePrecio > 0) {
-                    $cantidadNC = $cantidadBasePrecio;
-                    $precioNC = $diferenciaPrecio; // monto de reducción por unidad
-                    $subtotal = $cantidadNC * $precioNC;
-
-                    $detalle = new Salesdetail();
-                    $detalle->sale_id = $nfactura->id;
-                    $detalle->product_id = $productoData['product_id'];
-                    $detalle->amountp = $cantidadNC;
-                    $detalle->priceunit = $precioNC;
-                    $detalle->description = $productoOriginal->description . ' (Ajuste precio)';
-                    $detalle->renta = 0; // Campo requerido
-                    $detalle->fee = 0; // Campo requerido
-                    $detalle->feeiva = 0; // Campo requerido
-                    $detalle->reserva = 0; // Campo requerido
-                    $detalle->ruta = $productoOriginal->ruta ?? null;
-                    $detalle->destino = $productoOriginal->destino ?? null;
-                    $detalle->linea = $productoOriginal->linea ?? null;
-                    $detalle->canal = $productoOriginal->canal ?? null;
-                    $detalle->user_id = Auth::id();
-
-                    if ($tipoVenta === 'gravada') {
-                        $detalle->pricesale = $subtotal;
-                        $detalle->detained13 = $subtotal * 0.13;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = 0;
-                    } elseif ($tipoVenta === 'exenta') {
-                        $detalle->pricesale = 0;
-                        $detalle->detained13 = 0;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = $subtotal;
-                        $detalle->nosujeta = 0;
-                    } elseif ($tipoVenta === 'no_sujeta') {
-                        $detalle->pricesale = 0;
-                        $detalle->detained13 = 0;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = $subtotal;
-                    } else {
-                        // Por defecto, tratar como gravada
-                        $detalle->pricesale = $subtotal;
-                        $detalle->detained13 = $subtotal * 0.13;
-                        $detalle->detained = null; // Campo nullable
-                        $detalle->exempt = 0;
-                        $detalle->nosujeta = 0;
-                    }
-                    $detalle->save();
-                }
+                $detalle->save();
             }
             // Verificar si DTE está habilitado para esta empresa
 
