@@ -735,12 +735,7 @@ if (!function_exists('fac')) {
 
             $receptor["direccion"] = $direccion_receptor;
         }else if ($cliente[0]->extranjero == 1) {
-            $direccion_receptor = [
-                "departamento"  => null,
-                "municipio"     => null,
-                "complemento"   => null
-            ];
-            $receptor["direccion"] = $direccion_receptor;
+            $receptor["direccion"] = null;
         }
         //dd($cliente);
         if ($cliente[0]->telefono != '') {
