@@ -909,7 +909,6 @@ class SaleController extends Controller
 
     public function ncr($id_sale)
     {
-        for($i = 0; $i < 50; $i++){
         // La nota de crédito SOLO puede venir del formulario
         if (!request()->isMethod('post') || !request()->has('productos')) {
             return redirect()->back()
@@ -1454,7 +1453,6 @@ class SaleController extends Controller
                 ->withInput()
                 ->with('error', 'Error al procesar la nota de crédito. Revisa los logs para más detalles.');
         }
-    }
     }
 
     /**
