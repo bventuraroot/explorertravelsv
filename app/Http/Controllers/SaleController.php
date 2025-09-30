@@ -1734,9 +1734,9 @@ class SaleController extends Controller
     INNER JOIN economicactivities b ON a.economicactivity_id=b.id
     INNER JOIN addresses c ON a.address_id=c.id
     INNER JOIN phones p ON a.phone_id=p.id
-    LEFT JOIN countries d ON c.country_id=d.id
+    INNER JOIN countries d ON c.country_id=d.id
     LEFT JOIN departments f ON c.department_id=f.id
-    INNER JOIN municipalities g ON c.municipality_id=g.id
+    LEFT JOIN municipalities g ON c.municipality_id=g.id
     WHERE a.id = $anular->client_id";
             $cliente = DB::select(DB::raw($querycliente));
             //dd($cliente);
