@@ -1592,10 +1592,10 @@ if (!function_exists('ncr')) {
                 "descripcion"       => $item->descripcion,
 
 
-                "precioUni"         => (float)($item->precio_unitario),
+                "precioUni"         => round((float)($item->precio_unitario),2),
                 "montoDescu"        => 0.00,
-                "ventaNoSuj"        => (float)($item->descuento),
-                "ventaExenta"       => (float)($item->exentas),
+                "ventaNoSuj"        => round((float)($item->descuento),2),
+                "ventaExenta"       => round((float)($item->exentas),2),
                 "ventaGravada"      => $ventagravada,
                 "tributos"          => ($item->gravadas != 0) ? ["20"] : null,
                 "ivaItem"           => $ivaItem
