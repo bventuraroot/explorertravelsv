@@ -731,7 +731,7 @@ if (!function_exists('fac')) {
         ];
         //dd($receptor);
 
-        if ($cliente[0]->codPais == '9300' && $cliente[0]->extranjero = 0) {
+        if ($cliente[0]->codPais == '9300' && $cliente[0]->extranjero == 0) {
 
             $receptor["direccion"] = $direccion_receptor;
         }
@@ -881,7 +881,6 @@ if (!function_exists('fac')) {
             "numPagoElectronico"    => ""
         ];
         $es_mayor = ($totales["totalPagar"] >= 200);
-        dd($cliente[0]);
         $extension = [
             "nombEntrega"   => ($es_mayor) ? $encabezado->NombreUsuario : null,
             "docuEntrega"   => ($es_mayor) ? str_replace("-", "", $encabezado->docUser) : null,
