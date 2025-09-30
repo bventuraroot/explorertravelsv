@@ -1053,7 +1053,6 @@ class SaleController extends Controller
             $typedocumentNCR = \App\Models\Typedocument::where('type', 'NCR')
                 ->where('company_id', $saleOriginal->company_id)
                 ->first();
-            dd($typedocumentNCR);
             if (!$typedocumentNCR) {
                 DB::rollBack();
                 return redirect()->back()
