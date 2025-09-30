@@ -158,7 +158,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 <tr style="text-transform: uppercase;">
                     <td style="font-size: 10px; text-align: left;"><b>NUM. <br> CORR.</b></td>
                     <td style="font-size: 10px; text-align: left;"><b>Fecha<br>Emisión</b></td>
-                    <td style="font-size: 10px; text-align: left;"><b>Número de control DTE<br>Código de generación</b></td>
+                    <td style="font-size: 10px; text-align: left;"><b>Num. <br> Doc.</b></td>
                     <td style="font-size: 10px;"><b>Nombre del Cliente</b></td>
                     <td style="font-size: 10px; text-align: right;"><b>NRC</b></td>
                     <td style="font-size: 10px; text-align: right;"><b>Exentas</b></td>
@@ -197,8 +197,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                     <td
                         style="font-size: 10px; text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
-                        <?php echo ($sale['numeroControl'] ?? '-') ?><br>
-                        <small><?php echo ($sale['codigoGeneracion'] ?? '-') ?></small>
+                        <?php echo $sale['correlativo'] ?>
                     </td>
                     <td class="text-uppercase"
                         style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">

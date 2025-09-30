@@ -1557,12 +1557,22 @@ class SaleController extends Controller
      */
     public function destroy($id)
     {
-        $idFactura = base64_decode($id);
-        $anular = Sale::find($idFactura);
-        $anular->state = 0;
-        $anular->typesale = 0;
+        try {
+            $idFactura = base64_decode($id);
+            $anular = Sale::find($idFactura);
 
-        $queryinvalidacion = "SELECT
+            if (!$anular) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Venta no encontrada',
+                    'res' => 0
+                ], 404);
+            }
+
+            $anular->state = 0;
+            $anular->typesale = 0;
+
+            $queryinvalidacion = "SELECT
         b.tipoModelo,
         b.type_document,
         b.sale_id numero_factura,
@@ -1576,8 +1586,8 @@ class SaleController extends Controller
         (SELECT SUM(det.detained13) FROM salesdetails det WHERE det.sale_id=a.id) iva,
         clie.nit,
         CASE
-                WHEN clie.tpersona = 'N' THEN CONCAT(clie.firstname, ' ', clie.secondname, ' ' , clie.firstlastname, ' ', clie.secondlastname)
-                WHEN clie.tpersona = 'J' THEN CONCAT(clie.name_contribuyente)
+                WHEN clie.tpersona = 'N' THEN CONCAT_WS(' ', clie.firstname, clie.secondname, clie.firstlastname, clie.secondlastname)
+                WHEN clie.tpersona = 'J' THEN COALESCE(clie.name_contribuyente, '')
             END AS anombrede,
         a.company_id id_empresa,
         a.client_id id_cliente,
@@ -1590,11 +1600,11 @@ class SaleController extends Controller
         INNER JOIN dte b ON b.sale_id=a.id
         LEFT JOIN ambientes am ON CONCAT('0',b.ambiente_id)=am.cod
         WHERE a.id = $idFactura";
-        $invalidacion = DB::select(DB::raw($queryinvalidacion));
-        //data del emisor
-        $queryemisor = "SELECT
+            $invalidacion = DB::select(DB::raw($queryinvalidacion));
+
+            $queryemisor = "SELECT
         a.nit,
-        a.ncr,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         a.name nombre,
         c.code codActividad,
         c.name descActividad,
@@ -1620,12 +1630,14 @@ class SaleController extends Controller
         INNER JOIN departments f ON d.department_id=f.id
         INNER JOIN municipalities g ON d.municipality_id=g.id
         WHERE a.id=$anular->company_id";
-        $emisor = DB::select(DB::raw($queryemisor));
+            $emisor = DB::select(DB::raw($queryemisor));
 
-
-        $queryproducto = "SELECT
+            $queryproducto = "SELECT
         c.id id_producto,
-        c.description descripcion,
+        CASE
+            WHEN b.description IS NOT NULL AND b.description != '' THEN b.description
+            ELSE c.description
+        END AS descripcion,
         b.amountp cantidad,
         b.priceunit precio_unitario,
         0 descuento,
@@ -1644,12 +1656,12 @@ class SaleController extends Controller
         INNER JOIN salesdetails b ON b.sale_id=a.id
         INNER JOIN products c ON b.product_id=c.id
         WHERE a.id=$idFactura";
-        $producto = DB::select(DB::raw($queryproducto));
-        $detalle = $producto;
+            $producto = DB::select(DB::raw($queryproducto));
+            $detalle = $producto;
 
-        $detailsbd = Salesdetail::where('sale_id', '=', $idFactura)
-            ->select(
-                DB::raw('SUM(nosujeta) nosujeta,
+            $detailsbd = Salesdetail::where('sale_id', '=', $idFactura)
+                ->select(
+                    DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
             SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE pricesale END) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
@@ -1665,48 +1677,48 @@ class SaleController extends Controller
             0 rentarete,
             NULL pagos,
             SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
-            )
-            ->get();
-        //detalle de montos de la factura
-        $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - $detailsbd[0]->ivarete);
-        $totales = [
-            "totalNoSuj" => (float)$detailsbd[0]->nosujeta,
-            "totalExenta" => (float)$detailsbd[0]->exentas,
-            "totalGravada" => (float)$detailsbd[0]->gravadas,
-            "subTotalVentas" => round((float)($detailsbd[0]->subtotalventas), 2),
-            "descuNoSuj" => $detailsbd[0]->descnosujeta,
-            "descuExenta" => $detailsbd[0]->descexenta,
-            "descuGravada" => $detailsbd[0]->desgravada,
-            "porcentajeDescuento" => 0.00,
-            "totalDescu" => $detailsbd[0]->totaldesc,
-            "tributos" =>  null,
-            "subTotal" => round((float)($detailsbd[0]->subtotal), 2),
-            "ivaPerci1" => 0.00,
-            "ivaRete1" => 0.00,
-            "reteRenta" => round((float)$detailsbd[0]->rentarete, 2),
-            "montoTotalOperacion" => round((float)($detailsbd[0]->subtotal), 2),
-            //(float)$encabezado["montoTotalOperacion"],
-            "totalNoGravado" => (float)0,
-            "totalPagar" => (float)$totalPagar,
-            "totalLetras" => numtoletras($totalPagar),
-            "saldoFavor" => 0.00,
-            "condicionOperacion" => $anular->waytopay,
-            "pagos" => null,
-            "totalIva" => (float)$detailsbd[0]->iva
-        ];
-        $querycliente = "SELECT
+                )
+                ->get();
+
+            $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - $detailsbd[0]->ivarete);
+            $totales = [
+                "totalNoSuj" => (float)$detailsbd[0]->nosujeta,
+                "totalExenta" => (float)$detailsbd[0]->exentas,
+                "totalGravada" => (float)$detailsbd[0]->gravadas,
+                "subTotalVentas" => round((float)($detailsbd[0]->subtotalventas), 8),
+                "descuNoSuj" => $detailsbd[0]->descnosujeta,
+                "descuExenta" => $detailsbd[0]->descexenta,
+                "descuGravada" => $detailsbd[0]->desgravada,
+                "porcentajeDescuento" => 0.00,
+                "totalDescu" => $detailsbd[0]->totaldesc,
+                "tributos" =>  null,
+                "subTotal" => round((float)($detailsbd[0]->subtotal), 8),
+                "ivaPerci1" => 0.00,
+                "ivaRete1" => 0.00,
+                "reteRenta" => round((float)$detailsbd[0]->rentarete, 8),
+                "montoTotalOperacion" => round((float)($detailsbd[0]->subtotal), 8),
+                "totalNoGravado" => (float)0,
+                "totalPagar" => (float)$totalPagar,
+                "totalLetras" => numtoletras($totalPagar),
+                "saldoFavor" => 0.00,
+                "condicionOperacion" => $anular->waytopay,
+                "pagos" => null,
+                "totalIva" => (float)$detailsbd[0]->iva
+            ];
+
+            $querycliente = "SELECT
         a.id idcliente,
         a.nit,
-        a.ncr,
+        CAST(REPLACE(REPLACE(a.ncr, '-', ''), ' ', '') AS UNSIGNED) AS ncr,
         CASE
-            WHEN a.tpersona = 'N' THEN CONCAT(a.firstname, ' ', a.secondname, ' ' , a.firstlastname, ' ', a.secondlastname)
-            WHEN a.tpersona = 'J' THEN CONCAT(a.name_contribuyente)
+            WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
+            WHEN a.tpersona = 'J' THEN COALESCE(a.name_contribuyente, '')
         END AS nombre,
         b.code codActividad,
         b.name descActividad,
         CASE
-            WHEN a.tpersona = 'N' THEN CONCAT(a.firstname, ' ', a.secondname, ' ' , a.firstlastname, ' ', a.secondlastname)
-            WHEN a.tpersona = 'J' THEN CONCAT(a.comercial_name)
+            WHEN a.tpersona = 'N' THEN CONCAT_WS(' ', a.firstname, a.secondname, a.firstlastname, a.secondlastname)
+            WHEN a.tpersona = 'J' THEN COALESCE(a.comercial_name, '')
         END AS nombreComercial,
         a.email correo,
         f.code departamento,
@@ -1730,89 +1742,105 @@ class SaleController extends Controller
     INNER JOIN departments f ON c.department_id=f.id
     INNER JOIN municipalities g ON c.municipality_id=g.id
     WHERE a.id = $anular->client_id";
-        $cliente = DB::select(DB::raw($querycliente));
+            $cliente = DB::select(DB::raw($querycliente));
 
-        $documento[0] = [
-            "tipodocumento"         => 99,
-            "nu_doc"                => $invalidacion[0]->numero_factura,
-            "tipoDteOriginal"       => $invalidacion[0]->tipoDte,
-            "tipo_establecimiento"  => $invalidacion[0]->tipoEstablecimiento,  //Cambiar,
-            "version"               => 2,
-            "ambiente"              => $invalidacion[0]->ambiente,
-            "id_doc"                => $invalidacion[0]->id_doc,
-            "fecAnulado"            => date('Y-m-d'), //"2022-07-20", // $encabezado["fecEmi"],    //Cambiar
-            "horAnulado"            => date("H:i:s"),
-            "codigoGeneracionOriginal" => $invalidacion[0]->codigoGeneracion,
-            "selloRecibidoOriginal"     => $invalidacion[0]->selloRecibido,
-            "fecEmiOriginal"            => date('Y-m-d', strtotime($invalidacion[0]->fhRecibido)),
-            "total_iva"                 => $invalidacion[0]->iva,
-            "tipoDocumento"             => $invalidacion[0]->type_document,
-            "numDocumento"              => $invalidacion[0]->nit,
-            "nombre"                    => $invalidacion[0]->anombrede,
-            "versionjson"               => 2,
-            "id_empresa"                => $invalidacion[0]->id_empresa,
-            "url_credencial"            => $invalidacion[0]->url_credencial,
-            "url_envio"                 => $invalidacion[0]->url_invalidacion,
-            "url_firmador"              => $invalidacion[0]->url_firmador,
-            "nuEnvio"                   => 1
-        ];
-        $comprobante = [
-            "emisor"    => $emisor,
-            "documento" => $documento,
-            "detalle"   => $detalle,
-            "totales"   => $totales,
-            "cliente"   => $cliente
-        ];
-        //$cliente = Client::where('id', $invalidacion[0]->id_cliente)->get();
-        //dd($documento);
-        $respuesta = $this->Enviar_Hacienda($comprobante, "02");
-        if ($respuesta["codEstado"] == "03") {
-            return json_encode($respuesta);
+            $documento[0] = [
+                "tipodocumento"         => 99,
+                "nu_doc"                => $invalidacion[0]->numero_factura,
+                "tipoDteOriginal"       => $invalidacion[0]->tipoDte,
+                "tipo_establecimiento"  => $invalidacion[0]->tipoEstablecimiento,
+                "version"               => 2,
+                "ambiente"              => $invalidacion[0]->ambiente,
+                "id_doc"                => $invalidacion[0]->id_doc,
+                "fecAnulado"            => date('Y-m-d'),
+                "horAnulado"            => date("H:i:s"),
+                "codigoGeneracionOriginal" => $invalidacion[0]->codigoGeneracion,
+                "selloRecibidoOriginal"     => $invalidacion[0]->selloRecibido,
+                "fecEmiOriginal"            => date('Y-m-d', strtotime($invalidacion[0]->fhRecibido)),
+                "total_iva"                 => $invalidacion[0]->iva,
+                "tipoDocumento"             => $invalidacion[0]->type_document,
+                "numDocumento"              => $invalidacion[0]->nit,
+                "nombre"                    => $invalidacion[0]->anombrede,
+                "versionjson"               => 2,
+                "id_empresa"                => $invalidacion[0]->id_empresa,
+                "url_credencial"            => $invalidacion[0]->url_credencial,
+                "url_envio"                 => $invalidacion[0]->url_invalidacion,
+                "url_firmador"              => $invalidacion[0]->url_firmador,
+                "nuEnvio"                   => 1
+            ];
+            $comprobante = [
+                "emisor"    => $emisor,
+                "documento" => $documento,
+                "detalle"   => $detalle,
+                "totales"   => $totales,
+                "cliente"   => $cliente
+            ];
+
+            $respuesta = $this->Enviar_Hacienda($comprobante, "02");
+            if ($respuesta["codEstado"] == "03") {
+                return response()->json([
+                    'success' => false,
+                    'message' => $respuesta['descripcionMsg'],
+                    'code' => $respuesta["codEstado"]
+                ], 400);
+            }
+            $comprobante["json"] = $respuesta;
+
+            $dtecreate = new Dte();
+            $dtecreate->versionJson = $documento[0]["versionjson"];
+            $dtecreate->ambiente_id = $documento[0]["ambiente"];
+            $dtecreate->tipoDte = $documento[0]["tipoDocumento"];
+            $dtecreate->tipoModelo = 2;
+            $dtecreate->tipoTransmision = $documento[0]["tipoDocumento"];
+            $dtecreate->tipoContingencia = "null";
+            $dtecreate->idContingencia = "null";
+            $dtecreate->nameTable = 'Sales';
+            $dtecreate->company_id = $anular->company_id;
+            $dtecreate->company_name = $emisor[0]->nombreComercial;
+            $dtecreate->id_doc = $documento[0]["id_doc"];
+            $dtecreate->codTransaction = "02";
+            $dtecreate->desTransaction = "Invalidacion";
+            $dtecreate->type_document = $documento[0]["tipoDocumento"];
+            $dtecreate->id_doc_Ref1 = $documento[0]["id_doc"];
+            $dtecreate->id_doc_Ref2 = "null";
+            $dtecreate->type_invalidacion = "1";
+            $dtecreate->codEstado = $respuesta["codEstado"];
+            $dtecreate->Estado = $respuesta["estado"];
+            $dtecreate->codigoGeneracion = $respuesta["codigoGeneracion"];
+            $dtecreate->selloRecibido = $respuesta["selloRecibido"];
+            $dtecreate->fhRecibido = $respuesta["fhRecibido"];
+            $dtecreate->estadoHacienda = $respuesta["estadoHacienda"];
+            $dtecreate->json = json_encode($comprobante);
+            $dtecreate->nSends = $respuesta["nuEnvios"];
+            $dtecreate->codeMessage = $respuesta["codigoMsg"];
+            $dtecreate->claMessage = $respuesta["clasificaMsg"];
+            $dtecreate->descriptionMessage = $respuesta["descripcionMsg"];
+            $dtecreate->detailsMessage = $respuesta["observacionesMsg"];
+            $dtecreate->sale_id = $idFactura;
+            $dtecreate->created_by = $documento[0]["nombre"];
+            $dtecreate->save();
+            $anular->save();
+
+            if ($dtecreate && $anular) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Documento invalidado correctamente',
+                    'res' => 1
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al invalidar el documento',
+                    'res' => 0
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage(),
+                'res' => 0
+            ], 500);
         }
-        $comprobante["json"] = $respuesta;
-
-
-        //dd($respuesta);
-        $dtecreate = new Dte();
-        $dtecreate->versionJson = $documento[0]["versionjson"];
-        $dtecreate->ambiente_id = $documento[0]["ambiente"];
-        $dtecreate->tipoDte = $documento[0]["tipoDocumento"];
-        $dtecreate->tipoModelo = 2;
-        $dtecreate->tipoTransmision = $documento[0]["tipoDocumento"];
-        $dtecreate->tipoContingencia = "null";
-        $dtecreate->idContingencia = "null";
-        $dtecreate->nameTable = 'Sales';
-        $dtecreate->company_id = $anular->company_id;
-        $dtecreate->company_name = $emisor[0]->nombreComercial;
-        $dtecreate->id_doc = $documento[0]["id_doc"];
-        $dtecreate->codTransaction = "02";
-        $dtecreate->desTransaction = "Invalidacion";
-        $dtecreate->type_document = $documento[0]["tipoDocumento"];
-        $dtecreate->id_doc_Ref1 = $documento[0]["id_doc"];
-        $dtecreate->id_doc_Ref2 = "null";
-        $dtecreate->type_invalidacion = "1";
-        $dtecreate->codEstado = $respuesta["codEstado"];
-        $dtecreate->Estado = $respuesta["estado"];
-        $dtecreate->codigoGeneracion = $respuesta["codigoGeneracion"];
-        $dtecreate->selloRecibido = $respuesta["selloRecibido"];
-        $dtecreate->fhRecibido = $respuesta["fhRecibido"];
-        $dtecreate->estadoHacienda = $respuesta["estadoHacienda"];
-        $dtecreate->json = json_encode($comprobante);;
-        $dtecreate->nSends = $respuesta["nuEnvios"];
-        $dtecreate->codeMessage = $respuesta["codigoMsg"];
-        $dtecreate->claMessage = $respuesta["clasificaMsg"];
-        $dtecreate->descriptionMessage = $respuesta["descripcionMsg"];
-        $dtecreate->detailsMessage = $respuesta["observacionesMsg"];
-        $dtecreate->sale_id = $idFactura;
-        $dtecreate->created_by = $documento[0]["nombre"];
-        $dtecreate->save();
-        $anular->save();
-
-        if ($dtecreate && $anular) $exit = 1;
-        else $exit = 0;
-        return response()->json(array(
-            "res" => $exit
-        ));
     }
 
     public function Enviar_Hacienda($comprobante, $codTransaccion = "01")
