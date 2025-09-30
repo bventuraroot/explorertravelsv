@@ -337,9 +337,9 @@
                                                     <a href="{{ route('credit-notes.create', ['sale_id' => $sale->id]) }}" class="dropdown-item">
                                                         <i class="ti ti-file-minus me-2"></i>Crear Nota de Crédito
                                                     </a>
-                                                    <a href="{{ route('debit-notes.create', ['sale_id' => $sale->id]) }}" class="dropdown-item">
+                                                   <!-- <a href="{{ route('debit-notes.create', ['sale_id' => $sale->id]) }}" class="dropdown-item">
                                                         <i class="ti ti-file-plus me-2"></i>Crear Nota de Débito
-                                                    </a>
+                                                    </a>-->
                                                     @endif
                                                 </div>
                                             </div>
