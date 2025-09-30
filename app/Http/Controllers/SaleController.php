@@ -1734,12 +1734,12 @@ class SaleController extends Controller
     INNER JOIN economicactivities b ON a.economicactivity_id=b.id
     INNER JOIN addresses c ON a.address_id=c.id
     INNER JOIN phones p ON a.phone_id=p.id
-    INNER JOIN countries d ON c.country_id=d.id
-    INNER JOIN departments f ON c.department_id=f.id
+    LEFT JOIN countries d ON c.country_id=d.id
+    LEFT JOIN departments f ON c.department_id=f.id
     INNER JOIN municipalities g ON c.municipality_id=g.id
     WHERE a.id = $anular->client_id";
             $cliente = DB::select(DB::raw($querycliente));
-            dd($cliente);
+            //dd($cliente);
             $documento[0] = [
                 "tipodocumento"         => 99,
                 "nu_doc"                => $invalidacion[0]->numero_factura,
