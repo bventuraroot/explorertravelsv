@@ -1590,15 +1590,13 @@ if (!function_exists('ncr')) {
                 "codTributo"        => null,
                 "uniMedida"         => 99,
                 "descripcion"       => $item->descripcion,
-
-
-                "precioUni"         => round((float)($item->precio_unitario),2),
+                "precioUni"         => round((float)($item->precio_unitario+$item->iva),2),
                 "montoDescu"        => 0.00,
                 "ventaNoSuj"        => round((float)($item->descuento),2),
                 "ventaExenta"       => round((float)($item->exentas),2),
                 "ventaGravada"      => $ventagravada,
-                "tributos"          => ($item->gravadas != 0) ? ["20"] : null,
-                "ivaItem"           => $ivaItem
+                "tributos"          => ($item->gravadas != 0) ? ["20"] : null
+                //"ivaItem"           => $ivaItem
                 //"psv"               => (float)"0.00",
                 //"noGravado"         => (float)$item["no_imponible"]
             ];
