@@ -35,7 +35,7 @@
             </h5>
         </div>
 
-        <form id="creditNoteForm" action="{{ route('credit-notes.store', ['sale_id' => $sale->id ?? 0]) }}" method="POST"> 
+        <form id="creditNoteForm" action="{{ route('credit-notes.store', ['sale_id' => $sale->id ?? 0]) }}" method="POST">
             @csrf
             <input type="hidden" id="redirectToSales" value="{{ route('sale.index') }}">
 
@@ -397,7 +397,7 @@
                                                 <td>
                                                     <input type="number" name="productos[{{ $index }}][precio]"
                                                            class="form-control form-control-sm"
-                                                           min="0" step="0.01" value="{{ number_format($detalle->pricesale / $detalle->amountp, 2) }}" readonly>
+                                                           min="0" step="0.01" value="{{ number_format($detalle->pricesale / $detalle->amountp, 2) }}">
                                                 </td>
                                                 <td class="text-end">
                                                     <span class="iva-display">$0.00</span>
