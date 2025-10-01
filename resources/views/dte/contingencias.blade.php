@@ -148,10 +148,11 @@ $(document).ready(function() {
     // Si el modal ya estuviera abierto o la empresa ya está seleccionada, intentar cargar una vez al iniciar
     setTimeout(triggerLoadIfReady, 200);
 
-    // Aprobar contingencia
+    // Aprobar contingencia (autorizar flujo MH como en Roma Copies)
     $('.aprobar-contingencia').click(function() {
         const contingenciaId = $(this).data('contingencia-id');
         const nombre = $(this).data('nombre');
+        const empresaId = $(this).data('empresa-id');
 
         Swal.fire({
             title: 'Aprobar Contingencia',
@@ -162,35 +163,11 @@ $(document).ready(function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Usar ruta correcta del grupo dte-admin para aprobar
-                $.post(`{{ route('dte.aprobar-contingencia', ['id' => '__ID__']) }}`.replace('__ID__', contingenciaId), {
-                    _token: '{{ csrf_token() }}'
-                })
-                .done(function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Contingencia aprobada!',
-                            text: response.message,
-                            timer: 2000
-                        }).then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: response.message
-                        });
-                    }
-                })
-                .fail(function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error de conexión'
-                    });
-                });
+                // Redirigir a la autorización completa (genera JSON y envía a MH) como Roma Copies
+                const url = `{{ route('dte.autorizar-contingencia', ['empresa' => '__EMP__', 'id' => '__ID__']) }}`
+                    .replace('__EMP__', empresaId)
+                    .replace('__ID__', contingenciaId);
+                window.location.href = url;
             }
         });
     });
@@ -459,6 +436,7 @@ $(document).ready(function() {
                                             @if($contingencia->codEstado == '01')
                                                 <button class="btn btn-sm btn-outline-success aprobar-contingencia"
                                                         data-contingencia-id="{{ $contingencia->id }}"
+                                                        data-empresa-id="{{ $contingencia->idEmpresa ?? $contingencia->company_id ?? 0 }}"
                                                         data-nombre="{{ $contingencia->nombre }}">
                                                     <i class="fas fa-check"></i>
                                                     Aprobar
