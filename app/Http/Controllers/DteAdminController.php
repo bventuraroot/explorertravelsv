@@ -312,7 +312,7 @@ class DteAdminController extends Controller
             'fecha_fin' => 'required|date|after:fecha_inicio',
             'resolucion_mh' => 'nullable|string',
             'dte_ids' => 'nullable|array',
-            'dte_ids.*' => 'exists:dte,id'
+            'dte_ids.*' => 'string' // puede venir "SALE-XX" o ID numérico de dte
         ]);
 
         try {
@@ -343,15 +343,21 @@ class DteAdminController extends Controller
                 'nombreResponsable' => auth()->user()->name,
                 'tipoDocResponsable' => '13',
                 'nuDocResponsable' => '12345678-9',
+                // contar solo IDs válidos (DTEs numéricos + ventas en borrador prefijo SALE-)
                 'documentos_afectados' => count($request->dte_ids ?? []),
                 'created_by' => auth()->user()->name,
                 'updated_by' => auth()->user()->name
             ]);
 
-            // Asociar DTEs si se proporcionaron
+            // Asociar DTEs si se proporcionaron (solo IDs numéricos)
             if ($request->dte_ids) {
-                Dte::whereIn('id', $request->dte_ids)
-                    ->update(['idContingencia' => $contingencia->id]);
+                $numericDteIds = collect($request->dte_ids)
+                    ->filter(function($val){ return is_numeric($val); })
+                    ->values();
+
+                if ($numericDteIds->isNotEmpty()) {
+                    Dte::whereIn('id', $numericDteIds)->update(['idContingencia' => $contingencia->id]);
+                }
             }
 
             DB::commit();
