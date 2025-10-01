@@ -97,6 +97,19 @@ $(document).ready(function() {
         }
     });
 
+    // Helper: dispara la carga si ya hay una empresa preseleccionada (caso 1 sola empresa)
+    function triggerLoadIfReady() {
+        const $empresa = $('#empresa_id_modal');
+        const val = $empresa.val();
+        if (val) {
+            // esperar a que Select2 termine de inicializar
+            setTimeout(function(){ $empresa.trigger('change'); }, 50);
+        } else if ($empresa.find('option').length === 2) {
+            const autoVal = $empresa.find('option:eq(1)').val();
+            $empresa.val(autoVal).trigger('change');
+        }
+    }
+
     // Al abrir el modal: si hay una única empresa, seleccionarla y cargar borradores
     $('#crearContingenciaModal').on('shown.bs.modal', function () {
         // Si no hay empresas renderizadas en servidor, cargarlas por AJAX
@@ -128,7 +141,12 @@ $(document).ready(function() {
         } else if ($empresa.val()) {
             $empresa.trigger('change');
         }
+        // fallback: asegurar disparo tras un pequeño delay
+        setTimeout(triggerLoadIfReady, 150);
     });
+
+    // Si el modal ya estuviera abierto o la empresa ya está seleccionada, intentar cargar una vez al iniciar
+    setTimeout(triggerLoadIfReady, 200);
 
     // Aprobar contingencia
     $('.aprobar-contingencia').click(function() {
