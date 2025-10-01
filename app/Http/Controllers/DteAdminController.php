@@ -303,32 +303,30 @@ class DteAdminController extends Controller
      */
     public function crearContingencia(Request $request): RedirectResponse
     {
-        // Debug temporal para ver qué está recibiendo
-        \Log::info('Datos recibidos en crearContingencia:', [
-            'company' => $request->company,
-            'all_request' => $request->all()
-        ]);
+        // Debug temporal - comentado
+        // \Log::info('Datos recibidos en crearContingencia:', [...]);
 
         // Usar exactamente el mismo código del módulo original que funciona
         $contingencia = new Contingencia();
-        $contingencia->idEmpresa = $request->company;
+        $contingencia->idEmpresa = $request->company ?? $request->empresa_id;
         $contingencia->versionJson = $request->versionJson;
         $contingencia->ambiente = $request->ambiente;
         $contingencia->codEstado = "01";
         $contingencia->estado = "En Cola";
-        $contingencia->tipoContingencia = $request->tipoContingencia;
-        $contingencia->motivoContingencia = $request->motivoContingencia;
-        $contingencia->nombreResponsable = $request->nombreResponsable;
-        $contingencia->tipoDocResponsable = $request->tipoDocResponsable;
-        $contingencia->nuDocResponsable = $request->nuDocResponsable;
-        $fc = \Carbon\Carbon::parse($request->fechaCreacion, 'America/El_Salvador');
-        $fi = \Carbon\Carbon::parse($request->fechaInicioFin, 'America/El_Salvador');
+        $contingencia->tipoContingencia = $request->tipoContingencia ?? $request->tipo_contingencia;
+        $contingencia->motivoContingencia = $request->motivoContingencia ?? $request->motivo;
+        $contingencia->nombreResponsable = $request->nombreResponsable ?? $request->nombre ?? auth()->user()->name;
+        $contingencia->tipoDocResponsable = $request->tipoDocResponsable ?? '13';
+        $contingencia->nuDocResponsable = $request->nuDocResponsable ?? '00000000-0';
+        $fc = \Carbon\Carbon::parse($request->fechaCreacion ?? now(), 'America/El_Salvador');
+        $fi = \Carbon\Carbon::parse($request->fechaInicioFin ?? $request->fecha_inicio ?? now(), 'America/El_Salvador');
         $contingencia->fechaCreacion = $fc->toDateTimeString();
         $contingencia->fInicio = $fi->toDateString();
-        $contingencia->fFin = $fi->toDateString();
+        $fFin = \Carbon\Carbon::parse($request->fecha_fin ?? $request->fecha_inicio ?? now(), 'America/El_Salvador');
+        $contingencia->fFin = $fFin->toDateString();
         $contingencia->horaCreacion = $fc->format('H:i:s');
         $contingencia->hInicio = $fi->format('H:i:s');
-        $contingencia->hFin = $fi->format('H:i:s');
+        $contingencia->hFin = $fFin->format('H:i:s');
         $contingencia->codigoGeneracion = strtoupper(\Str::uuid()->toString());
 
         // Campos adicionales para completar la información
@@ -337,12 +335,8 @@ class DteAdminController extends Controller
 
         $contingencia->save();
 
-        // Debug temporal para verificar qué se guardó
-        \Log::info('Contingencia guardada:', [
-            'id' => $contingencia->id,
-            'idEmpresa' => $contingencia->idEmpresa,
-            'codEstado' => $contingencia->codEstado
-        ]);
+        // Debug temporal - comentado
+        // \Log::info('Contingencia guardada:', [...]);
 
         // Generar código interno único después de guardar
         $contingencia->codInterno = 'CONT-' . date('Ymd') . '-' . str_pad($contingencia->id, 4, '0', STR_PAD_LEFT);
