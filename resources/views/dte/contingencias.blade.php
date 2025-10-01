@@ -162,7 +162,8 @@ $(document).ready(function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post(`/dte/contingencias/${contingenciaId}/aprobar`, {
+                // Usar ruta correcta del grupo dte-admin para aprobar
+                $.post(`{{ route('dte.aprobar-contingencia', ['id' => '__ID__']) }}`.replace('__ID__', contingenciaId), {
                     _token: '{{ csrf_token() }}'
                 })
                 .done(function(response) {
@@ -208,7 +209,8 @@ $(document).ready(function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.post(`/dte/contingencias/${contingenciaId}/activar`, {
+                // Usar ruta correcta del grupo dte-admin para activar
+                $.post(`{{ route('dte.activar-contingencia', ['id' => '__ID__']) }}`.replace('__ID__', contingenciaId), {
                     _token: '{{ csrf_token() }}'
                 })
                 .done(function(response) {
