@@ -32,10 +32,21 @@ $(document).ready(function() {
     });
 
     // Inicializar Select2
-    $('#empresa_id, #empresa_id_modal, #dte_ids').select2({
+    $('#empresa_id, #empresa_id_modal').select2({
         theme: 'bootstrap-5',
         placeholder: 'Seleccione...'
     });
+
+    // Inicialización específica para el select dentro del modal (evita que el dropdown se oculte)
+    function initSelect2Modal() {
+        $('#dte_ids').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccione DTEs...',
+            width: '100%',
+            dropdownParent: $('#crearContingenciaModal')
+        });
+    }
+    initSelect2Modal();
 
     // Cargar DTEs para contingencia
     $('#empresa_id').change(function() {
@@ -73,6 +84,10 @@ $(document).ready(function() {
                     if (data.length === 0) {
                         select.empty().append('<option value="" disabled>No hay documentos en borrador</option>');
                     }
+                    // Re-inicializar Select2 para que tome el dropdownParent tras cargar opciones
+                    select.off('select2:select');
+                    select.select2('destroy');
+                    initSelect2Modal();
                 })
                 .fail(function(xhr) {
                     select.empty().append('<option value="" disabled>Error cargando documentos</option>').prop('disabled', false);
@@ -86,6 +101,8 @@ $(document).ready(function() {
     $('#crearContingenciaModal').on('shown.bs.modal', function () {
         // Si no hay empresas renderizadas en servidor, cargarlas por AJAX
         const $empresa = $('#empresa_id_modal');
+        // Asegurar dropdownParent correcto en cada apertura
+        initSelect2Modal();
         if ($empresa.find('option').length <= 1) {
             $.get('/company/getCompany')
                 .done(function(list) {
@@ -104,7 +121,7 @@ $(document).ready(function() {
                     }
                 });
         }
-        const $empresa = $('#empresa_id_modal');
+        // Reutilizar la variable $empresa definida arriba
         if ($empresa.find('option').length === 2 && !$empresa.val()) { // placeholder + 1 empresa
             const val = $empresa.find('option:eq(1)').val();
             $empresa.val(val).trigger('change');
