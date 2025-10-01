@@ -6,6 +6,7 @@ use App\Models\Dte;
 use App\Models\DteError;
 use App\Models\Contingencia;
 use App\Models\Company;
+use App\Models\Sale;
 use App\Services\DteService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
