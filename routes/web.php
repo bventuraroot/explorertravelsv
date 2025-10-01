@@ -256,6 +256,8 @@ Route::group(['prefix' => 'config', 'as' => 'config.'], function(){
 Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
 
     Route::get('contingencias', [ContingenciasController::class, 'contingencias'])->name('contingencias');
+    // Alias para ver el mismo listado en el dashboard de contingencias
+    Route::get('contingencias/dashboard', [ContingenciasController::class, 'contingencias'])->name('contingencias.dashboard');
     Route::post('store', [ContingenciasController::class, 'store'])->name('store');
     Route::get('autoriza_contingencia/{empresa}/{id}', [ContingenciasController::class, 'autoriza_contingencia'])->name('autoriza_contingencia');
     Route::get('procesa_contingencia/{id}', [ContingenciasController::class, 'procesa_contingencia'])->name('procesa_contingencia');
