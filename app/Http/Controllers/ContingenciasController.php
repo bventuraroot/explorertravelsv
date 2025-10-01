@@ -279,7 +279,7 @@ class ContingenciasController extends Controller
                 ?? ($empresaconti[0]->urlFirmador ?? ($empresaconti[0]->url_firmardocumento ?? null));
             if (!$urlFirmador) {
                 // Fallback (evitar hardcode, pero mantener compatibilidad)
-                $urlFirmador = 'http://143.198.63.171:8113/firmardocumento/';
+                $urlFirmador = 'https://explorertravelfirmador.demosconsoftsv.website/firmardocumento/';
             }
             // Asegurar endpoint correcto
             if (stripos($urlFirmador, 'firmardocumento') === false) {
