@@ -437,16 +437,16 @@ class DteAdminController extends Controller
 
         // DTEs asociados a la empresa y sin contingencia
         $dteQuery = Dte::query()
-            ->where('company_id', $empresaId)
-            ->whereNull('idContingencia')
-            ->orderBy('created_at', 'desc')
+            ->where('dte.company_id', $empresaId)
+            ->whereNull('dte.idContingencia')
+            ->orderBy('dte.created_at', 'desc')
             ->limit(200);
 
         // Estados: 03=Rechazado; opcionalmente 01=En cola, 10=En revisión (según convención del proyecto)
         if ($incluirBorradores) {
-            $dteQuery->whereIn('codEstado', ['01', '03', '10']);
+            $dteQuery->whereIn('dte.codEstado', ['01', '03', '10']);
         } else {
-            $dteQuery->where('codEstado', '03');
+            $dteQuery->where('dte.codEstado', '03');
         }
 
         // Unir con ventas y clientes para enriquecer datos cuando existan
