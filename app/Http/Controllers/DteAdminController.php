@@ -343,17 +343,29 @@ class DteAdminController extends Controller
         $contingencia->save();
 
         // Procesar documentos seleccionados manualmente (flujo híbrido)
+        $documentosProcesados = 0;
         if ($request->dte_ids && is_array($request->dte_ids)) {
             foreach ($request->dte_ids as $dteId) {
                 if (strpos($dteId, 'SALE-') === 0) {
                     // Es una venta sin DTE (borrador)
                     $saleId = str_replace('SALE-', '', $dteId);
                     $sale = Sale::find($saleId);
-                    if ($sale && !$sale->codigoGeneracion) { // Solo si no tiene DTE emitido
+                    if ($sale) { // Actualizar SIEMPRE que se seleccione
                         $sale->id_contingencia = $contingencia->id;
-                        $uuid_generado = strtoupper(\Str::uuid()->toString());
-                        $sale->codigoGeneracion = $uuid_generado;
+                        // Solo generar codigoGeneracion si no tiene uno
+                        if (!$sale->codigoGeneracion) {
+                            $uuid_generado = strtoupper(\Str::uuid()->toString());
+                            $sale->codigoGeneracion = $uuid_generado;
+                        }
                         $sale->save();
+
+                        // Debug temporal
+                        \Log::info("Venta actualizada para contingencia:", [
+                            'sale_id' => $saleId,
+                            'id_contingencia' => $sale->id_contingencia,
+                            'codigoGeneracion' => $sale->codigoGeneracion
+                        ]);
+                        $documentosProcesados++;
                     }
                 } else {
                     // Es un DTE existente (en borrador)
@@ -365,16 +377,25 @@ class DteAdminController extends Controller
                         // También actualizar la venta asociada
                         if ($dte->sale_id) {
                             $sale = Sale::find($dte->sale_id);
-                            if ($sale && !$sale->codigoGeneracion) {
+                            if ($sale) { // Actualizar SIEMPRE
                                 $sale->id_contingencia = $contingencia->id;
-                                $uuid_generado = strtoupper(\Str::uuid()->toString());
-                                $sale->codigoGeneracion = $uuid_generado;
+                                // Solo generar codigoGeneracion si no tiene uno
+                                if (!$sale->codigoGeneracion) {
+                                    $uuid_generado = strtoupper(\Str::uuid()->toString());
+                                    $sale->codigoGeneracion = $uuid_generado;
+                                }
                                 $sale->save();
+                                $documentosProcesados++;
                             }
                         }
+                        $documentosProcesados++;
                     }
                 }
             }
+
+            // Actualizar el contador de documentos afectados
+            $contingencia->documentos_afectados = $documentosProcesados;
+            $contingencia->save();
         } else {
             // Si no se seleccionaron documentos, usar el flujo automático del módulo original
             $countfacturas = Sale::leftJoin('dte', 'dte.sale_id', '=', 'sales.id')

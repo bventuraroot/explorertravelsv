@@ -40,7 +40,8 @@ class Contingencia extends Model
         'descripcionMsg',
         'observacionesMsg',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'documentos_afectados'
     ];
 
     protected $casts = [
