@@ -137,7 +137,9 @@ class ContingenciasController extends Controller
             b.url_credencial,
             b.url_envio,
             b.url_invalidacion,
-            b.url_contingencia
+            b.url_contingencia,
+            b.url_firmador,
+            b.url_firmardocumento
             FROM config a
             LEFT OUTER JOIN ambientes b ON a.ambiente=b.id
             LEFT OUTER JOIN companies c ON a.company_id = c.id
