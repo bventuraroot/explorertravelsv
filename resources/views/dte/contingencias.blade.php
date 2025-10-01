@@ -434,13 +434,12 @@ $(document).ready(function() {
                                     <td>
                                         <div class="btn-group" role="group">
                                             @if($contingencia->codEstado == '01')
-                                                <button class="btn btn-sm btn-outline-success aprobar-contingencia"
-                                                        data-contingencia-id="{{ $contingencia->id }}"
-                                                        data-empresa-id="{{ $contingencia->idEmpresa ?? $contingencia->company_id ?? 0 }}"
-                                                        data-nombre="{{ $contingencia->nombre }}">
+                                                <a class="btn btn-sm btn-outline-success"
+                                                   href="{{ route('dte.autorizar-contingencia', ['empresa' => ($contingencia->idEmpresa ?? $contingencia->company_id ?? 0), 'id' => $contingencia->id]) }}"
+                                                   title="Autorizar y enviar a MH">
                                                     <i class="fas fa-check"></i>
-                                                    Aprobar
-                                                </button>
+                                                    Autorizar
+                                                </a>
                                             @elseif($contingencia->codEstado == '02' && !$contingencia->activa)
                                                 <button class="btn btn-sm btn-outline-primary activar-contingencia"
                                                         data-contingencia-id="{{ $contingencia->id }}"
