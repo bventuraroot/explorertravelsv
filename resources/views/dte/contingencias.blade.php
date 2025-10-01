@@ -57,18 +57,28 @@ $(document).ready(function() {
     // Cargar DTEs para el modal (empresa_id_modal)
     $('#empresa_id_modal').change(function() {
         const empresaId = $(this).val();
-        const incluirBorradores = $('#incluir_borradores_modal').is(':checked');
+        // Forzar incluir borradores por defecto para este flujo
+        const incluirBorradores = true;
         if (empresaId) {
+            const select = $('#dte_ids');
+            select.empty().append('<option value="">Cargando documentos...</option>').prop('disabled', true);
             $.get('{{ route("dte.dtes-para-contingencia") }}', { empresa_id: empresaId, incluir_borradores: incluirBorradores ? 1 : 0 })
                 .done(function(data) {
-                    const select = $('#dte_ids');
                     select.empty();
-                    select.append('<option value="">Seleccione DTEs...</option>');
+                    select.append('<option value="">Seleccione DTEs...</option>').prop('disabled', false);
 
                     data.forEach(function(dte) {
                         select.append(`<option value="${dte.id}">${dte.numero_control} - ${dte.cliente} (${dte.tipo_documento})</option>`);
                     });
-                });
+                    if (data.length === 0) {
+                        select.empty().append('<option value="" disabled>No hay documentos en borrador</option>');
+                    }
+                })
+                .fail(function(xhr) {
+                    select.empty().append('<option value="" disabled>Error cargando documentos</option>').prop('disabled', false);
+                    console.error('Error dtes-para-contingencia:', xhr.status, xhr.responseText);
+                })
+                ;
         }
     });
 
