@@ -461,8 +461,9 @@ $(document).ready(function() {
                                             @php
                                                 $empresaLinkId = $contingencia->idEmpresa ?? $contingencia->company_id ?? null;
                                                 $contLinkId = $contingencia->id ?? null;
+                                                $estadoCod = $contingencia->codEstado ?? '';
                                             @endphp
-                                            @if($contingencia->codEstado == '01')
+                                            @if(in_array($estadoCod, ['01','10']))
                                                 @if($empresaLinkId && $contLinkId)
                                                     <a class="btn btn-sm btn-outline-success"
                                                        href="{{ route('dte.autorizar-contingencia', ['empresa' => $empresaLinkId, 'id' => $contLinkId]) }}"
@@ -476,7 +477,7 @@ $(document).ready(function() {
                                                         Autorizar
                                                     </button>
                                                 @endif
-                                            @elseif($contingencia->codEstado == '03')
+                                            @elseif($estadoCod == '03')
                                                 @if($empresaLinkId && $contLinkId)
                                                     <a class="btn btn-sm btn-outline-danger"
                                                        href="{{ route('dte.autorizar-contingencia', ['empresa' => $empresaLinkId, 'id' => $contLinkId]) }}"
