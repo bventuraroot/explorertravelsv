@@ -309,8 +309,8 @@ class DteAdminController extends Controller
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after:fecha_inicio',
             'resolucion_mh' => 'nullable|string',
-            'dte_ids' => 'nullable|array',
-            'dte_ids.*' => 'string'
+            'dte_ids' => 'required|array',
+            'dte_ids.*' => 'string' // IDs de ventas con prefijo SALE-
         ]);
 
         try {
@@ -322,7 +322,6 @@ class DteAdminController extends Controller
             $fFin = \Carbon\Carbon::parse($request->fecha_fin);
 
             $contingencia = Contingencia::create([
-                // Campos existentes en tabla (según Roma Copies)
                 'idEmpresa' => $request->empresa_id,
                 'versionJson' => '3',
                 'ambiente' => '00',
@@ -342,13 +341,26 @@ class DteAdminController extends Controller
                 'codigoGeneracion' => strtoupper(\Str::uuid()->toString())
             ]);
 
-            // Asociar DTEs elegidos (solo IDs numéricos) a la contingencia
-            if ($request->dte_ids) {
-                $numericDteIds = collect($request->dte_ids)->filter(fn($v) => is_numeric($v))->values();
-                if ($numericDteIds->isNotEmpty()) {
-                    Dte::whereIn('id', $numericDteIds)->update(['idContingencia' => $contingencia->id]);
-                }
+            // Asociar SOLO ventas sin DTE seleccionadas (prefijo SALE-)
+            $saleIds = collect($request->dte_ids)
+                ->filter(fn($v) => is_string($v) && str_starts_with($v, 'SALE-'))
+                ->map(fn($v) => intval(str_replace('SALE-', '', $v)))
+                ->filter()->values();
+
+            if ($saleIds->isEmpty()) {
+                DB::rollBack();
+                return redirect()->back()->withInput()->with('danger', 'Debe seleccionar al menos una venta en borrador');
             }
+
+            // Marcar ventas con la contingencia y generar codigoGeneracion si falta
+            \DB::table('sales')->whereIn('id', $saleIds)->update(['id_contingencia' => $contingencia->id]);
+            $salesToCode = \DB::table('sales')->whereIn('id', $saleIds)->whereNull('codigoGeneracion')->pluck('id');
+            foreach ($salesToCode as $sid) {
+                \DB::table('sales')->where('id', $sid)->update(['codigoGeneracion' => strtoupper(\Str::uuid()->toString())]);
+            }
+
+            // documentos_afectados
+            \DB::table('contingencias')->where('id', $contingencia->id)->update(['documentos_afectados' => $saleIds->count()]);
 
             DB::commit();
 
@@ -429,87 +441,36 @@ class DteAdminController extends Controller
     public function getDtesParaContingencia(Request $request): JsonResponse
     {
         $empresaId = $request->get('empresa_id');
-        $incluirBorradores = filter_var($request->get('incluir_borradores'), FILTER_VALIDATE_BOOLEAN) || $request->get('incluir_borradores') == 1;
-
         if (!$empresaId) {
             return response()->json([]);
         }
 
-        // DTEs asociados a la empresa y sin contingencia
-        $dteQuery = Dte::query()
-            ->where('dte.company_id', $empresaId)
-            ->whereNull('dte.idContingencia')
-            ->orderBy('dte.created_at', 'desc')
-            ->limit(200);
-
-        // Estados: 03=Rechazado; opcionalmente 01=En cola, 10=En revisión (según convención del proyecto)
-        if ($incluirBorradores) {
-            $dteQuery->whereIn('dte.codEstado', ['01', '03', '10']);
-        } else {
-            $dteQuery->where('dte.codEstado', '03');
-        }
-
-        // Unir con ventas y clientes para enriquecer datos cuando existan
-        $dtes = $dteQuery
-            ->leftJoin('sales', 'sales.id', '=', 'dte.sale_id')
+        // Solo ventas sin DTE (borradores) de esta empresa
+        $ventasSinDte = \DB::table('sales as a')
+            ->leftJoin('dte as b', 'b.sale_id', '=', 'a.id')
+            ->leftJoin('typedocuments as t', 't.id', '=', 'a.typedocument_id')
+            ->where('a.company_id', $empresaId)
+            ->whereNull('b.sale_id')
             ->select(
-                'dte.id as id',
-                'dte.id_doc as numero_control',
-                'dte.tipoDte as tipo_documento',
-                'dte.codEstado as estado_dte',
-                'dte.created_at as fecha_creado',
-                'sales.id as sale_id'
+                'a.id',
+                'a.created_at',
+                't.type as tipo_documento'
             )
+            ->orderBy('a.created_at', 'desc')
+            ->limit(300)
             ->get()
-            ->map(function($row) {
-                $estadoTexto = match($row->estado_dte) {
-                    '01' => 'En Cola (Borrador)',
-                    '10' => 'En Revisión (Borrador)',
-                    '03' => 'Rechazado (Borrador)',
-                    default => 'Borrador'
-                };
+            ->map(function($row){
                 return [
-                    'id' => $row->id,
-                    'numero_control' => $row->numero_control ?? ($row->sale_id ?: $row->id),
+                    'id' => 'SALE-' . $row->id,
+                    'numero_control' => $row->id,
                     'cliente' => 'N/A',
                     'tipo_documento' => $row->tipo_documento ?? 'N/A',
-                    'estado' => $estadoTexto,
-                    'fecha' => optional($row->fecha_creado)->format('d/m/Y')
+                    'estado' => 'Sin DTE (Borrador)',
+                    'fecha' => optional($row->created_at)->format('d/m/Y')
                 ];
             });
 
-        // Ventas sin DTE (borradores de venta) cuando se solicite incluir borradores
-        $ventasSinDte = collect();
-        if ($incluirBorradores) {
-            $ventasSinDte = \DB::table('sales as a')
-                ->leftJoin('dte as b', 'b.sale_id', '=', 'a.id')
-                ->leftJoin('typedocuments as t', 't.id', '=', 'a.typedocument_id')
-                ->where('a.company_id', $empresaId)
-                ->whereNull('b.sale_id')
-                ->select(
-                    'a.id',
-                    'a.created_at',
-                    't.type as tipo_documento'
-                )
-                ->orderBy('a.created_at', 'desc')
-                ->limit(200)
-                ->get()
-                ->map(function($row){
-                    return [
-                        'id' => 'SALE-' . $row->id, // prefijo para evitar colisiones con IDs de dte
-                        'numero_control' => $row->id,
-                        'cliente' => 'N/A',
-                        'tipo_documento' => $row->tipo_documento ?? 'N/A',
-                        'estado' => 'Sin DTE (Borrador)',
-                        'fecha' => optional($row->created_at)->format('d/m/Y')
-                    ];
-                });
-        }
-
-        // Combinar resultados
-        $documentos = $dtes->concat($ventasSinDte)->values();
-
-        return response()->json($documentos);
+        return response()->json($ventasSinDte->values());
     }
 
     /**

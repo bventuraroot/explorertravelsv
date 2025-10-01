@@ -112,7 +112,7 @@ class ContingenciasController extends Controller
         $tipo_resultado = "";
         $mensaje_resultado = '';
         try {
-            $cola_aux = Contingencia::where('id',$id)->where('codEstado', '01')->get();
+            $cola_aux = Contingencia::where('id',$id)->whereIn('codEstado', ['01','10'])->get();
             if ($cola_aux->isEmpty()) {
                 $tipo_resultado = "danger";
                 $mensaje_resultado = 'Contingencia ya fue Procesada';
