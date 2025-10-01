@@ -304,57 +304,47 @@ class DteAdminController extends Controller
     {
         $request->validate([
             'empresa_id' => 'required|exists:companies,id',
-            'tipo_contingencia' => 'required|string',
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'required|string',
+            'tipo_contingencia' => 'required',
             'motivo' => 'required|string',
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after:fecha_inicio',
             'resolucion_mh' => 'nullable|string',
             'dte_ids' => 'nullable|array',
-            'dte_ids.*' => 'string' // puede venir "SALE-XX" o ID numérico de dte
+            'dte_ids.*' => 'string'
         ]);
 
         try {
             DB::beginTransaction();
 
+            // Fechas y horas al estilo Roma Copies
+            $fechaCreacion = now();
+            $fInicio = \Carbon\Carbon::parse($request->fecha_inicio);
+            $fFin = \Carbon\Carbon::parse($request->fecha_fin);
+
             $contingencia = Contingencia::create([
+                // Campos existentes en tabla (según Roma Copies)
                 'idEmpresa' => $request->empresa_id,
-                'company_id' => $request->empresa_id,
-                'idTienda' => 1,
-                'codInterno' => 'CONT-' . time(),
-                'nombre' => $request->nombre,
-                'versionJson' => '1.0',
+                'versionJson' => '3',
                 'ambiente' => '00',
-                'codEstado' => '01', // Pendiente
-                'activa' => false,
-                'estado' => 'Pendiente',
-                'codigoGeneracion' => 'CONT-' . time(),
-                'fechaCreacion' => now()->format('Y-m-d'),
-                'horaCreacion' => now()->format('H:i:s'),
-                'fInicio' => $request->fecha_inicio,
-                'fecha_inicio' => $request->fecha_inicio,
-                'fFin' => $request->fecha_fin,
-                'fecha_fin' => $request->fecha_fin,
-                'hInicio' => '00:00:00',
-                'hFin' => '23:59:59',
+                'codEstado' => '01',
+                'estado' => 'En Cola',
                 'tipoContingencia' => $request->tipo_contingencia,
                 'motivoContingencia' => $request->motivo,
-                'nombreResponsable' => auth()->user()->name,
+                'nombreResponsable' => auth()->user()->name ?? 'Sistema',
                 'tipoDocResponsable' => '13',
-                'nuDocResponsable' => '12345678-9',
-                // contar solo IDs válidos (DTEs numéricos + ventas en borrador prefijo SALE-)
-                'documentos_afectados' => count($request->dte_ids ?? []),
-                'created_by' => auth()->user()->name,
-                'updated_by' => auth()->user()->name
+                'nuDocResponsable' => '00000000-0',
+                'fechaCreacion' => $fechaCreacion->format('Y-m-d H:i:s'),
+                'fInicio' => $fInicio->format('Y-m-d'),
+                'fFin' => $fFin->format('Y-m-d'),
+                'horaCreacion' => $fechaCreacion->format('H:i:s'),
+                'hInicio' => $fInicio->format('H:i:s'),
+                'hFin' => $fFin->format('H:i:s'),
+                'codigoGeneracion' => strtoupper(\Str::uuid()->toString())
             ]);
 
-            // Asociar DTEs si se proporcionaron (solo IDs numéricos)
+            // Asociar DTEs elegidos (solo IDs numéricos) a la contingencia
             if ($request->dte_ids) {
-                $numericDteIds = collect($request->dte_ids)
-                    ->filter(function($val){ return is_numeric($val); })
-                    ->values();
-
+                $numericDteIds = collect($request->dte_ids)->filter(fn($v) => is_numeric($v))->values();
                 if ($numericDteIds->isNotEmpty()) {
                     Dte::whereIn('id', $numericDteIds)->update(['idContingencia' => $contingencia->id]);
                 }
@@ -367,6 +357,10 @@ class DteAdminController extends Controller
 
         } catch (Exception $e) {
             DB::rollBack();
+            \Log::error('Error creando contingencia', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error al crear contingencia: ' . $e->getMessage());
