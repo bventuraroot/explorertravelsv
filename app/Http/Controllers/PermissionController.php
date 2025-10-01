@@ -222,6 +222,12 @@ class PermissionController extends Controller
                         "slug" => "dte.dashboard"
                     ],
                     [
+                        "url" => "/factmh/contingencias/dashboard",
+                        "name" => "Dashboard Contingencias",
+                        "icon" => "menu-icon fa-solid fa-chart-pie",
+                        "slug" => "factmh.contingencias.dashboard"
+                    ],
+                    [
                         "url" => "/factmh/contingencias",
                         "name" => "Contingencias MH",
                         "icon" => "menu-icon fa-solid fa-satellite-dish",
