@@ -452,14 +452,13 @@ class DteAdminController extends Controller
         // Unir con ventas y clientes para enriquecer datos cuando existan
         $dtes = $dteQuery
             ->leftJoin('sales', 'sales.id', '=', 'dte.sale_id')
-            ->leftJoin('clients', 'clients.id', '=', 'sales.client_id')
             ->select(
                 'dte.id as id',
                 'dte.id_doc as numero_control',
                 'dte.tipoDte as tipo_documento',
                 'dte.codEstado as estado_dte',
                 'dte.created_at as fecha_creado',
-                'clients.name as cliente'
+                'sales.id as sale_id'
             )
             ->get()
             ->map(function($row) {
@@ -471,8 +470,8 @@ class DteAdminController extends Controller
                 };
                 return [
                     'id' => $row->id,
-                    'numero_control' => $row->numero_control ?? $row->id,
-                    'cliente' => $row->cliente ?? 'N/A',
+                    'numero_control' => $row->numero_control ?? ($row->sale_id ?: $row->id),
+                    'cliente' => 'N/A',
                     'tipo_documento' => $row->tipo_documento ?? 'N/A',
                     'estado' => $estadoTexto,
                     'fecha' => optional($row->fecha_creado)->format('d/m/Y')
