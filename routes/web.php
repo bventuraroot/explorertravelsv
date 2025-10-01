@@ -343,6 +343,8 @@ Route::middleware('auth')->group(function () {
         Route::post('contingencias', [DteAdminController::class, 'crearContingencia'])->name('crear-contingencia');
         Route::post('contingencias/{id}/aprobar', [DteAdminController::class, 'aprobarContingencia'])->name('aprobar-contingencia');
         Route::post('contingencias/{id}/activar', [DteAdminController::class, 'activarContingencia'])->name('activar-contingencia');
+        // Alias de autorización como en Roma Copies, reutiliza el ContingenciasController existente
+        Route::get('contingencias/{empresa}/{id}/autorizar', [ContingenciasController::class, 'autoriza_contingencia'])->name('autorizar-contingencia');
 
 
         // API para contingencias
