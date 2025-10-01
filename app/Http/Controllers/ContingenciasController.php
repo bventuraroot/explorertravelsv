@@ -273,12 +273,25 @@ class ContingenciasController extends Controller
                 "passwordPri" => $empresaconti[0]->passwordPri,
                 "dteJson" => $comprobante_electronico
             ];
+            // Obtener URL del firmador desde BD/ambiente/config si está disponible
+            $urlFirmador = $empresaconti[0]->url_firmador
+                ?? ($empresaconti[0]->urlFirmador ?? ($empresaconti[0]->url_firmardocumento ?? null));
+            if (!$urlFirmador) {
+                // Fallback (evitar hardcode, pero mantener compatibilidad)
+                $urlFirmador = 'http://143.198.63.171:8113/firmardocumento/';
+            }
+            // Asegurar endpoint correcto
+            if (stripos($urlFirmador, 'firmardocumento') === false) {
+                $urlFirmador = rtrim($urlFirmador, "/") . "/firmardocumento/";
+            }
             try {
-                $response = Http::accept('application/json')->post('http://143.198.63.171:8113/firmardocumento/', $firma_electronica);
+                $response = Http::accept('application/json')->post($urlFirmador, $firma_electronica);
             } catch (\Throwable $th) {
-                \Log::error('Error en Firma de Documento', ['error' => $th->getMessage()]);
-                return redirect()->route('dte.contingencias')
-                    ->with('danger', 'Error en Firma de Documento: '.$th->getMessage());
+                $error = [
+                    "mensaje" => "Error en Firma de Documento",
+                    "error" => $th
+                ];
+                return  json_encode($error);
             }
 
             $objResponse = json_decode($response, true);
