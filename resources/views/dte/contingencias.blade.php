@@ -458,20 +458,38 @@ $(document).ready(function() {
                                     <td>{{ $contingencia->created_by ?? 'Sistema' }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
+                                            @php
+                                                $empresaLinkId = $contingencia->idEmpresa ?? $contingencia->company_id ?? null;
+                                                $contLinkId = $contingencia->id ?? null;
+                                            @endphp
                                             @if($contingencia->codEstado == '01')
-                                                <a class="btn btn-sm btn-outline-success"
-                                                   href="{{ route('dte.autorizar-contingencia', ['empresa' => ($contingencia->idEmpresa ?? $contingencia->company_id ?? 0), 'id' => $contingencia->id]) }}"
-                                                   title="Autorizar y enviar a MH">
-                                                    <i class="fas fa-check"></i>
-                                                    Autorizar
-                                                </a>
+                                                @if($empresaLinkId && $contLinkId)
+                                                    <a class="btn btn-sm btn-outline-success"
+                                                       href="{{ route('dte.autorizar-contingencia', ['empresa' => $empresaLinkId, 'id' => $contLinkId]) }}"
+                                                       title="Autorizar y enviar a MH">
+                                                        <i class="fas fa-check"></i>
+                                                        Autorizar
+                                                    </a>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-secondary" disabled title="Falta ID de empresa o contingencia">
+                                                        <i class="fas fa-ban"></i>
+                                                        Autorizar
+                                                    </button>
+                                                @endif
                                             @elseif($contingencia->codEstado == '03')
-                                                <a class="btn btn-sm btn-outline-danger"
-                                                   href="{{ route('dte.autorizar-contingencia', ['empresa' => ($contingencia->idEmpresa ?? $contingencia->company_id ?? 0), 'id' => $contingencia->id]) }}"
-                                                   title="Reintentar autorización">
-                                                    <i class="ti ti-refresh"></i>
-                                                    Reintentar
-                                                </a>
+                                                @if($empresaLinkId && $contLinkId)
+                                                    <a class="btn btn-sm btn-outline-danger"
+                                                       href="{{ route('dte.autorizar-contingencia', ['empresa' => $empresaLinkId, 'id' => $contLinkId]) }}"
+                                                       title="Reintentar autorización">
+                                                        <i class="ti ti-refresh"></i>
+                                                        Reintentar
+                                                    </a>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-secondary" disabled title="Falta ID de empresa o contingencia">
+                                                        <i class="fas fa-ban"></i>
+                                                        Reintentar
+                                                    </button>
+                                                @endif
                                             @elseif($contingencia->codEstado == '02' && !$contingencia->activa)
                                                 <button class="btn btn-sm btn-outline-primary activar-contingencia"
                                                         data-contingencia-id="{{ $contingencia->id }}"
