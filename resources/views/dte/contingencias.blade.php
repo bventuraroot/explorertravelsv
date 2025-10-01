@@ -57,8 +57,9 @@ $(document).ready(function() {
     // Cargar DTEs para el modal (empresa_id_modal)
     $('#empresa_id_modal').change(function() {
         const empresaId = $(this).val();
+        const incluirBorradores = $('#incluir_borradores_modal').is(':checked');
         if (empresaId) {
-            $.get('{{ route("dte.dtes-para-contingencia") }}', { empresa_id: empresaId })
+            $.get('{{ route("dte.dtes-para-contingencia") }}', { empresa_id: empresaId, incluir_borradores: incluirBorradores ? 1 : 0 })
                 .done(function(data) {
                     const select = $('#dte_ids');
                     select.empty();
@@ -68,6 +69,37 @@ $(document).ready(function() {
                         select.append(`<option value="${dte.id}">${dte.numero_control} - ${dte.cliente} (${dte.tipo_documento})</option>`);
                     });
                 });
+        }
+    });
+
+    // Al abrir el modal: si hay una única empresa, seleccionarla y cargar borradores
+    $('#crearContingenciaModal').on('shown.bs.modal', function () {
+        // Si no hay empresas renderizadas en servidor, cargarlas por AJAX
+        const $empresa = $('#empresa_id_modal');
+        if ($empresa.find('option').length <= 1) {
+            $.get('/company/getCompany')
+                .done(function(list) {
+                    if (Array.isArray(list)) {
+                        list.forEach(function(c) {
+                            $empresa.append('<option value="' + c.id + '">' + (c.name || c.razon_social || ('Empresa ' + c.id)) + '</option>');
+                        });
+                        $empresa.trigger('change.select2');
+                    }
+                })
+                .always(function() {
+                    // Seleccionar automáticamente si quedó una sola
+                    if ($empresa.find('option').length === 2 && !$empresa.val()) {
+                        const val = $empresa.find('option:eq(1)').val();
+                        $empresa.val(val).trigger('change');
+                    }
+                });
+        }
+        const $empresa = $('#empresa_id_modal');
+        if ($empresa.find('option').length === 2 && !$empresa.val()) { // placeholder + 1 empresa
+            const val = $empresa.find('option:eq(1)').val();
+            $empresa.val(val).trigger('change');
+        } else if ($empresa.val()) {
+            $empresa.trigger('change');
         }
     });
 
