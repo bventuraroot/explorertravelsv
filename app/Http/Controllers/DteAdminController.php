@@ -429,29 +429,90 @@ class DteAdminController extends Controller
     public function getDtesParaContingencia(Request $request): JsonResponse
     {
         $empresaId = $request->get('empresa_id');
+        $incluirBorradores = filter_var($request->get('incluir_borradores'), FILTER_VALIDATE_BOOLEAN) || $request->get('incluir_borradores') == 1;
 
         if (!$empresaId) {
             return response()->json([]);
         }
 
-        $dtes = Dte::where('company_id', $empresaId)
-            ->where('codEstado', '03') // Rechazados
+        // DTEs asociados a la empresa y sin contingencia
+        $dteQuery = Dte::query()
+            ->where('company_id', $empresaId)
             ->whereNull('idContingencia')
-            ->select('id', 'id_doc', 'tipoDte', 'created_at')
             ->orderBy('created_at', 'desc')
-            ->limit(100)
+            ->limit(200);
+
+        // Estados: 03=Rechazado; opcionalmente 01=En cola, 10=En revisión (según convención del proyecto)
+        if ($incluirBorradores) {
+            $dteQuery->whereIn('codEstado', ['01', '03', '10']);
+        } else {
+            $dteQuery->where('codEstado', '03');
+        }
+
+        // Unir con ventas y clientes para enriquecer datos cuando existan
+        $dtes = $dteQuery
+            ->leftJoin('sales', 'sales.id', '=', 'dte.sale_id')
+            ->leftJoin('clients', 'clients.id', '=', 'sales.client_id')
+            ->select(
+                'dte.id as id',
+                'dte.id_doc as numero_control',
+                'dte.tipoDte as tipo_documento',
+                'dte.codEstado as estado_dte',
+                'dte.created_at as fecha_creado',
+                'clients.name as cliente'
+            )
             ->get()
-            ->map(function($dte) {
+            ->map(function($row) {
+                $estadoTexto = match($row->estado_dte) {
+                    '01' => 'En Cola (Borrador)',
+                    '10' => 'En Revisión (Borrador)',
+                    '03' => 'Rechazado (Borrador)',
+                    default => 'Borrador'
+                };
                 return [
-                    'id' => $dte->id,
-                    'numero_control' => $dte->id_doc,
-                    'cliente' => 'Cliente N/A', // Se puede mejorar con relación
-                    'tipo_documento' => $dte->tipoDte,
-                    'fecha' => $dte->created_at->format('d/m/Y')
+                    'id' => $row->id,
+                    'numero_control' => $row->numero_control ?? $row->id,
+                    'cliente' => $row->cliente ?? 'N/A',
+                    'tipo_documento' => $row->tipo_documento ?? 'N/A',
+                    'estado' => $estadoTexto,
+                    'fecha' => optional($row->fecha_creado)->format('d/m/Y')
                 ];
             });
 
-        return response()->json($dtes);
+        // Ventas sin DTE (borradores de venta) cuando se solicite incluir borradores
+        $ventasSinDte = collect();
+        if ($incluirBorradores) {
+            $ventasSinDte = \DB::table('sales as a')
+                ->leftJoin('dte as b', 'b.sale_id', '=', 'a.id')
+                ->leftJoin('clients as c', 'c.id', '=', 'a.client_id')
+                ->leftJoin('typedocuments as t', 't.id', '=', 'a.typedocument_id')
+                ->where('a.company_id', $empresaId)
+                ->whereNull('b.sale_id')
+                ->select(
+                    'a.id',
+                    'a.created_at',
+                    'c.name as cliente',
+                    't.type as tipo_documento'
+                )
+                ->orderBy('a.created_at', 'desc')
+                ->limit(200)
+                ->get()
+                ->map(function($row){
+                    return [
+                        'id' => 'SALE-' . $row->id, // prefijo para evitar colisiones con IDs de dte
+                        'numero_control' => $row->id,
+                        'cliente' => $row->cliente ?? 'N/A',
+                        'tipo_documento' => $row->tipo_documento ?? 'N/A',
+                        'estado' => 'Sin DTE (Borrador)',
+                        'fecha' => optional($row->created_at)->format('d/m/Y')
+                    ];
+                });
+        }
+
+        // Combinar resultados
+        $documentos = $dtes->concat($ventasSinDte)->values();
+
+        return response()->json($documentos);
     }
 
     /**
