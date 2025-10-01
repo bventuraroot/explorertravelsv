@@ -287,6 +287,7 @@ class ContingenciasController extends Controller
             }
             try {
                 $response = Http::accept('application/json')->post($urlFirmador, $firma_electronica);
+                dd($response);
             } catch (\Throwable $th) {
                 $error = [
                     "mensaje" => "Error en Firma de Documento",
