@@ -302,82 +302,88 @@ class DteAdminController extends Controller
      */
     public function crearContingencia(Request $request): RedirectResponse
     {
-        $request->validate([
-            'empresa_id' => 'required|exists:companies,id',
-            'tipo_contingencia' => 'required',
-            'motivo' => 'required|string',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after:fecha_inicio',
-            'resolucion_mh' => 'nullable|string',
-            'dte_ids' => 'required|array',
-            'dte_ids.*' => 'string' // IDs de ventas con prefijo SALE-
-        ]);
+        // Usar exactamente el mismo código del módulo original que funciona
+        $contingencia = new Contingencia();
+        $contingencia->idEmpresa = $request->company;
+        $contingencia->versionJson = $request->versionJson;
+        $contingencia->ambiente = $request->ambiente;
+        $contingencia->codEstado = "01";
+        $contingencia->estado = "En Cola";
+        $contingencia->tipoContingencia = $request->tipoContingencia;
+        $contingencia->motivoContingencia = $request->motivoContingencia;
+        $contingencia->nombreResponsable = $request->nombreResponsable;
+        $contingencia->tipoDocResponsable = $request->tipoDocResponsable;
+        $contingencia->nuDocResponsable = $request->nuDocResponsable;
+        $fc = \Carbon\Carbon::parse($request->fechaCreacion, 'America/El_Salvador');
+        $fi = \Carbon\Carbon::parse($request->fechaInicioFin, 'America/El_Salvador');
+        $contingencia->fechaCreacion = $fc->toDateTimeString();
+        $contingencia->fInicio = $fi->toDateString();
+        $contingencia->fFin = $fi->toDateString();
+        $contingencia->horaCreacion = $fc->format('H:i:s');
+        $contingencia->hInicio = $fi->format('H:i:s');
+        $contingencia->hFin = $fi->format('H:i:s');
+        $contingencia->codigoGeneracion = strtoupper(\Str::uuid()->toString());
+        $contingencia->save();
 
-        try {
-            DB::beginTransaction();
+        // Procesar documentos seleccionados manualmente (flujo híbrido)
+        if ($request->dte_ids && is_array($request->dte_ids)) {
+            foreach ($request->dte_ids as $dteId) {
+                if (strpos($dteId, 'SALE-') === 0) {
+                    // Es una venta sin DTE (borrador)
+                    $saleId = str_replace('SALE-', '', $dteId);
+                    $sale = Sale::find($saleId);
+                    if ($sale && !$sale->codigoGeneracion) { // Solo si no tiene DTE emitido
+                        $sale->id_contingencia = $contingencia->id;
+                        $uuid_generado = strtoupper(\Str::uuid()->toString());
+                        $sale->codigoGeneracion = $uuid_generado;
+                        $sale->save();
+                    }
+                } else {
+                    // Es un DTE existente (en borrador)
+                    $dte = Dte::find($dteId);
+                    if ($dte && $dte->estado !== 'RECIBIDO') { // Solo si no está recibido
+                        $dte->idContingencia = $contingencia->id;
+                        $dte->save();
 
-            // Fechas y horas al estilo Roma Copies
-            $fechaCreacion = now();
-            $fInicio = \Carbon\Carbon::parse($request->fecha_inicio);
-            $fFin = \Carbon\Carbon::parse($request->fecha_fin);
-
-            $contingencia = Contingencia::create([
-                'idEmpresa' => $request->empresa_id,
-                'versionJson' => '3',
-                'ambiente' => '00',
-                'codEstado' => '01',
-                'estado' => 'En Cola',
-                'tipoContingencia' => $request->tipo_contingencia,
-                'motivoContingencia' => $request->motivo,
-                'nombreResponsable' => auth()->user()->name ?? 'Sistema',
-                'tipoDocResponsable' => '13',
-                'nuDocResponsable' => '00000000-0',
-                'fechaCreacion' => $fechaCreacion->format('Y-m-d H:i:s'),
-                'fInicio' => $fInicio->format('Y-m-d'),
-                'fFin' => $fFin->format('Y-m-d'),
-                'horaCreacion' => $fechaCreacion->format('H:i:s'),
-                'hInicio' => $fInicio->format('H:i:s'),
-                'hFin' => $fFin->format('H:i:s'),
-                'codigoGeneracion' => strtoupper(\Str::uuid()->toString())
-            ]);
-
-            // Asociar SOLO ventas sin DTE seleccionadas (prefijo SALE-)
-            $saleIds = collect($request->dte_ids)
-                ->filter(fn($v) => is_string($v) && str_starts_with($v, 'SALE-'))
-                ->map(fn($v) => intval(str_replace('SALE-', '', $v)))
-                ->filter()->values();
-
-            if ($saleIds->isEmpty()) {
-                DB::rollBack();
-                return redirect()->back()->withInput()->with('danger', 'Debe seleccionar al menos una venta en borrador');
+                        // También actualizar la venta asociada
+                        if ($dte->sale_id) {
+                            $sale = Sale::find($dte->sale_id);
+                            if ($sale && !$sale->codigoGeneracion) {
+                                $sale->id_contingencia = $contingencia->id;
+                                $uuid_generado = strtoupper(\Str::uuid()->toString());
+                                $sale->codigoGeneracion = $uuid_generado;
+                                $sale->save();
+                            }
+                        }
+                    }
+                }
             }
+        } else {
+            // Si no se seleccionaron documentos, usar el flujo automático del módulo original
+            $countfacturas = Sale::leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+                ->whereNull('dte.sale_id')
+                ->whereNull('sales.codigoGeneracion')
+                ->where(function ($query) {
+                    $query->where('typedocument_id', '=', 6)
+                          ->orWhere('typedocument_id', '=', 3);
+                })
+                ->select('sales.id', 'dte.id as DTEID')
+                ->take(3)
+                ->get();
 
-            // Marcar ventas con la contingencia y generar codigoGeneracion si falta
-            \DB::table('sales')->whereIn('id', $saleIds)->update(['id_contingencia' => $contingencia->id]);
-
-            // Generar codigoGeneracion para todas las ventas seleccionadas (no solo las que no tienen)
-            foreach ($saleIds as $sid) {
-                \DB::table('sales')->where('id', $sid)->update(['codigoGeneracion' => strtoupper(\Str::uuid()->toString())]);
+            foreach ($countfacturas as $fac) {
+                $updatefac = Sale::find($fac->id);
+                if ($updatefac) {
+                    $updatefac->id_contingencia = $contingencia->id;
+                    $uuid_generado = strtoupper(\Str::uuid()->toString());
+                    $updatefac->codigoGeneracion = $uuid_generado;
+                    $updatefac->save();
+                }
             }
-
-            // documentos_afectados
-            \DB::table('contingencias')->where('id', $contingencia->id)->update(['documentos_afectados' => $saleIds->count()]);
-
-            DB::commit();
-
-            return redirect()->route('dte.contingencias')
-                ->with('success', 'Contingencia creada exitosamente');
-
-        } catch (Exception $e) {
-            DB::rollBack();
-            \Log::error('Error creando contingencia', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Error al crear contingencia: ' . $e->getMessage());
         }
+
+        return redirect()->route('dte.contingencias')
+            ->with('success', 'Contingencia creada con Éxito');
     }
 
     /**
