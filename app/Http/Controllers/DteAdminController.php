@@ -303,6 +303,12 @@ class DteAdminController extends Controller
      */
     public function crearContingencia(Request $request): RedirectResponse
     {
+        // Debug temporal para ver qué está recibiendo
+        \Log::info('Datos recibidos en crearContingencia:', [
+            'company' => $request->company,
+            'all_request' => $request->all()
+        ]);
+
         // Usar exactamente el mismo código del módulo original que funciona
         $contingencia = new Contingencia();
         $contingencia->idEmpresa = $request->company;
@@ -330,6 +336,13 @@ class DteAdminController extends Controller
         $contingencia->updated_by = auth()->id();
 
         $contingencia->save();
+
+        // Debug temporal para verificar qué se guardó
+        \Log::info('Contingencia guardada:', [
+            'id' => $contingencia->id,
+            'idEmpresa' => $contingencia->idEmpresa,
+            'codEstado' => $contingencia->codEstado
+        ]);
 
         // Generar código interno único después de guardar
         $contingencia->codInterno = 'CONT-' . date('Ymd') . '-' . str_pad($contingencia->id, 4, '0', STR_PAD_LEFT);

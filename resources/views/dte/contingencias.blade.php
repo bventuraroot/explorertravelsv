@@ -463,19 +463,10 @@ $(document).ready(function() {
                                                 $contLinkId = $contingencia->id ?? null;
                                                 $estadoCod = $contingencia->codEstado ?? '';
 
-                                                // Debug temporal
-                                                if ($contingencia->id == 4) { // Solo para la contingencia ID 3
-                                                    dd([
-                                                        'id' => $contingencia->id,
-                                                        'idEmpresa' => $contingencia->idEmpresa,
-                                                        'company_id' => $contingencia->company_id,
-                                                        'codEstado' => $contingencia->codEstado,
-                                                        'empresaLinkId' => $empresaLinkId,
-                                                        'contLinkId' => $contLinkId,
-                                                        'estadoCod' => $estadoCod,
-                                                        'all_attributes' => $contingencia->getAttributes()
-                                                    ]);
-                                                }
+                                                // Debug temporal - comentado
+                                                // if ($contingencia->id == 4) {
+                                                //     dd([...]);
+                                                // }
                                             @endphp
                                             @if(in_array($estadoCod, ['01','10']))
                                                 @if($empresaLinkId && $contLinkId)
