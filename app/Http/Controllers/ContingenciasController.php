@@ -297,7 +297,6 @@ class ContingenciasController extends Controller
 
             $objResponse = json_decode($response, true);
             $objResponse = (array)$objResponse;
-            dd($objResponse);
             if (!isset($objResponse["body"])) {
                 return redirect()->route('dte.contingencias')
                     ->with('danger', 'Respuesta inválida del firmador');
@@ -319,6 +318,7 @@ class ContingenciasController extends Controller
                 ];
                 try {
                     $response_enviado = Http::withToken($token)->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
+                    dd($response_enviado);
                 } catch (\Throwable $th) {
                     \Log::error('Error con Servicios de Hacienda', ['error' => $th->getMessage()]);
                     return redirect()->route('dte.contingencias')
