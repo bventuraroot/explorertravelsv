@@ -338,13 +338,16 @@ $(document).ready(function() {
                                     <td>
                                         <div>
                                             <small class="text-muted">Inicio:</small><br>
-                                            {{ $contingencia->fecha_inicio ? $contingencia->fecha_inicio->format('d/m/Y H:i') : 'N/A' }}
+                                            {{ $contingencia->fecha_inicio ? ((($contingencia->fecha_inicio instanceof \Illuminate\Support\Carbon) || ($contingencia->fecha_inicio instanceof \Carbon\Carbon)) ? $contingencia->fecha_inicio->format('d/m/Y H:i') : \Carbon\Carbon::parse($contingencia->fecha_inicio)->format('d/m/Y H:i')) : 'N/A' }}
                                         </div>
                                         <div class="mt-1">
                                             <small class="text-muted">Fin:</small><br>
-                                            {{ $contingencia->fecha_fin ? $contingencia->fecha_fin->format('d/m/Y H:i') : 'N/A' }}
+                                            {{ $contingencia->fecha_fin ? ((($contingencia->fecha_fin instanceof \Illuminate\Support\Carbon) || ($contingencia->fecha_fin instanceof \Carbon\Carbon)) ? $contingencia->fecha_fin->format('d/m/Y H:i') : \Carbon\Carbon::parse($contingencia->fecha_fin)->format('d/m/Y H:i')) : 'N/A' }}
                                         </div>
-                                        @if($contingencia->fecha_fin && $contingencia->fecha_fin >= now())
+                                        @php
+                                            $__fin = $contingencia->fecha_fin ? ((($contingencia->fecha_fin instanceof \Illuminate\Support\Carbon) || ($contingencia->fecha_fin instanceof \Carbon\Carbon)) ? $contingencia->fecha_fin : \Carbon\Carbon::parse($contingencia->fecha_fin)) : null;
+                                        @endphp
+                                        @if($__fin && $__fin >= now())
                                             <span class="badge bg-success mt-1">Vigente</span>
                                         @else
                                             <span class="badge bg-secondary mt-1">Vencida</span>
