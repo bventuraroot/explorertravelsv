@@ -251,12 +251,12 @@ $(document).ready(function() {
     @endif
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold py-3 mb-0">
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <h4 class="py-3 mb-0 fw-bold">
                     <i class="fas fa-shield-alt me-2"></i>
                     Gestión de Contingencias DTE
                 </h4>
-                <div class="d-flex gap-2">
+                <div class="gap-2 d-flex">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearContingenciaModal">
                         <i class="fas fa-plus me-1"></i>
                         Nueva Contingencia
@@ -271,11 +271,11 @@ $(document).ready(function() {
     </div>
 
     <!-- Filtros -->
-    <div class="row mb-4">
+    <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="mb-0 card-title">
                         <i class="fas fa-filter me-2"></i>
                         Filtros
                     </h5>
@@ -330,8 +330,8 @@ $(document).ready(function() {
     </div>
 
     <!-- Estadísticas de contingencias -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-4">
+    <div class="mb-4 row">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -339,15 +339,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Total Contingencias</h6>
                             <h3 class="mb-0">{{ $contingencias->total() }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-secondary rounded">
-                            <i class="fas fa-shield-alt text-white"></i>
+                        <div class="rounded avatar avatar-md bg-secondary">
+                            <i class="text-white fas fa-shield-alt"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -355,15 +355,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Activas</h6>
                             <h3 class="mb-0 text-success">{{ $contingencias->where('activa', true)->count() }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-success rounded">
-                            <i class="fas fa-check text-white"></i>
+                        <div class="rounded avatar avatar-md bg-success">
+                            <i class="text-white fas fa-check"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -371,15 +371,15 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Pendientes</h6>
                             <h3 class="mb-0 text-warning">{{ $contingencias->where('codEstado', '01')->count() }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-warning rounded">
-                            <i class="fas fa-clock text-white"></i>
+                        <div class="rounded avatar avatar-md bg-warning">
+                            <i class="text-white fas fa-clock"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6 mb-4">
+        <div class="mb-4 col-lg-3 col-md-6">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
@@ -387,8 +387,8 @@ $(document).ready(function() {
                             <h6 class="card-title text-muted">Vigentes</h6>
                             <h3 class="mb-0 text-info">{{ $contingencias->where('fecha_fin', '>=', now())->count() }}</h3>
                         </div>
-                        <div class="avatar avatar-md bg-info rounded">
-                            <i class="fas fa-calendar-check text-white"></i>
+                        <div class="rounded avatar avatar-md bg-info">
+                            <i class="text-white fas fa-calendar-check"></i>
                         </div>
                     </div>
                 </div>
@@ -401,7 +401,7 @@ $(document).ready(function() {
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="mb-0 card-title">
                         <i class="fas fa-list me-2"></i>
                         Lista de Contingencias
                     </h5>
@@ -446,9 +446,9 @@ $(document).ready(function() {
                                             $__fin = $contingencia->fecha_fin ? ((($contingencia->fecha_fin instanceof \Illuminate\Support\Carbon) || ($contingencia->fecha_fin instanceof \Carbon\Carbon)) ? $contingencia->fecha_fin : \Carbon\Carbon::parse($contingencia->fecha_fin)) : null;
                                         @endphp
                                         @if($__fin && $__fin >= now())
-                                            <span class="badge bg-success mt-1">Vigente</span>
+                                            <span class="mt-1 badge bg-success">Vigente</span>
                                         @else
-                                            <span class="badge bg-secondary mt-1">Vencida</span>
+                                            <span class="mt-1 badge bg-secondary">Vencida</span>
                                         @endif
                                     </td>
                                     <td>
@@ -464,7 +464,7 @@ $(document).ready(function() {
                                                 $estadoCod = $contingencia->codEstado ?? '';
 
                                                 // Debug temporal
-                                                if ($contingencia->id == 3) { // Solo para la contingencia ID 3
+                                                if ($contingencia->id == 4) { // Solo para la contingencia ID 3
                                                     dd([
                                                         'id' => $contingencia->id,
                                                         'idEmpresa' => $contingencia->idEmpresa,
@@ -525,7 +525,7 @@ $(document).ready(function() {
                     </div>
 
                     <!-- Paginación -->
-                    <div class="d-flex justify-content-center mt-4">
+                    <div class="mt-4 d-flex justify-content-center">
                         {{ $contingencias->appends($filtros)->links() }}
                     </div>
                 </div>
