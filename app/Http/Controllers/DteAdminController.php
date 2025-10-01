@@ -354,8 +354,9 @@ class DteAdminController extends Controller
 
             // Marcar ventas con la contingencia y generar codigoGeneracion si falta
             \DB::table('sales')->whereIn('id', $saleIds)->update(['id_contingencia' => $contingencia->id]);
-            $salesToCode = \DB::table('sales')->whereIn('id', $saleIds)->whereNull('codigoGeneracion')->pluck('id');
-            foreach ($salesToCode as $sid) {
+
+            // Generar codigoGeneracion para todas las ventas seleccionadas (no solo las que no tienen)
+            foreach ($saleIds as $sid) {
                 \DB::table('sales')->where('id', $sid)->update(['codigoGeneracion' => strtoupper(\Str::uuid()->toString())]);
             }
 
