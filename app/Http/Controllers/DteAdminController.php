@@ -324,6 +324,15 @@ class DteAdminController extends Controller
         $contingencia->hInicio = $fi->format('H:i:s');
         $contingencia->hFin = $fi->format('H:i:s');
         $contingencia->codigoGeneracion = strtoupper(\Str::uuid()->toString());
+
+        // Campos adicionales para completar la información
+        $contingencia->created_by = auth()->id();
+        $contingencia->updated_by = auth()->id();
+
+        $contingencia->save();
+
+        // Generar código interno único después de guardar
+        $contingencia->codInterno = 'CONT-' . date('Ymd') . '-' . str_pad($contingencia->id, 4, '0', STR_PAD_LEFT);
         $contingencia->save();
 
         // Procesar documentos seleccionados manualmente (flujo híbrido)

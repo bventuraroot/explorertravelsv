@@ -109,4 +109,45 @@ class Contingencia extends Model
     {
         return $query->where('empresa_id', $empresaId);
     }
+
+    /**
+     * Accessor para nombre (alias de motivoContingencia)
+     */
+    public function getNombreAttribute()
+    {
+        return $this->motivoContingencia;
+    }
+
+    /**
+     * Accessor para fecha_inicio (alias de fInicio)
+     */
+    public function getFechaInicioAttribute()
+    {
+        return $this->fInicio;
+    }
+
+    /**
+     * Accessor para fecha_fin (alias de fFin)
+     */
+    public function getFechaFinAttribute()
+    {
+        return $this->fFin;
+    }
+
+    /**
+     * Accessor para tipo_texto
+     */
+    public function getTipoTextoAttribute()
+    {
+        $tipos = [
+            1 => 'No disponibilidad de sistema del MH',
+            2 => 'No disponibilidad de sistema del emisor',
+            3 => 'Falla en el suministro de servicio de Internet del Emisor',
+            4 => 'Falla en el suministro de servicio de energia eléctrica del emisor que impida la transmisión de los DTE',
+            5 => 'Otro'
+        ];
+
+        $tipoTexto = $tipos[$this->tipoContingencia ?? 0] ?? 'Desconocido';
+        return '<span class="badge bg-label-primary">' . $tipoTexto . '</span>';
+    }
 }
