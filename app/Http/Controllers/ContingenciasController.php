@@ -287,7 +287,6 @@ class ContingenciasController extends Controller
             }
             try {
                 $response = Http::accept('application/json')->post($urlFirmador, $firma_electronica);
-                dd($response);
             } catch (\Throwable $th) {
                 $error = [
                     "mensaje" => "Error en Firma de Documento",
@@ -298,6 +297,7 @@ class ContingenciasController extends Controller
 
             $objResponse = json_decode($response, true);
             $objResponse = (array)$objResponse;
+            dd($objResponse);
             if (!isset($objResponse["body"])) {
                 return redirect()->route('dte.contingencias')
                     ->with('danger', 'Respuesta inválida del firmador');
