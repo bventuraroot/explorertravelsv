@@ -483,14 +483,12 @@ class DteAdminController extends Controller
         if ($incluirBorradores) {
             $ventasSinDte = \DB::table('sales as a')
                 ->leftJoin('dte as b', 'b.sale_id', '=', 'a.id')
-                ->leftJoin('clients as c', 'c.id', '=', 'a.client_id')
                 ->leftJoin('typedocuments as t', 't.id', '=', 'a.typedocument_id')
                 ->where('a.company_id', $empresaId)
                 ->whereNull('b.sale_id')
                 ->select(
                     'a.id',
                     'a.created_at',
-                    'c.name as cliente',
                     't.type as tipo_documento'
                 )
                 ->orderBy('a.created_at', 'desc')
@@ -500,7 +498,7 @@ class DteAdminController extends Controller
                     return [
                         'id' => 'SALE-' . $row->id, // prefijo para evitar colisiones con IDs de dte
                         'numero_control' => $row->id,
-                        'cliente' => $row->cliente ?? 'N/A',
+                        'cliente' => 'N/A',
                         'tipo_documento' => $row->tipo_documento ?? 'N/A',
                         'estado' => 'Sin DTE (Borrador)',
                         'fecha' => optional($row->created_at)->format('d/m/Y')
