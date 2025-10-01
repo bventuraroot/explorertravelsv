@@ -32,13 +32,30 @@ $(document).ready(function() {
     });
 
     // Inicializar Select2
-    $('#empresa_id, #dte_ids').select2({
+    $('#empresa_id, #empresa_id_modal, #dte_ids').select2({
         theme: 'bootstrap-5',
         placeholder: 'Seleccione...'
     });
 
     // Cargar DTEs para contingencia
     $('#empresa_id').change(function() {
+        const empresaId = $(this).val();
+        if (empresaId) {
+            $.get('{{ route("dte.dtes-para-contingencia") }}', { empresa_id: empresaId })
+                .done(function(data) {
+                    const select = $('#dte_ids');
+                    select.empty();
+                    select.append('<option value="">Seleccione DTEs...</option>');
+
+                    data.forEach(function(dte) {
+                        select.append(`<option value="${dte.id}">${dte.numero_control} - ${dte.cliente} (${dte.tipo_documento})</option>`);
+                    });
+                });
+        }
+    });
+
+    // Cargar DTEs para el modal (empresa_id_modal)
+    $('#empresa_id_modal').change(function() {
         const empresaId = $(this).val();
         if (empresaId) {
             $.get('{{ route("dte.dtes-para-contingencia") }}', { empresa_id: empresaId })
@@ -413,7 +430,7 @@ $(document).ready(function() {
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="empresa_id" class="form-label">Empresa *</label>
-                            <select name="empresa_id" id="empresa_id" class="form-select" required>
+                            <select name="empresa_id" id="empresa_id_modal" class="form-select" required>
                                 <option value="">Seleccione empresa...</option>
                                 @foreach($empresas as $empresa)
                                     <option value="{{ $empresa->id }}">{{ $empresa->name }}</option>
