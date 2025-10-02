@@ -809,8 +809,10 @@ class SaleController extends Controller
                 $dtecreate->created_by = $documento[0]->NombreUsuario;
                 $dtecreate->save();
 
-                // Envío automático de correo después de guardar el DTE
-                //$this->enviarCorreoAutomatico(base64_decode($corr), $dtecreate);
+                // Envío automático de correo tras confirmación exitosa en Hacienda (solo producción)
+                if (($dtecreate->codEstado ?? null) === '02' && (string)($dtecreate->ambiente_id ?? '') === '01') {
+                    $this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
+                }
             } else {
                 // DTE deshabilitado - solo guardar la venta sin emisión
                 Log::info("DTE deshabilitado para empresa ID: {$idempresa}. Venta guardada sin emisión DTE.");
@@ -2290,11 +2292,14 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.fac';
                 break;
+            case '04': // FSE - Sujeto Excluido
+                $rptComprobante = 'pdf.fse';
+                break;
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05':
-                $rptComprobante = 'pdf.ncr';
+            case '05': // NCR - usar plantilla de CCF como base
+                $rptComprobante = 'pdf.crf';
                 break;
             case '06':
                 $rptComprobante = 'pdf.ndb';
@@ -2375,11 +2380,14 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.faclocal';
                 break;
+            case '04': // FSE - Sujeto Excluido (local)
+                $rptComprobante = 'pdf.fse';
+                break;
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05':
-                $rptComprobante = 'pdf.ncr';
+            case '05': // NCR local - usar plantilla local de CCF
+                $rptComprobante = 'pdf.crflocal';
                 break;
             case '06':
                 $rptComprobante = 'pdf.ndb';

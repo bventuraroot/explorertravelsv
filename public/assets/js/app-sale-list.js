@@ -320,7 +320,7 @@ function EnviarCorreo(id_factura, correo, numero) {
 
             // Enviar correo
             $.ajax({
-                url: "{{ route('sale.envia_correo') }}",
+                url: "/sale/envia_correo",
                 type: 'GET',
                 data: {
                     id_factura: id_factura,

@@ -50,7 +50,8 @@ class DteService
                     $resultados['exitosos']++;
 
                     // Enviar correo si es ambiente de producción
-                    if ($resultado['ambiente'] === '01') {
+                    $ambienteId = (string)($dte->ambiente_id ?? '');
+                    if ($ambienteId === '01') {
                         $this->enviarCorreoAutomatico($dte);
                         $resultados['correos_enviados']++;
                     }
@@ -372,12 +373,30 @@ class DteService
                 'json' => (object) $jsonDte
             ];
 
-            // Crear y enviar correo
+            // Crear correo y adjuntar PDF + JSON
             $asunto = "Comprobante de Venta No." . $jsonDte['identificacion']['numeroControl'] .
                      ' de Proveedor: ' . $jsonDte['emisor']['nombre'];
 
             $correo = new EnviarCorreo($data);
             $correo->subject($asunto);
+
+            try {
+                // Generar PDF oficial usando controlador existente
+                $pdf = app(\App\Http\Controllers\SaleController::class)->genera_pdf($dte->sale_id);
+                $baseNombre = $dte->codigoGeneracion ?: ($jsonDte['identificacion']['numeroControl'] ?? ('venta_' . $dte->sale_id));
+                $correo->attachData($pdf->output(), $baseNombre . '.pdf');
+
+                // Adjuntar JSON
+                $jsonRoot = json_decode($dte->json ?? $dte->jsonDte);
+                $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
+                $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
+                $correo->attachData($jsonPretty, $baseNombre . '.json');
+            } catch (\Throwable $t) {
+                Log::warning('Fallo adjuntando PDF/JSON en correo automático', [
+                    'dte_id' => $dte->id,
+                    'error' => $t->getMessage()
+                ]);
+            }
 
             Mail::to($sale->client->email)->send($correo);
 
