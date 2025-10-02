@@ -2393,7 +2393,7 @@ class SaleController extends Controller
                 "totales" => $totales,
             ];
         }
-
+        dd($data);
         @$fecha = $json["fhRecibido"] ?? null;
         @$qr = base64_encode(codigoQR($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null), $json["codigoGeneracion"] ?? null, $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
