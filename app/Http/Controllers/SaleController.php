@@ -2278,13 +2278,14 @@ class SaleController extends Controller
             )
             ->where('sales.id', '=', $id)
             ->get();
-        //dd($factura);
+        dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["json"], true);
+        $data = json_decode($comprobante[0]["jsonlocal"], true);
         //print_r($data);
         //dd($data);
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        $tipo_comprobante = $comprobante[0]['codemh'];
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
