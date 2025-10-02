@@ -2281,6 +2281,7 @@ class SaleController extends Controller
             ->get();
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
+        dd($comprobante[0]["json"]);
         $data = json_decode($comprobante[0]["json"]["json_enviado"], true);
         //print_r($data);
         //dd($data);
