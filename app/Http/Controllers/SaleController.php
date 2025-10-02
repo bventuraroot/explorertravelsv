@@ -2206,43 +2206,47 @@ class SaleController extends Controller
         $id_factura = $request->id_factura;
         $nombre = $request->nombre;
         $numero = $request->numero;
-        $comprobante = Sale::join('dte', 'dte.sale_id', '=', 'sales.id')
-            ->join('companies', 'companies.id', '=', 'sales.company_id')
-            ->join('addresses', 'addresses.id', '=', 'companies.address_id')
-            ->join('countries', 'countries.id', '=', 'addresses.country_id')
-            ->join('departments', 'departments.id', '=', 'addresses.department_id')
-            ->join('municipalities', 'municipalities.id', '=', 'addresses.municipality_id')
-            ->join('clients as cli', 'cli.id', '=', 'sales.client_id')
-            ->join('addresses as add', 'add.id', '=', 'cli.address_id')
-            ->join('countries as cou', 'cou.id', '=', 'add.country_id')
-            ->join('departments as dep', 'dep.id', '=', 'add.department_id')
-            ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
-            ->select(
-                'sales.*',
-                'dte.json as JsonDTE',
-                'dte.codigoGeneracion',
-                'countries.name as PaisE',
-                'departments.name as DepartamentoE',
-                'municipalities.name as MunicipioE',
-                'cou.name as PaisR',
-                'dep.name as DepartamentoR',
-                'muni.name as MunicipioR'
-            )
-            ->where('sales.id', '=', $id_factura)
-            ->get();
-        //dd($comprobante);
         $email = $request->email;
-        //$email ="briandagoberto20@hotmail.com";
-        $pdf = $this->genera_pdf($id_factura);
-        $json_root = json_decode($comprobante[0]->JsonDTE);
-        $json_enviado = $json_root->json->json_enviado;
-        $json = json_encode($json_enviado, JSON_PRETTY_PRINT);
-        $archivos = [
-            $comprobante[0]->codigoGeneracion . '.pdf' => $pdf->output(),
-            $comprobante[0]->codigoGeneracion . '.json' => $json
-        ];
-        $data = ["nombre" => $json_enviado->receptor->nombre, "numero" => $numero,  "json" => $json_enviado];
-        $asunto = "Comprobante de Venta No." . $data["json"]->identificacion->numeroControl . ' de Proveedor: ' . $data["json"]->emisor->nombre;
+
+        // Verificar si existe DTE para esta venta
+        $dte = \App\Models\Dte::where('sale_id', $id_factura)->first();
+
+        if ($dte && $dte->json) {
+            // Si hay DTE, usar PDF oficial y JSON enviado
+            $pdf = $this->genera_pdf($id_factura);
+            $json_root = json_decode($dte->json);
+            $json_enviado = $json_root->json->json_enviado ?? $json_root;
+            $json = json_encode($json_enviado, JSON_PRETTY_PRINT);
+
+            $archivos = [
+                $dte->codigoGeneracion . '.pdf' => $pdf->output(),
+                $dte->codigoGeneracion . '.json' => $json
+            ];
+
+            $data = [
+                "nombre" => $json_enviado->receptor->nombre ?? $nombre,
+                "numero" => $numero,
+                "json" => $json_enviado
+            ];
+
+            $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $numero) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');
+        } else {
+            // Si no hay DTE, usar PDF local
+            $pdf = $this->genera_pdflocal($id_factura);
+
+            $archivos = [
+                'venta_' . $id_factura . '.pdf' => $pdf->output()
+            ];
+
+            $data = [
+                "nombre" => $nombre,
+                "numero" => $numero,
+                "json" => null
+            ];
+
+            $asunto = "Comprobante de Venta No." . $numero;
+        }
+
         $correo = new EnviarCorreo($data);
         $correo->subject($asunto);
         foreach ($archivos as $nombreArchivo => $rutaArchivo) {
@@ -2425,6 +2429,14 @@ class SaleController extends Controller
         //dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
         $tipo_comprobante = $comprobante[0]['codemh'];
+
+        // Mapear datos para compatibilidad con templates
+        $data["emisor"] = $data["emisor"] ?? [];
+        $data["cliente"] = $data["cliente"] ?? [];
+        $data["detalle"] = $data["detalle"] ?? [];
+        $data["totales"] = $data["totales"] ?? [];
+        $data["documento"] = $data["documento"] ?? [];
+        $data["json"] = $data["json"] ?? [];
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crflocal';
@@ -2462,6 +2474,12 @@ class SaleController extends Controller
         $data["DepartamentoR"] = $factura[0]['DepartamentoR'];
         $data["MunicipioR"] = $factura[0]['MunicipioR'];
         $data["qr"] = $qr;
+
+        // Variables adicionales para compatibilidad con templates
+        $data["MunicipioE"] = $factura[0]['MunicipioE'];
+        $data["DepartamentoE"] = $factura[0]['DepartamentoE'];
+        $data["MunicipioR"] = $factura[0]['MunicipioR'];
+        $data["DepartamentoR"] = $factura[0]['DepartamentoR'];
         $tamaño = "Letter";
         $orientacion = "Portrait";
         $pdf = app('dompdf.wrapper');
