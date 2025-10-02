@@ -90,7 +90,7 @@
                 <table width="100%">
                     <tr>
                         <td>
-
+                            <img src="{{ logo_pdf($emisor[0]['nrc'] ?? ($emisor[0]['ncr'] ?? '')) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
                         </td>
                     </tr>
                     <tr>
@@ -103,14 +103,21 @@
                         <td>NIT: {{$emisor[0]["nit"]}}</td>
                     </tr>
                     <tr>
-                        <td>NRC: {{$emisor[0]["ncr"]}}</td>
+                        <td>NRC: {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
                     </tr>
                     <tr>
                         <td>Actividad económica: {{$emisor[0]["descActividad"]}}</td>
                     </tr>
                     <tr>
-                        <td>Dirección: {{$emisor[0]["direccion"]}}<br>
-                            {{$MunicipioE}},{{$DepartamentoE}}</td>
+                        <td>Dirección:
+                            @if(isset($emisor[0]["direccion"]["complemento"]))
+                                {{$emisor[0]["direccion"]["complemento"]}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @else
+                                {{$emisor[0]["direccion"]}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td>Número de teléfono: {{$emisor[0]["telefono"]}}</td>
@@ -139,7 +146,7 @@
                     </tr>
                     <tr>
                         <td><strong>Código de Generación:</strong></td>
-                        <td colspan="2">{{$json["codigoGeneracion"]}}</td>
+                        <td colspan="2">{{ $json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? '') }}</td>
                     </tr>
                     <tr>
                         <td><strong>Sello de recepción:</strong></td>
@@ -147,21 +154,21 @@
                     </tr>
                     <tr>
                         <td><strong>Número de Control:</strong></td>
-                        <td colspan="2">{{$json["identificacion"]["numeroControl"]}}</td>
+                        <td colspan="2">{{ $json["identificacion"]["numeroControl"] ?? '' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Modélo facturación:</strong></td>
                         <td>Previo</td>
-                        <td><strong>Versión del Json:</strong> {{$documento[0]["versionJson"]}}</td>
+                        <td><strong>Versión del Json:</strong> {{ $documento[0]["versionjson"] ?? ($documento[0]["versionJson"] ?? ($documento[0]["version"] ?? '')) }}</td>
                     </tr>
                     <tr>
                         <td><strong>Tipo de transmisión</strong></td>
                         <td>Normal</td>
-                        <td><strong>Fecha emisión:</strong> {{date('d/m/Y', strtotime($json["fhRecibido"]))}}</td>
+                        <td><strong>Fecha emisión:</strong> {{ isset($json["fhRecibido"]) ? date('d/m/Y', strtotime($json["fhRecibido"])) : (isset($json["identificacion"]["fecEmi"]) ? date('d/m/Y', strtotime($json["identificacion"]["fecEmi"])) : '') }}</td>
                     </tr>
                     <tr>
                         <td><strong>Hora de emisión:</strong></td>
-                        <td>{{substr($json["fhRecibido"],12,8)}}</td>
+                        <td>{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? '') }}</td>
                         <td><strong>Documento interno No:</strong>{{$documento[0]["actual"]}}</td>
                     </tr>
                     <tr>
