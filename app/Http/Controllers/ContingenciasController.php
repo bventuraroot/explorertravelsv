@@ -275,7 +275,7 @@ class ContingenciasController extends Controller
                 "detalleDTE" => $detalleDTE,
                 "motivo" => $motivo
             ];
-            //dd($comprobante_electronico);
+            dd($comprobante_electronico);
             if (empty($comprobante_electronico)) {
                 $cola->codEstado = "10";
                 $cola->estado = "Revision";
@@ -346,7 +346,6 @@ class ContingenciasController extends Controller
 
             if (count($comprobante[0]) > 0) {
                 $objEnviado = json_decode($response_enviado);
-                dd($objEnviado);
                 if (isset($objEnviado->estado)) {
                     $estado_envio = $objEnviado->estado;
                     $dateString = $objEnviado->fechaHora ?? null;
