@@ -134,6 +134,7 @@ class ContingenciasController extends Controller
             a.passMH AS pwd,
             c.email,
             a.ambiente,
+            b.cod as ambiente_cod,
             b.url_credencial,
             b.url_envio,
             b.url_invalidacion,
@@ -213,8 +214,9 @@ class ContingenciasController extends Controller
             $comprobante["codigoGeneracion"] = $encabezado[0]->codigoGeneracion;
 
             $identificacion = [
-                "version"   => intval($encabezado[0]->versionJson),
-                "ambiente"  => $encabezado[0]->ambiente,
+                //"version"   => intval($encabezado[0]->versionJson),
+                "version"   => 3,
+                "ambiente"  => $empresaconti[0]->ambiente_cod,
                 "codigoGeneracion"  => $encabezado[0]->codigoGeneracion,
                 "fTransmision"      => $encabezado[0]->fechaCreacion,
                 "hTransmision"       => $encabezado[0]->horaCreacion
