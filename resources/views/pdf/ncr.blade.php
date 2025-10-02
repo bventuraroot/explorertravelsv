@@ -52,41 +52,46 @@
                 <table width="100%">
                     <tr>
                         <td>
-                            <img src="{{ logo_pdf($comprobante[0][0]['nrc_emisor']) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
+                            <img src="{{ logo_pdf($emisor[0]['nrc'] ?? ($emisor[0]['ncr'] ?? '')) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
                         </td>
                     </tr>
                     <tr>
                         <td style="font-size: x-small;">
-                            <strong>{{$comprobante[0][0]["nombre_empresa"]}}</strong>
+                            <strong>{{$emisor[0]["nombre"] ?? ''}}</strong>
                         </td>
                     </tr>
 
                     <tr>
-                        <td>NIT:{{$comprobante[0][0]["nit_emisor"]}}</td>
+                        <td>NIT: {{$emisor[0]["nit"] ?? ''}}</td>
                     </tr>
                     <tr>
-                        <td>NRC:{{$comprobante[0][0]["nrc_emisor"]}}</td>
+                        <td>NRC: {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
                     </tr>
                     <tr>
-                        <td>Actividad económica:{{$comprobante[0][0]["descActividad"]}}</td>
+                        <td>Actividad económica: {{$emisor[0]["descActividad"] ?? ''}}</td>
                     </tr>
                     <tr>
-                        <td>Dirección: {{$comprobante[0][0]["complemento_emisor"]}}<br>
-                        {{$comprobante[0][0]["municipio_emisor"]}},{{$comprobante[0][0]["departamento_emisor"]}}</td>
-                    </tr>
-                    <tr>
-                        <td>Número de teléfono:{{$comprobante[0][0]["telefono"]}}</td>
-                    </tr>
-                    <tr>
-                        <td>Correo electrónico:{{$comprobante[0][0]["correo"]}}</td>
-                    </tr>
-                    <tr>
-                        <td>Nombre comercial:{{$comprobante[0][0]["nombreComercial"]}}</td>
-                    </tr>
-                    <tr>
-                        <td>Tipo de establecimiento:{{Tipo_Establecimiento($comprobante[0][0]["tipo_establecimiento"])}}
-                             - {{$comprobante[0][0]["nombre_tienda"]}}
+                        <td>Dirección:
+                            @if(isset($emisor[0]["direccion"]["complemento"]))
+                                {{$emisor[0]["direccion"]["complemento"]}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @else
+                                {{$emisor[0]["direccion"] ?? ''}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @endif
                         </td>
+                    </tr>
+                    <tr>
+                        <td>Número de teléfono: {{$emisor[0]["telefono"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Correo electrónico: {{$emisor[0]["correo"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre comercial: {{$emisor[0]["nombreComercial"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Tipo de establecimiento: Casa Matriz</td>
                     </tr>
 
                 </table>
@@ -101,30 +106,30 @@
                     </tr>
                     <tr>
                         <td><strong>Código de Generación:</strong></td>
-                        <td colspan="2">{{$comprobante[0][0]["codigoGeneracion"]}}</td>
+                        <td colspan="2">{{ $json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? '') }}</td>
                     </tr>
                     <tr>
                         <td><strong>Sello de recepción:</strong></td>
-                        <td colspan="2">{{$comprobante[0][0]["selloRecibido"]}}</td>
+                        <td colspan="2">{{$json["selloRecibido"] ?? 'N/A'}}</td>
                     </tr>
                     <tr>
                         <td><strong>Número de Control:</strong></td>
-                        <td colspan="2">{{$dte}}</td>
+                        <td colspan="2">{{ $json["identificacion"]["numeroControl"] ?? '' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Modélo facturación:</strong></td>
                         <td>Previo</td>
-                        <td><strong>Versión del Json:</strong> {{$comprobante[0][0]["version"]}}</td>
+                        <td><strong>Versión del Json:</strong> {{ $documento[0]["versionjson"] ?? ($documento[0]["versionJson"] ?? ($documento[0]["version"] ?? '')) }}</td>
                     </tr>
                     <tr>
                         <td><strong>Tipo de transmisión</strong></td>
                         <td>Normal</td>
-                        <td><strong>Fecha emisión:</strong> {{$comprobante[0][0]["fecEmi"]}}</td>
+                        <td><strong>Fecha emisión:</strong> {{ isset($json["fhRecibido"]) ? date('d/m/Y', strtotime($json["fhRecibido"])) : (isset($json["identificacion"]["fecEmi"]) ? date('d/m/Y', strtotime($json["identificacion"]["fecEmi"])) : '') }}</td>
                     </tr>
                     <tr>
                         <td><strong>Hora de emisión:</strong></td>
-                        <td>{{$comprobante[0][0]["horEmi"]}}</td>
-                        <td><strong>Documento interno No:</strong>{{$comprobante[0][0]["nu_doc"]}}</td>
+                        <td>{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? '') }}</td>
+                        <td><strong>Documento interno No:</strong>{{$documento[0]["actual"]}}</td>
                     </tr>
                     <tr>
                         <td colspan="3" align="center">
@@ -149,33 +154,39 @@
 
                     <tr>
                         <td align="right" width="100px"><strong>Nombre:</strong></td>
-                        <td colspan="2" >{{$comprobante[0][0]["id_cliente"]}} - {{$comprobante[0][0]["nombre"]}}  </td>
+                        <td colspan="2" >{{$cliente[0]["nombre"] ?? ($json["receptor"]["nombre"] ?? '')}}  </td>
                     </tr>
                     <tr>
-                        <td align="right"><strong>Actividad económica:</strong></td>
-                        <td width="60%">{{$comprobante[0][0]["descActividad_receptor"]}}</td>
-                        <td><strong>NIT:</strong> {{$comprobante[0][0]["nit_receptor"]}}</td>
+                        <td align="right"><strong>Tipo Documento:</strong></td>
+                        <td width="60%">{{tipoDocumento($cliente[0]["tipoDocumento"] ?? ($json["receptor"]["tipoDocumento"] ?? null))}}</td>
+                        <td><strong>No.Documento:</strong> {{$cliente[0]["numDocumento"] ?? ($json["receptor"]["numDocumento"] ?? '')}}</td>
                     </tr>
                     <tr>
                         <td align="right"><strong>Correo electrónico:</strong></td>
-                        <td>{{$comprobante[0][0]["correo_receptor"]}}</td>
-                        <td><strong>NRC:</strong> {{$comprobante[0][0]["nrc_receptor"]}}</td>
+                        <td>{{$cliente[0]["correo"] ?? ($json["receptor"]["correo"] ?? '')}}</td>
+                        <td><strong>Teléfono:</strong> {{$cliente[0]["telefono"] ?? ($json["receptor"]["telefono"] ?? '')}}</td>
                     </tr>
                     <tr>
                         <td align="right"><strong>Dirección:</strong></td>
-                        <td>{{$comprobante[0][0]["complemento_receptor"]}}</td>
-                        <td><strong>Teléfono:</strong> {{$comprobante[0][0]["telefono_receptor"]}}</td>
+                        <td>{{$cliente[0]["direccion"] ?? ($json["receptor"]["direccion"]["complemento"] ?? '')}}</td>
+                        <td></td>
                     </tr>
 
 
                     <tr>
                         <td align="right"><strong>Municipio:</strong></td>
-                        <td>{{$comprobante[0][0]["municipio_receptor"]}}</td>
-                        <td><strong>Forma pago:</strong> {{$comprobante[0][0]["condicionOperacion"]}}</td>
+                        <td>{{$MunicipioR}}</td>
+                        <td><strong>Forma pago:</strong> @if($totales['condicionOperacion']=="1")
+                            CONTADO
+                            @elseif ($totales['condicionOperacion']=="2")
+                            CREDITO
+                            @elseif ($totales['condicionOperacion']=="3")
+                            OTRO
+                        @endif</td>
                     </tr>
                     <tr>
                         <td align="right"><strong>Departamento:</strong></td>
-                        <td>{{$comprobante[0][0]["departamento_receptor"]}}</td>
+                        <td>{{$DepartamentoR}}</td>
                         <td><strong>Moneda:</strong>USD</td>
                     </tr>
 
@@ -218,19 +229,19 @@
             </tr>
         </thead>
         <tbody>
-            @foreach ($comprobante[1] as $d)
+            @foreach ($detalle as $d)
 
 
             <tr>
                 <th>{{$loop->index+1}}</th>
-                <td>1</td>
-                <td>{{$d["descripcion"]}}</td>
-                <td align="right">{{FNumero($d["pre_unitario"])}}</td>
+                <td>{{$d["cantidad"] ?? $d["cantidad"]}}</td>
+                <td>{{$d["descripcion"] ?? $d["descripcion"]}}</td>
+                <td align="right">{{FNumero(($d["precio_unitario"] ?? $d["precioUni"] ?? 0) + ($d["iva"] ?? $d["ivaItem"] ?? 0))}}</td>
                 <td align="right">0.00</td>
-                <td align="right">{{FNumero($d["imp_int_det"])}}</td>
-                <td align="right">{{FNumero($d["no_sujetas"])}}</td>
-                <td align="right">{{FNumero($d["excento"])}}</td>
-                <td align="right">{{FNumero($d["gravado"])}}</td>
+                <td align="right">{{FNumero($d["no_imponible"] ?? 0)}}</td>
+                <td align="right">{{FNumero($d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0)}}</td>
+                <td align="right">{{FNumero($d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
+                <td align="right">{{FNumero(($d["gravadas"] ?? $d["ventaGravada"] ?? 0) + ($d["iva"] ?? $d["ivaItem"] ?? 0))}}</td>
             </tr>
             @endforeach
         </tbody>
@@ -244,18 +255,18 @@
                     <td width="490px">
                         <table width="100%">
                             <tr>
-                                <td colspan="2"><strong>Valor en Letras:</strong> {{$comprobante[0][0]["total_letras"]}}</td>
+                                <td colspan="2"><strong>Valor en Letras:</strong> {{$totales["totalLetras"] ?? $totales["totalLetras"] ?? ''}}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" align="center" style="background-color: lightgray;"><strong>EXTENSIÓN</strong></td>
                             </tr>
                             <tr>
-                                <td width="245px"><strong>Nombre entrega</strong> {{$comprobante[0][0]["nombEntrega"]}}</td>
-                                <td><strong>No Documento</strong> {{$comprobante[0][0]["docuEntrega"]}}</td>
+                                <td width="245px"><strong>Nombre entrega</strong> {{$json["extension"]["nombEntrega"] ?? ''}}</td>
+                                <td><strong>No Documento</strong> {{$json["extension"]["docuEntrega"] ?? ''}}</td>
                             </tr>
                             <tr>
-                                <td><strong>Nombre recibe</strong> {{$comprobante[0][0]["nombRecibe"]}}</td>
-                                <td><strong>No Documento</strong> {{$comprobante[0][0]["docuRecibe"]}}</td>
+                                <td><strong>Nombre recibe</strong> {{$json["extension"]["nombRecibe"] ?? ''}}</td>
+                                <td><strong>No Documento</strong> {{$json["extension"]["docuRecibe"] ?? ''}}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" align="center" style="background-color: lightgray;"><strong>OBSERVACIONES</strong></td>
@@ -300,14 +311,14 @@
                         <table style="border-spacing: 0 0;">
                             <tr>
                                 <td width="80px">Sumas $</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_nosujeto"])}}</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_exento"])}}</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_gravado"])}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalNoSuj"] ?? $totales["totalNoSuj"] ?? 0)}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalExenta"] ?? $totales["totalExenta"] ?? 0)}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalGravada"] ?? $totales["totalGravada"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3" width="160px">Suma total de operaciones</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotalVentas"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["subTotalVentas"] ?? $totales["subTotal"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
@@ -317,37 +328,37 @@
                             </tr>
                             <tr>
                                 <td colspan="3" width="160px">Impuestos al Valor Agregado 13%</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["iva"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["totalIva"] ?? $totales["totalIva"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">Sub-Total</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotal"] ?? $totales["subTotal"] ?? 0) + ($totales["totalIva"] ?? $totales["totalIva"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">IVA Percibido</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["ivaPerci1"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["ivaPerci1"] ?? $totales["totalIva"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">IVA Retenido</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["ivaRete1"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["ivaRete1"] ?? $totales["ivaRete1"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">Monto Total de la operación</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["montoTotalOperacion"] ?? $totales["montoTotalOperacion"] ?? 0) + ($totales["totalIva"] ?? $totales["totalIva"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">Total otros montos no afectos</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["totalNoGravado"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["totalNoGravado"] ?? $totales["totalNoGravado"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3" ><strong>TOTAL A PAGAR</strong></td>
-                                <td align="right" class="cuadro-izq"><strong>{{FNumero($comprobante[0][0]["totalPagar"])}}</strong></td>
+                                <td align="right" class="cuadro-izq"><strong>{{FNumero($totales["totalPagar"] ?? $totales["totalPagar"] ?? 0)}}</strong></td>
 
                             </tr>
 
@@ -357,15 +368,15 @@
                 </tr>
                 <tr class="cuadro">
                     <td colspan="2" style="font-size:6px;"><span style="margin:0;padding=0;"><center>Condiciones generales de los servicios prestados por
-                        {{$comprobante[0][0]["nombre_empresa"]}}</center><br style="margin:0;padding=0;">
-                    • {{$comprobante[0][0]["nombre_empresa"]}}. declara expresamente que actúa como agente representante o distribuidor de
+                        {{$emisor[0]["nombre"] ?? ''}}</center><br style="margin:0;padding=0;">
+                    • {{$emisor[0]["nombre"] ?? ''}}. declara expresamente que actúa como agente representante o distribuidor de
                     los
                     transportistas aéreos, que previamente la han autorizado para vender transporte aéreo de su propiedad, atendiendo a lo
                     estipulado en el Régimen respectivo del Código de Comercio de El Salvador, por ende, se sujeta estrictamente a las
                     instrucciones emanadas por ellos, sin tener injerencia alguna en cuanto al precio de tarifa , políticas de equipaje,
                     horarios de vuelos, entre otras condiciones.
                     • El contrato de transporte Aéreo se celebra entre el consumidor o pasajero y el transportista aéreo, por ende,
-                    {{$comprobante[0][0]["nombre_empresa"]}}, no tiene responsabilidad alguna en casos de muerte o lesiones de los
+                    {{$emisor[0]["nombre"] ?? ''}}, no tiene responsabilidad alguna en casos de muerte o lesiones de los
                     pasajeros, destrucción,
                     perdida o avería de su equipaje, así como por atrasaos, huelgas, terremotos o cualquier otro acontecimiento de fuerza
                     mayor. El contrato se rige por la Ley Orgánica de Aviación Civil y Convenios Internacionales ratificados por el Estado
