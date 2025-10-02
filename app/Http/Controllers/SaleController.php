@@ -2214,8 +2214,8 @@ class SaleController extends Controller
         if ($dte && $dte->json) {
             // Si hay DTE, usar PDF oficial y JSON enviado
             $pdf = $this->genera_pdf($id_factura);
-            $json_root = json_decode($dte->json);
-            $json_enviado = $json_root->json->json_enviado ?? $json_root;
+            $json_root = json_decode($dte->json, true); // Decodificar como array
+            $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
             $archivos = [
@@ -2224,12 +2224,12 @@ class SaleController extends Controller
             ];
 
             $data = [
-                "nombre" => $json_enviado->receptor->nombre ?? $nombre,
+                "nombre" => $json_enviado['receptor']['nombre'] ?? $nombre,
                 "numero" => $numero,
-                "json" => json_decode(json_encode($json_enviado), true) // Convertir objeto a array
+                "json" => $json_enviado // Ya es un array
             ];
 
-            $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $numero) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');
+            $asunto = "Comprobante de Venta No." . ($json_enviado['identificacion']['numeroControl'] ?? $numero) . ' de Proveedor: ' . ($json_enviado['emisor']['nombre'] ?? 'Empresa');
         } else {
             // Si no hay DTE, usar PDF local
             $pdf = $this->genera_pdflocal($id_factura);
@@ -2342,8 +2342,8 @@ class SaleController extends Controller
 
             // Generar PDF oficial
             $pdf = $this->genera_pdf($id_factura);
-            $json_root = json_decode($comprobante[0]->JsonDTE);
-            $json_enviado = $json_root->json->json_enviado ?? $json_root;
+            $json_root = json_decode($comprobante[0]->JsonDTE, true); // Decodificar como array
+            $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
             $archivos = [
@@ -2352,12 +2352,12 @@ class SaleController extends Controller
             ];
 
             $data = [
-                "nombre" => $json_enviado->receptor->nombre ?? $nombre_cliente,
+                "nombre" => $json_enviado['receptor']['nombre'] ?? $nombre_cliente,
                 "numero" => $request->numero ?? $comprobante[0]->nu_doc,
-                "json" => json_decode(json_encode($json_enviado), true) // Convertir objeto a array
+                "json" => $json_enviado // Ya es un array
             ];
 
-            $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $data["numero"]) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');
+            $asunto = "Comprobante de Venta No." . ($json_enviado['identificacion']['numeroControl'] ?? $data["numero"]) . ' de Proveedor: ' . ($json_enviado['emisor']['nombre'] ?? 'Empresa');
 
             $correo = new EnviarCorreo($data);
             $correo->subject($asunto);
@@ -2743,14 +2743,17 @@ class SaleController extends Controller
         if ($dte && $dte->json) {
             // Armar PDF oficial y JSON
             $pdf = $this->genera_pdf($saleId);
-            $jsonRoot = json_decode($dte->json);
-            $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-            $jsonLimpio = $this->limpiarJsonParaCorreo($jsonEnviado ?: $jsonRoot);
+            $jsonRoot = json_decode($dte->json, true); // Decodificar como array
+            $jsonEnviado = $jsonRoot['json']['json_enviado'] ?? null;
+
+            // Usar json_enviado si existe, sino usar el json completo
+            $jsonParaCorreo = $jsonEnviado ?: $jsonRoot;
+            $jsonLimpio = $this->limpiarJsonParaCorreo($jsonParaCorreo);
 
             $dataCorreo = [
                 'nombre' => $nombreCliente,
                 'numero' => $numero,
-                'json' => json_decode(json_encode($jsonEnviado ?: $jsonRoot), true) // Convertir objeto a array
+                'json' => $jsonParaCorreo // Ya es un array
             ];
 
             $correo = new EnviarCorreo($dataCorreo);
