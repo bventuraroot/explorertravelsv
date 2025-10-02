@@ -2332,8 +2332,8 @@ class SaleController extends Controller
             "documento" => $documento,
         ];
 
-        // Para FAC, CRF y FSE, alinear estructura (emisor/cliente/detalle/totales del tope de sales.json)
-        if (in_array($tipo_comprobante, ['01', '03', '14'])) {
+        // Para FAC, CRF, FSE, NCR y NDB, alinear estructura (emisor/cliente/detalle/totales del tope de sales.json)
+        if (in_array($tipo_comprobante, ['01', '03', '14', '05', '06'])) {
             if (isset($salesJson["emisor"]) && is_array($salesJson["emisor"])) {
                 $data["emisor"] = $salesJson["emisor"]; // ya viene como arreglo [ {...} ]
             }
@@ -2347,7 +2347,7 @@ class SaleController extends Controller
                 $data["totales"] = $salesJson["totales"]; // objeto asociativo
             }
 
-            // Para FAC, CRF y FSE, si tenemos json_enviado, usar su estructura de emisor que es compatible con el template
+            // Para FAC, CRF, FSE, NCR y NDB, si tenemos json_enviado, usar su estructura de emisor que es compatible con el template
             if (isset($json["emisor"]) && is_array($json["emisor"])) {
                 $data["emisor"] = [$json["emisor"]]; // convertir a arreglo como espera el template
             }
