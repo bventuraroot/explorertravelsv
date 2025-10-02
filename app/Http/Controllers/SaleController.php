@@ -2279,17 +2279,13 @@ class SaleController extends Controller
         //dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
-        // Usar el JSON confirmado por Hacienda guardado en sales.json -> json.json_enviado
-        $data = json_decode($comprobante[0]["jsonlocal"] ?? $comprobante[0]["json"], true);
-        if (isset($data["json"])) {
-            if (is_array($data["json"]) && isset($data["json"]["json_enviado"])) {
-                $data["json"] = $data["json"]["json_enviado"]; // priorizar json_enviado
-            } elseif (is_string($data["json"])) {
-                $maybeArray = json_decode($data["json"], true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                    // Si dentro hay json_enviado, usarlo
-                    $data["json"] = $maybeArray["json_enviado"] ?? $maybeArray;
-                }
+        // Mantener construcción desde DTE->json como en FAC/CCF
+        $data = json_decode($comprobante[0]["json"], true);
+        // Asegurar que $data["json"] sea arreglo si viene como string
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $maybeArray = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                $data["json"] = $maybeArray;
             }
         }
         // Asegurar que $data["json"] sea un arreglo si viene como string
@@ -2390,15 +2386,11 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
-        // Usar json_enviado si existe dentro de sales.json->json
-        if (isset($data["json"])) {
-            if (is_array($data["json"]) && isset($data["json"]["json_enviado"])) {
-                $data["json"] = $data["json"]["json_enviado"];
-            } elseif (is_string($data["json"])) {
-                $maybeArray = json_decode($data["json"], true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                    $data["json"] = $maybeArray["json_enviado"] ?? $maybeArray;
-                }
+        // Mantener estructura original; si json es string, normalizar a arreglo
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $maybeArray = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                $data["json"] = $maybeArray;
             }
         }
         //dd($data);
@@ -2505,8 +2497,9 @@ class SaleController extends Controller
             // Armar PDF oficial y JSON
             $pdf = $this->genera_pdf($saleId);
             $jsonRoot = json_decode($dte->json);
-            $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-            $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
+            // Adjuntar SIEMPRE el json_enviado si existe, como solicitaste
+            $jsonEnviado = $jsonRoot->json->json_enviado ?? ($jsonRoot->json ?? $jsonRoot);
+            $jsonPretty = json_encode($jsonEnviado, JSON_PRETTY_PRINT);
 
             $dataCorreo = [
                 'nombre' => $nombreCliente,
