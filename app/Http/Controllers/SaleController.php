@@ -2405,8 +2405,9 @@ class SaleController extends Controller
 
         //print_r($data);
         //dd($data);
-        //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
-        $tipo_comprobante = $comprobante[0]['codemh'];
+        // Determinar tipo de comprobante desde los datos locales (sin depender de joins)
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"]
+            ?? ($data["json"]["identificacion"]["tipoDte"] ?? null);
         // Asignar plantilla local por defecto para evitar variable indefinida
         $rptComprobante = 'pdf.faclocal';
         switch ($tipo_comprobante) {
@@ -2468,8 +2469,9 @@ class SaleController extends Controller
     }
     public function print($id)
     {
-        //$pdf = $this->genera_pdf($id);
-        $pdf = $this->genera_pdflocal($id);
+        // Si existe DTE para esta venta, imprimir PDF oficial; de lo contrario, PDF local
+        $tieneDte = \App\Models\Dte::where('sale_id', $id)->exists();
+        $pdf = $tieneDte ? $this->genera_pdf($id) : $this->genera_pdflocal($id);
         return $pdf->stream('comprobante.pdf');
     }
 
