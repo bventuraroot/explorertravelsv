@@ -2280,13 +2280,18 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         $comprobante = json_decode($factura, true);
-        // Tomar sales.json y priorizar json.json_enviado
-        $salesJsonRaw = $comprobante[0]["json"] ?? null;
-        dd($salesJsonRaw);
+        // Tomar sales.json y priorizar json.json_enviado (con robustez si vienen strings anidados)
+        $salesJsonRaw = $comprobante[0]["json"] ?? '{}';
         $salesJson = is_string($salesJsonRaw) ? json_decode($salesJsonRaw, true) : (is_array($salesJsonRaw) ? $salesJsonRaw : []);
+        if (isset($salesJson["json"]) && is_string($salesJson["json"])) {
+            $maybe = json_decode($salesJson["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($maybe)) {
+                $salesJson["json"] = $maybe;
+            }
+        }
         $json = [];
         if (isset($salesJson["json"]["json_enviado"])) {
-            $json = $salesJson["json"]["json_enviado"];
+            $json = is_string($salesJson["json"]["json_enviado"]) ? json_decode($salesJson["json"]["json_enviado"], true) : $salesJson["json"]["json_enviado"];
         } elseif (isset($salesJson["json"])) {
             $json = $salesJson["json"];
         }
@@ -2326,6 +2331,22 @@ class SaleController extends Controller
             "json" => $json,
             "documento" => $documento,
         ];
+
+        // Para FAC y CRF, alinear estructura a la usada por FSE (emisor/cliente/detalle/totales del tope de sales.json)
+        if (in_array($tipo_comprobante, ['01', '03'])) {
+            if (isset($salesJson["emisor"]) && is_array($salesJson["emisor"])) {
+                $data["emisor"] = $salesJson["emisor"]; // ya viene como arreglo [ {...} ]
+            }
+            if (isset($salesJson["cliente"]) && is_array($salesJson["cliente"])) {
+                $data["cliente"] = $salesJson["cliente"]; // ya viene como arreglo [ {...} ]
+            }
+            if (isset($salesJson["detalle"]) && is_array($salesJson["detalle"])) {
+                $data["detalle"] = $salesJson["detalle"]; // arreglo de items
+            }
+            if (isset($salesJson["totales"]) && is_array($salesJson["totales"])) {
+                $data["totales"] = $salesJson["totales"]; // objeto asociativo
+            }
+        }
         @$fecha = $json["fhRecibido"] ?? null;
         @$qr = base64_encode(codigoQR(($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null)), ($json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? null)), $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
