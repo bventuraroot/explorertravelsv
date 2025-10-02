@@ -2298,10 +2298,10 @@ class SaleController extends Controller
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05': // NCR - usar plantilla de CCF como base
-                $rptComprobante = 'pdf.crf';
+            case '05': // NCR - usar plantilla oficial de NCR
+                $rptComprobante = 'pdf.ncr';
                 break;
-            case '06':
+            case '06': // NDB - usar plantilla oficial de NDB
                 $rptComprobante = 'pdf.ndb';
                 break;
 
@@ -2386,10 +2386,10 @@ class SaleController extends Controller
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05': // NCR local - usar plantilla local de CCF
-                $rptComprobante = 'pdf.crflocal';
+            case '05': // NCR local - usar plantilla local de NCR
+                $rptComprobante = 'pdf.ncrlocal';
                 break;
-            case '06':
+            case '06': // NDB local - usar plantilla oficial de NDB (misma estructura)
                 $rptComprobante = 'pdf.ndb';
                 break;
 
