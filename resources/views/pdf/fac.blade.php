@@ -92,7 +92,9 @@
                     <tr>
                         <td>
 
-
+                            @php
+                                dd($emisor);
+                            @endphp
                         </td>
                     </tr>
                     <tr>
@@ -190,7 +192,7 @@
                     <tr>
                         <table>
                             <tr>
-                                <td  width="100px"><strong>Nombre:</strong></td> 
+                                <td  width="100px"><strong>Nombre:</strong></td>
                                 <td colspan="2" >{{$json["receptor"]["nombre"]}}  </td>
                             </tr>
                         </table>
