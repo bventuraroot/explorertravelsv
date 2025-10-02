@@ -276,12 +276,12 @@
                 <th>{{$loop->index+1}}</th>
                 <td align="center">{{$d["cantidad"]}}</td>
                 <td>{{$d["descripcion"]}}</td>
-                <td align="right">{{FNumero($d["precio_unitario"])}}</td>
+                <td align="right">{{FNumero($d["precio_unitario"] ?? $d["precioUni"] ?? 0)}}</td>
                 <td align="right">0.00</td>
-                <td align="right">{{FNumero($d["no_imponible"])}}</td>
-                <td align="right">{{FNumero($d["no_sujetas"])}}</td>
-                <td align="right">{{FNumero($d["exentas"])}}</td>
-                <td align="right">{{FNumero($d["gravadas"])}}</td>
+                <td align="right">{{FNumero($d["no_imponible"] ?? $d["noGravado"] ?? 0)}}</td>
+                <td align="right">{{FNumero($d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0)}}</td>
+                <td align="right">{{FNumero($d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
+                <td align="right">{{FNumero($d["gravadas"] ?? $d["ventaGravada"] ?? 0)}}</td>
             </tr>
 
             @if (($loop->index+1) % 37 == 0)
