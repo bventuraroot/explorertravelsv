@@ -318,13 +318,31 @@ class DteAdminController extends Controller
         $contingencia->nombreResponsable = $request->nombreResponsable ?? $request->nombre ?? auth()->user()->name;
         $contingencia->tipoDocResponsable = $request->tipoDocResponsable ?? '13';
         $contingencia->nuDocResponsable = $request->nuDocResponsable ?? '00000000-0';
-        $fc = \Carbon\Carbon::parse($request->fechaCreacion ?? now(), 'America/El_Salvador');
+        $fc = \Carbon\Carbon::parse($request->fechaCreacion ?? $request->fecha_inicio ?? $request->fechaInicioFin ?? now(), 'America/El_Salvador');
         $fi = \Carbon\Carbon::parse($request->fechaInicioFin ?? $request->fecha_inicio ?? now(), 'America/El_Salvador');
+        // Hora de creación exactamente desde el formulario cuando exista
+        $horaCreacionStr = null;
+        if (!empty($request->horaCreacion)) {
+            // Puede venir como HH:mm o HH:mm:ss
+            try {
+                $horaCreacionStr = \Carbon\Carbon::createFromFormat('H:i:s', $request->horaCreacion, 'America/El_Salvador')->format('H:i:s');
+            } catch (\Throwable $e) {
+                try {
+                    $horaCreacionStr = \Carbon\Carbon::createFromFormat('H:i', $request->horaCreacion, 'America/El_Salvador')->format('H:i:s');
+                } catch (\Throwable $e2) {
+                    $horaCreacionStr = null;
+                }
+            }
+        }
+        if ($horaCreacionStr === null) {
+            // Extraer hora de fechaCreacion/fecha_inicio si no se brindó separada
+            $horaCreacionStr = $fc->format('H:i:s');
+        }
         $contingencia->fechaCreacion = $fc->toDateTimeString();
         $contingencia->fInicio = $fi->toDateString();
         $fFin = \Carbon\Carbon::parse($request->fecha_fin ?? $request->fecha_inicio ?? now(), 'America/El_Salvador');
         $contingencia->fFin = $fFin->toDateString();
-        $contingencia->horaCreacion = $fc->format('H:i:s');
+        $contingencia->horaCreacion = $horaCreacionStr;
         $contingencia->hInicio = $fi->format('H:i:s');
         $contingencia->hFin = $fFin->format('H:i:s');
         $contingencia->codigoGeneracion = strtoupper(\Str::uuid()->toString());
