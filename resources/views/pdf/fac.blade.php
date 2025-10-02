@@ -146,7 +146,9 @@
                     </tr>
                     <tr>
                         <td><strong>Código de Generación:</strong></td>
-                        <td colspan="2">{{$json["codigoGeneracion"]}}</td>
+                        <td colspan="2">
+                            {{ $json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? '') }}
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>Sello de recepción:</strong></td>
@@ -154,7 +156,7 @@
                     </tr>
                     <tr>
                         <td><strong>Número de Control:</strong></td>
-                        <td colspan="2">{{$json["identificacion"]["numeroControl"]}}</td>
+                        <td colspan="2">{{ $json["identificacion"]["numeroControl"] ?? '' }}</td>
                     </tr>
                     <tr>
                         <td><strong>Modélo facturación:</strong></td>
@@ -164,11 +166,11 @@
                     <tr>
                         <td><strong>Tipo de transmisión</strong></td>
                         <td>Normal</td>
-                        <td><strong>Fecha emisión:</strong>{{date('d/m/Y', strtotime($json["fhRecibido"]))}} </td>
+                        <td><strong>Fecha emisión:</strong>{{ isset($json["fhRecibido"]) ? date('d/m/Y', strtotime($json["fhRecibido"])) : (isset($json["identificacion"]["fecEmi"]) ? date('d/m/Y', strtotime($json["identificacion"]["fecEmi"])) : '') }} </td>
                     </tr>
                     <tr>
                         <td><strong>Hora de emisión:</strong></td>
-                        <td>{{substr($json["fhRecibido"],12,8)}}</td>
+                        <td>{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? '') }}</td>
                         <td><strong>Documento interno No:</strong> {{$documento[0]["actual"]}}</td>
                     </tr>
                     <tr>
