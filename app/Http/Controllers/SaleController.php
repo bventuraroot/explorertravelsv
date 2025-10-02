@@ -2278,7 +2278,6 @@ class SaleController extends Controller
             )
             ->where('sales.id', '=', $id)
             ->get();
-        dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
