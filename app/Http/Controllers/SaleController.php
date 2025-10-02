@@ -2296,7 +2296,7 @@ class SaleController extends Controller
             }
         }
         //print_r($data);
-        dd($data);
+        dd($data["documento"][0]["tipodocumento"]);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"];
         // Asignar plantilla por defecto para evitar variable indefinida
         $rptComprobante = 'pdf.fac';
