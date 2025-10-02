@@ -95,18 +95,18 @@
                     </tr>
                     <tr>
                         <td style="font-size: x-small;">
-                            <strong>{{$emisor[0]["nombre"]}}</strong>
+                            <strong>{{$emisor[0]["nombre"] ?? ''}}</strong>
                         </td>
                     </tr>
 
                     <tr>
-                        <td>NIT: {{$emisor[0]["nit"]}}</td>
+                        <td>NIT: {{$emisor[0]["nit"] ?? ''}}</td>
                     </tr>
                     <tr>
                         <td>NRC: {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
                     </tr>
                     <tr>
-                        <td>Actividad económica: {{$emisor[0]["descActividad"]}}</td>
+                        <td>Actividad económica: {{$emisor[0]["descActividad"] ?? ''}}</td>
                     </tr>
                     <tr>
                         <td>Dirección:
@@ -120,13 +120,13 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Número de teléfono: {{$emisor[0]["telefono"]}}</td>
+                        <td>Número de teléfono: {{$emisor[0]["telefono"] ?? ''}}</td>
                     </tr>
                     <tr>
-                        <td>Correo electrónico: {{$emisor[0]["correo"]}}</td>
+                        <td>Correo electrónico: {{$emisor[0]["correo"] ?? ''}}</td>
                     </tr>
                     <tr>
-                        <td>Nombre comercial: {{$emisor[0]["nombreComercial"]}}</td>
+                        <td>Nombre comercial: {{$emisor[0]["nombreComercial"] ?? ''}}</td>
                     </tr>
                     <tr>
                         <td>Tipo de establecimiento:
