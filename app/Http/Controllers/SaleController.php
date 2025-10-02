@@ -2253,6 +2253,13 @@ class SaleController extends Controller
                 "json" => $json_enviado // Ya es un array
             ];
 
+            // Debug: Log para verificar qué se está enviando al correo
+            Log::info('Debug data para correo', [
+                'json_tipo' => gettype($data["json"]),
+                'json_keys' => is_array($data["json"]) ? array_keys($data["json"]) : 'No es array',
+                'identificacion_existe' => isset($data["json"]["identificacion"]) ? 'Sí' : 'No'
+            ]);
+
             $asunto = "Comprobante de Venta No." . ($json_enviado['identificacion']['numeroControl'] ?? $numero) . ' de Proveedor: ' . ($json_enviado['emisor']['nombre'] ?? 'Empresa');
         } else {
             // Si no hay DTE, usar PDF local
@@ -2384,6 +2391,13 @@ class SaleController extends Controller
                 "numero" => $request->numero ?? $comprobante[0]->nu_doc,
                 "json" => $json_enviado // Ya es un array
             ];
+
+            // Debug: Log para verificar qué se está enviando al correo
+            Log::info('Debug data para correo en enviar_correo_con_dte', [
+                'json_tipo' => gettype($data["json"]),
+                'json_keys' => is_array($data["json"]) ? array_keys($data["json"]) : 'No es array',
+                'identificacion_existe' => isset($data["json"]["identificacion"]) ? 'Sí' : 'No'
+            ]);
 
             $asunto = "Comprobante de Venta No." . ($json_enviado['identificacion']['numeroControl'] ?? $data["numero"]) . ' de Proveedor: ' . ($json_enviado['emisor']['nombre'] ?? 'Empresa');
 
@@ -2810,6 +2824,13 @@ class SaleController extends Controller
                 'numero' => $numero,
                 'json' => $jsonParaCorreo // Ya es un array
             ];
+
+            // Debug: Log para verificar qué se está enviando al correo
+            Log::info('Debug data para correo en enviarCorreoAutomaticoVenta', [
+                'json_tipo' => gettype($dataCorreo["json"]),
+                'json_keys' => is_array($dataCorreo["json"]) ? array_keys($dataCorreo["json"]) : 'No es array',
+                'identificacion_existe' => isset($dataCorreo["json"]["identificacion"]) ? 'Sí' : 'No'
+            ]);
 
             $correo = new EnviarCorreo($dataCorreo);
             $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
