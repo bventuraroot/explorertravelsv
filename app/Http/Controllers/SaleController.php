@@ -2256,6 +2256,195 @@ class SaleController extends Controller
         Mail::to($email)->send($correo);
     }
 
+    /**
+     * Envía correo electrónico con factura PDF (para uso offline - sin JSON de Hacienda)
+     * Esta función verifica si hay DTE y redirige a la función apropiada
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function enviar_correo_offline(Request $request)
+    {
+        try {
+            // Validar datos requeridos
+            $request->validate([
+                'id_factura' => 'required|integer|exists:sales,id',
+                'email' => 'required|email',
+                'nombre_cliente' => 'nullable|string',
+            ]);
+
+            $id_factura = $request->id_factura;
+            $email = $request->email;
+            $nombre_cliente = $request->nombre_cliente;
+
+            // Verificar si existe DTE para esta venta
+            $dte = \App\Models\Dte::where('sale_id', $id_factura)->first();
+
+            if ($dte && $dte->json) {
+                // Si existe DTE, usar el método con DTE (PDF + JSON)
+                return $this->enviar_correo_con_dte($request);
+            } else {
+                // Si no existe DTE, usar el método offline (solo PDF)
+                return $this->enviar_correo_sin_dte($request);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error("Error en enviar_correo_offline para venta ID: {$request->id_factura} - " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar el correo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Envía correo con DTE (PDF + JSON)
+     */
+    private function enviar_correo_con_dte(Request $request)
+    {
+        try {
+            $id_factura = $request->id_factura;
+            $email = $request->email;
+            $nombre_cliente = $request->nombre_cliente;
+
+            // Obtener datos de la venta con DTE
+            $comprobante = Sale::join('dte', 'dte.sale_id', '=', 'sales.id')
+                ->join('companies', 'companies.id', '=', 'sales.company_id')
+                ->join('addresses', 'addresses.id', '=', 'companies.address_id')
+                ->join('countries', 'countries.id', '=', 'addresses.country_id')
+                ->join('departments', 'departments.id', '=', 'addresses.department_id')
+                ->join('municipalities', 'municipalities.id', '=', 'addresses.municipality_id')
+                ->join('clients as cli', 'cli.id', '=', 'sales.client_id')
+                ->join('addresses as add', 'add.id', '=', 'cli.address_id')
+                ->join('countries as cou', 'cou.id', '=', 'add.country_id')
+                ->join('departments as dep', 'dep.id', '=', 'add.department_id')
+                ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
+                ->select(
+                    'sales.*',
+                    'dte.json as JsonDTE',
+                    'dte.codigoGeneracion',
+                    'countries.name as PaisE',
+                    'departments.name as DepartamentoE',
+                    'municipalities.name as MunicipioE',
+                    'cou.name as PaisR',
+                    'dep.name as DepartamentoR',
+                    'muni.name as MunicipioR'
+                )
+                ->where('sales.id', '=', $id_factura)
+                ->get();
+
+            if ($comprobante->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró información de la venta con DTE'
+                ], 404);
+            }
+
+            // Generar PDF oficial
+            $pdf = $this->genera_pdf($id_factura);
+            $json_root = json_decode($comprobante[0]->JsonDTE);
+            $json_enviado = $json_root->json->json_enviado ?? $json_root;
+            $json = json_encode($json_enviado, JSON_PRETTY_PRINT);
+
+            $archivos = [
+                $comprobante[0]->codigoGeneracion . '.pdf' => $pdf->output(),
+                $comprobante[0]->codigoGeneracion . '.json' => $json
+            ];
+
+            $data = [
+                "nombre" => $json_enviado->receptor->nombre ?? $nombre_cliente,
+                "numero" => $request->numero ?? $comprobante[0]->nu_doc,
+                "json" => $json_enviado
+            ];
+
+            $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $data["numero"]) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');
+
+            $correo = new EnviarCorreo($data);
+            $correo->subject($asunto);
+            foreach ($archivos as $nombreArchivo => $rutaArchivo) {
+                $correo->attachData($rutaArchivo, $nombreArchivo);
+            }
+
+            Mail::to($email)->send($correo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo enviado exitosamente con PDF y JSON',
+                'data' => [
+                    'numero_factura' => $data["numero"],
+                    'email' => $email,
+                    'archivos' => array_keys($archivos)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("Error en enviar_correo_con_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar el correo con DTE: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Envía correo sin DTE (solo PDF local)
+     */
+    private function enviar_correo_sin_dte(Request $request)
+    {
+        try {
+            $id_factura = $request->id_factura;
+            $email = $request->email;
+            $nombre_cliente = $request->nombre_cliente;
+
+            // Obtener datos básicos de la venta
+            $venta = Sale::join('companies', 'companies.id', '=', 'sales.company_id')
+                ->select('sales.*', 'companies.name as company_name')
+                ->where('sales.id', $id_factura)
+                ->first();
+
+            if (!$venta) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró información de la venta'
+                ], 404);
+            }
+
+            // Generar PDF local
+            $pdf = $this->genera_pdflocal($id_factura);
+
+            $data = [
+                "nombre" => $nombre_cliente ?: 'Cliente',
+                "numero" => $request->numero ?? $venta->nu_doc,
+                "json" => null
+            ];
+
+            $asunto = "Comprobante de Venta No." . $data["numero"] . ' - ' . $venta->company_name;
+
+            $correo = new EnviarCorreo($data);
+            $correo->subject($asunto);
+            $correo->attachData($pdf->output(), 'venta_' . $id_factura . '.pdf');
+
+            Mail::to($email)->send($correo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo enviado exitosamente con PDF local',
+                'data' => [
+                    'numero_factura' => $data["numero"],
+                    'email' => $email,
+                    'archivos' => ['venta_' . $id_factura . '.pdf']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error("Error en enviar_correo_sin_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al enviar el correo sin DTE: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function genera_pdf($id)
     {
         $factura = Sale::leftjoin('dte', 'dte.sale_id', '=', 'sales.id')

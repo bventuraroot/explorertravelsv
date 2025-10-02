@@ -320,21 +320,36 @@ function EnviarCorreo(id_factura, correo, numero) {
 
             // Enviar correo
             $.ajax({
-                url: "/sale/envia_correo",
-                type: 'GET',
+                url: "/sale/enviar_correo_offline",
+                type: 'POST',
                 data: {
                     id_factura: id_factura,
                     email: email,
                     numero: numero,
+                    nombre_cliente: '', // Parámetro requerido por la nueva función
                     _token: _token
                 },
                 success: function(response) {
-                    Swal.fire({
-                        title: '¡Éxito!',
-                        text: `Comprobante enviado a: ${email}`,
-                        icon: 'success',
-                        confirmButtonText: 'OK'
-                    });
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Correo Enviado!',
+                            html: `
+                                <p>Comprobante enviado exitosamente a:</p>
+                                <strong>${email}</strong>
+                                <br><br>
+                                <small class="text-muted">Factura: ${response.data?.numero_factura || numero}</small>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'Error al enviar el correo',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 },
                 error: function(xhr) {
                     let errorMessage = 'Error al enviar el correo';
