@@ -2317,6 +2317,7 @@ class SaleController extends Controller
                 # code...
                 break;
         }
+        $qr = '';
         @$fecha = $data["json"]["fhRecibido"] ?? ($data["fhRecibido"] ?? null);
         $ambienteQr = $data["documento"][0]["ambiente"]
             ?? ($data["json"]["identificacion"]["ambiente"] ?? ($data["identificacion"]["ambiente"] ?? null));
