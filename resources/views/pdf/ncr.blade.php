@@ -380,7 +380,7 @@
                     Estado, así como llegar al aeropuerto a las horas señaladas por el transportista y con la antelación suficiente que le
                     permite completar los tramite de chequeo y salida.
                     • El consumidor declara que previo a la compra de su boleto aéreo o paquete vacacional, personeros de
-                    {{$comprobante[0][0]["nombre_empresa"]}}, explicaron cada una de las condiciones descritas anteriormente, entendiéndolas
+                    {{$emisor[0]["nombre"] ?? ''}}, explicaron cada una de las condiciones descritas anteriormente, entendiéndolas
                     y aceptándolas, eximiéndola
                     de tal forma de cualquier responsabilidad que se derive de ellas.</span>
                     </td>
