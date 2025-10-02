@@ -2277,10 +2277,20 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        // Normalizar colección/objeto a arreglo asociativo
-        $comprobante = json_decode(json_encode($factura), true);
-        //dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["json"], true);
+        // Normalizar a arreglo asociativo de forma robusta
+        if ($factura instanceof \Illuminate\Support\Collection) {
+            $comprobante = $factura->toArray();
+        } else {
+            $comprobante = json_decode(json_encode($factura), true);
+        }
+        if (!is_array($comprobante) || !isset($comprobante[0])) {
+            return abort(404, 'No se encontró información del DTE para esta venta.');
+        }
+        $jsonRaw = $comprobante[0]["json"] ?? null;
+        $data = is_string($jsonRaw) ? json_decode($jsonRaw, true) : (is_array($jsonRaw) ? $jsonRaw : []);
+        if (empty($data) || !isset($data["documento"][0]["tipodocumento"])) {
+            return abort(422, 'JSON de DTE inválido o incompleto para generar PDF.');
+        }
         //print_r($data);
         //dd($data);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"];
