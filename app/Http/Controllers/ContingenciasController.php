@@ -245,12 +245,27 @@ class ContingenciasController extends Controller
                 $ban++;
             }
 
+            // Normalizar formatos requeridos por MH
+            $__fInicio = ($cola->fInicio instanceof \Carbon\Carbon)
+                ? $cola->fInicio->copy()
+                : \Carbon\Carbon::parse($cola->fInicio);
+            $__fFin = ($cola->fFin instanceof \Carbon\Carbon)
+                ? $cola->fFin->copy()
+                : \Carbon\Carbon::parse($cola->fFin);
+            $__hInicio = ($cola->hInicio instanceof \Carbon\Carbon)
+                ? $cola->hInicio->copy()
+                : \Carbon\Carbon::parse($cola->hInicio ?? '00:00:00');
+            $__hFin = ($cola->hFin instanceof \Carbon\Carbon)
+                ? $cola->hFin->copy()
+                : \Carbon\Carbon::parse($cola->hFin ?? '00:00:00');
+
             $motivo = [
-                "fInicio"               => $cola->fInicio,
-                "fFin"                  => $cola->fFin,
-                "hInicio"               => $cola->hInicio,
-                "hFin"                  => $cola->hFin,
-                "tipoContingencia"      => intval($cola->tipoContingencia),
+                "fInicio"               => $__fInicio->format('Y-m-d'),
+                "fFin"                  => $__fFin->format('Y-m-d'),
+                "hInicio"               => $__hInicio->format('H:i:s'),
+                "hFin"                  => $__hFin->format('H:i:s'),
+                //"tipoContingencia"      => intval($cola->tipoContingencia),
+                "tipoContingencia"      => 2,
                 "motivoContingencia"    => $cola->motivoContingencia
             ];
 
