@@ -2374,7 +2374,6 @@ class SaleController extends Controller
         //dd(asset('/temp'));
         // $pdf->set_option('tempDir', asset('/temp'));
         //dd($data);
-        $pdf->loadHtml(ob_get_clean());
         $pdf->setPaper($tamaño, $orientacion);
         $pdf->getDomPDF()->set_option("enable_php", true);
         $pdf->loadView($rptComprobante, $data);
@@ -2464,7 +2463,6 @@ class SaleController extends Controller
         //dd(asset('/temp'));
         // $pdf->set_option('tempDir', asset('/temp'));
         //dd($data);
-        $pdf->loadHtml(ob_get_clean());
         $pdf->setPaper($tamaño, $orientacion);
         $pdf->getDomPDF()->set_option("enable_php", true);
         $pdf->loadView($rptComprobante, $data);
