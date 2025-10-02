@@ -2277,40 +2277,19 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        // Normalizar a arreglo asociativo de forma robusta
-        if ($factura instanceof \Illuminate\Support\Collection) {
-            $comprobante = $factura->toArray();
-        } else {
-            $comprobante = json_decode(json_encode($factura), true);
-        }
-        if (!is_array($comprobante) || !isset($comprobante[0])) {
-            return abort(404, 'No se encontró información del DTE para esta venta.');
-        }
-        $jsonRaw = $comprobante[0]["json"] ?? null;
+        // Normalizar colección y decodificar JSON de DTE como antes, sin abortar
+        $comprobante = $factura instanceof \Illuminate\Support\Collection ? $factura->toArray() : json_decode(json_encode($factura), true);
+        $jsonRaw = $comprobante[0]["json"] ?? '{}';
         $data = is_string($jsonRaw) ? json_decode($jsonRaw, true) : (is_array($jsonRaw) ? $jsonRaw : []);
-        // Fallback: intentar desde sales.json usando json_enviado si existe
-        if (empty($data) || !isset($data["documento"][0]["tipodocumento"])) {
-            $jsonLocalRaw = $comprobante[0]["jsonlocal"] ?? null;
-            $local = is_string($jsonLocalRaw) ? json_decode($jsonLocalRaw, true) : (is_array($jsonLocalRaw) ? $jsonLocalRaw : []);
-            if (!empty($local)) {
-                if (isset($local["json"])) {
-                    if (is_string($local["json"])) {
-                        $maybe = json_decode($local["json"], true);
-                        if (json_last_error() === JSON_ERROR_NONE) {
-                            $local["json"] = $maybe;
-                        }
-                    }
-                    if (isset($local["json"]["json_enviado"])) {
-                        $local["json"] = $local["json"]["json_enviado"];
-                    }
-                }
-                if (isset($local["documento"][0]["tipodocumento"])) {
-                    $data = $local;
-                }
-            }
+        if (!is_array($data)) { $data = []; }
+        // Compatibilidad: si alguna subestructura viene serializada
+        if (isset($data["documento"]) && is_string($data["documento"])) {
+            $docMaybe = json_decode($data["documento"], true);
+            if (json_last_error() === JSON_ERROR_NONE) { $data["documento"] = $docMaybe; }
         }
-        if (empty($data) || !isset($data["documento"][0]["tipodocumento"])) {
-            return abort(422, 'JSON de DTE inválido o incompleto para generar PDF.');
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $jsonMaybe = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE) { $data["json"] = $jsonMaybe; }
         }
         //print_r($data);
         //dd($data);
