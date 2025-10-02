@@ -2282,6 +2282,7 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         // Tomar sales.json y priorizar json.json_enviado
         $salesJsonRaw = $comprobante[0]["json"] ?? null;
+        dd($salesJsonRaw);
         $salesJson = is_string($salesJsonRaw) ? json_decode($salesJsonRaw, true) : (is_array($salesJsonRaw) ? $salesJsonRaw : []);
         $json = [];
         if (isset($salesJson["json"]["json_enviado"])) {
@@ -2320,82 +2321,13 @@ class SaleController extends Controller
                 # code...
                 break;
         }
-        // Normalizar estructura para FSE con DTE oficial a las variables usadas en pdf.fse
-        if ($tipo_comprobante === '14') {
-            // Asegurar presencia de llaves
-            $doc  = is_array($documento) ? $documento : [];
-
-            // Emisor
-            $emisorJson = isset($json["emisor"]) && is_array($json["emisor"]) ? $json["emisor"] : [];
-            $emisor = [[
-                "nombre" => $emisorJson["nombre"] ?? ($emisorJson["nombreRazonSocial"] ?? ''),
-                "nit" => $emisorJson["nit"] ?? '',
-                "ncr" => $emisorJson["nrc"] ?? '',
-                "descActividad" => $emisorJson["descActividad"] ?? ($emisorJson["actividadEconomica"] ?? ''),
-                "direccion" => isset($emisorJson["direccion"]) && is_array($emisorJson["direccion"]) ? ($emisorJson["direccion"]["complemento"] ?? '') : ($emisorJson["complemento"] ?? ''),
-                "telefono" => $emisorJson["telefono"] ?? '',
-                "correo" => $emisorJson["correo"] ?? ($emisorJson["correoElectronico"] ?? ''),
-                "nombreComercial" => $emisorJson["nombreComercial"] ?? ($emisorJson["nombreRazonSocial"] ?? ''),
-            ]];
-
-            // Cliente (para FSE suele ser sujetoExcluido)
-            $receptorJson = isset($json["sujetoExcluido"]) && is_array($json["sujetoExcluido"]) ? $json["sujetoExcluido"] : (isset($json["receptor"]) && is_array($json["receptor"]) ? $json["receptor"] : []);
-            $cliente = [[
-                "nombre" => $receptorJson["nombre"] ?? '',
-                "tipoDocumento" => $receptorJson["tipoDocumento"] ?? ($receptorJson["tipoDoc"] ?? ''),
-                "numDocumento" => $receptorJson["numDocumento"] ?? ($receptorJson["numeroDocumento"] ?? ''),
-                "correo" => $receptorJson["correo"] ?? ($receptorJson["correoElectronico"] ?? ''),
-                "telefono" => $receptorJson["telefono"] ?? '',
-                "direccion" => isset($receptorJson["direccion"]) && is_array($receptorJson["direccion"]) ? ($receptorJson["direccion"]["complemento"] ?? '') : ($receptorJson["complemento"] ?? ''),
-            ]];
-
-            // Detalle
-            $detalleJson = isset($json["cuerpoDocumento"]) && is_array($json["cuerpoDocumento"]) ? $json["cuerpoDocumento"] : [];
-            $detalle = [];
-            foreach ($detalleJson as $item) {
-                $detalle[] = [
-                    "cantidad" => $item["cantidad"] ?? 0,
-                    "descripcion" => $item["descripcion"] ?? ($item["descripcionResumen"] ?? ''),
-                    "precio_unitario" => $item["precioUnitario"] ?? ($item["precio"] ?? 0),
-                    "no_imponible" => $item["montoNoGravado"] ?? 0,
-                    "no_sujetas" => $item["ventaNoSuj"] ?? ($item["noSujetas"] ?? 0),
-                    "exentas" => $item["ventaExenta"] ?? ($item["exentas"] ?? 0),
-                    "gravadas" => $item["ventaGravada"] ?? ($item["gravadas"] ?? 0),
-                ];
-            }
-
-            // Totales
-            $resumen = isset($json["resumen"]) && is_array($json["resumen"]) ? $json["resumen"] : [];
-            $totales = [
-                "totalNoSuj" => $resumen["totalNoSuj"] ?? 0,
-                "totalExenta" => $resumen["totalExenta"] ?? 0,
-                "totalGravada" => $resumen["totalGravada"] ?? 0,
-                "subTotalVentas" => $resumen["subTotalVentas"] ?? ($resumen["totalNoSuj"] ?? 0) + ($resumen["totalExenta"] ?? 0) + ($resumen["totalGravada"] ?? 0),
-                "subTotal" => $resumen["subTotal"] ?? ($resumen["subTotalVentas"] ?? 0),
-                "totalIva" => $resumen["totalIva"] ?? 0,
-                "ivaPerci1" => $resumen["ivaPerci1"] ?? 0,
-                "ivaRete1" => $resumen["ivaRete1"] ?? 0,
-                "montoTotalOperacion" => $resumen["montoTotalOperacion"] ?? ($resumen["totalPagar"] ?? 0),
-                "totalNoGravado" => $resumen["totalNoGravado"] ?? 0,
-                "reteRenta" => $resumen["reteRenta"] ?? 0,
-                "totalPagar" => $resumen["totalPagar"] ?? 0,
-                "condicionOperacion" => $resumen["condicionOperacion"] ?? ($json["identificacion"]["tipoOperacion"] ?? '1'),
-                "totalLetras" => $resumen["totalLetras"] ?? ''
-            ];
-
-            // Asignar variables compatibles con la vista
-            $data = [
-                "json" => $json,
-                "documento" => $doc,
-                "emisor" => $emisor,
-                "cliente" => $cliente,
-                "detalle" => $detalle,
-                "totales" => $totales,
-            ];
-        }
-        dd($data);
+        // Inicializar $data básico para todas las plantillas
+        $data = [
+            "json" => $json,
+            "documento" => $documento,
+        ];
         @$fecha = $json["fhRecibido"] ?? null;
-        @$qr = base64_encode(codigoQR($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null), $json["codigoGeneracion"] ?? null, $fecha));
+        @$qr = base64_encode(codigoQR(($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null)), ($json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? null)), $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
