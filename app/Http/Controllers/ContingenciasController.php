@@ -346,6 +346,7 @@ class ContingenciasController extends Controller
 
             if (count($comprobante[0]) > 0) {
                 $objEnviado = json_decode($response_enviado);
+                dd($objEnviado);
                 if (isset($objEnviado->estado)) {
                     $estado_envio = $objEnviado->estado;
                     $dateString = $objEnviado->fechaHora ?? null;
