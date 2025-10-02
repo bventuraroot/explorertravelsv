@@ -2284,6 +2284,7 @@ class SaleController extends Controller
         //print_r($data);
         //dd($data);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        $tipo_comprobante = $comprobante[0]['codemh'];
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
