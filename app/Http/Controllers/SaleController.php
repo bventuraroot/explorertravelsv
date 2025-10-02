@@ -2330,7 +2330,7 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.fac';
                 break;
-            case '04': // FSE - Sujeto Excluido
+            case '14': // FSE - Sujeto Excluido
                 $rptComprobante = 'pdf.fse';
                 break;
             case '11':  //FEX
@@ -2432,7 +2432,7 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.faclocal';
                 break;
-            case '04': // FSE - Sujeto Excluido (local)
+            case '14': // FSE - Sujeto Excluido (local)
                 $rptComprobante = 'pdf.fse';
                 break;
             case '11':  //FEX
