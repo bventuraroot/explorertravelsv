@@ -203,20 +203,7 @@
     </table>
 
 <!-- Datos Receptor -->
-@if (!empty($comprobante[3]))
-
-
-    <table width="100%" style="border-top:1px solid #000;">
-        <tr align="center" >
-            <td colspan="2"><strong>VENTA A CUENTA DE TERCEROS</strong></td>
-        </tr>
-        <tr>
-            <td><strong>NIT:</strong>{{$comprobante[3][0]["nit"]}}</td>
-            <td><strong>Nombre, denominación o razón social:</strong>{{$comprobante[3][0]["nombre"]}}</td>
-        </tr>
-
-    </table>
-@endif
+{{-- Sección de terceros comentada hasta implementar nueva estructura --}}
     <br />
 
     <table width="100%" style="border-collapse:collapse;">
@@ -299,9 +286,9 @@
                                 <td width="245px">
                                     <table width="100%">
                                         <tr>
-                                            <td align="right">{{FNumero($comprobante[0][0]["credito"])}}</td>
-                                            <td align="right">{{FNumero($comprobante[0][0]["contado"])}}</td>
-                                            <td align="right">{{FNumero($comprobante[0][0]["tarjeta"])}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "02")?$totales["totalPagar"]:0.00)}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "01")?$totales["totalPagar"]:0.00)}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "03")?$totales["totalPagar"]:0.00)}}</td>
                                         </tr>
                                     </table>
                                 </td>
