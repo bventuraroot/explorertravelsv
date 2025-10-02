@@ -2354,7 +2354,7 @@ class SaleController extends Controller
             $data = [
                 "nombre" => $json_enviado->receptor->nombre ?? $nombre_cliente,
                 "numero" => $request->numero ?? $comprobante[0]->nu_doc,
-                "json" => $json_enviado
+                "json" => json_decode(json_encode($json_enviado), true) // Convertir objeto a array
             ];
 
             $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $data["numero"]) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');

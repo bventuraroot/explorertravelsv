@@ -76,7 +76,7 @@
                             </td>
                         </tr>
                         <tr>
-                            
+
                             <td style="padding:30px;background-color:#ffffff;">
                                 <h3
                                     style="margin-top:0;margin-bottom:16px;font-size:18px;line-height:32px;font-weight:bold;letter-spacing:-0.02em;">
@@ -84,18 +84,18 @@
                                 <p style="margin:0;"><br>
                                 Adjunto encontrara su documento fiscal, por la compra realizada de acuerdo al siguiente detalle.
                                 <br>
-                                <p>Numero de Control: {{$data["json"]->identificacion->numeroControl}}</p>
-                                <p>Codigo de Generación: {{$data["json"]->identificacion->codigoGeneracion}}</p>
-                                <p>Fecha de Emisión: {{$data["json"]->identificacion->fecEmi}}</p>
-                                <p>Monto de Operación: {{FNumero($data["json"]->resumen->montoTotalOperacion)}}</p>
-                                <p>Sello Recibido: {{$data["json"]->selloRecibido}}</p>
+                                <p>Numero de Control: {{$data["json"]["identificacion"]["numeroControl"] ?? ''}}</p>
+                                <p>Codigo de Generación: {{$data["json"]["identificacion"]["codigoGeneracion"] ?? ''}}</p>
+                                <p>Fecha de Emisión: {{$data["json"]["identificacion"]["fecEmi"] ?? ''}}</p>
+                                <p>Monto de Operación: {{FNumero($data["json"]["resumen"]["montoTotalOperacion"] ?? 0)}}</p>
+                                <p>Sello Recibido: {{$data["json"]["selloRecibido"] ?? ''}}</p>
                                 <br>
-                                
+
                                </p>
                             </td>
                         </tr>
-                       
-                        
+
+
                         <tr>
                             <td>
                                 <br>
@@ -103,7 +103,7 @@
                                 <br>
                             </td>
                         </tr>
-                       
+
                         <tr>
                             <td
                                 style="padding:30px;text-align:center;font-size:12px;background-color:#404040;color:#cccccc;">
