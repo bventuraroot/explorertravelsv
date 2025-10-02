@@ -410,7 +410,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3" ><strong>TOTAL A PAGAR</strong></td>
-                                <td align="right" class="cuadro-izq"><strong>{{FNumero(($totales["totalPagar"] ?? $totales["totalPagar"] ?? 0)))}}</strong></td>
+                                <td align="right" class="cuadro-izq"><strong>{{FNumero(($totales["totalPagar"] ?? $totales["totalPagar"] ?? 0))}}</strong></td>
 
                             </tr>
 
