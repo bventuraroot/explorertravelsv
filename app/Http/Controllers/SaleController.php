@@ -2253,6 +2253,12 @@ class SaleController extends Controller
                 "json" => $json_enviado // Ya es un array
             ];
 
+            // CORRECCIÓN: Asegurar que el JSON sea un array, no string
+            if (is_string($data["json"])) {
+                $data["json"] = json_decode($data["json"], true);
+                Log::info('JSON convertido de string a array en envia_correo');
+            }
+
             // Debug: Log para verificar qué se está enviando al correo
             Log::info('Debug data para correo', [
                 'json_tipo' => gettype($data["json"]),
@@ -2391,6 +2397,12 @@ class SaleController extends Controller
                 "numero" => $request->numero ?? $comprobante[0]->nu_doc,
                 "json" => $json_enviado // Ya es un array
             ];
+
+            // CORRECCIÓN: Asegurar que el JSON sea un array, no string
+            if (is_string($data["json"])) {
+                $data["json"] = json_decode($data["json"], true);
+                Log::info('JSON convertido de string a array en enviar_correo_con_dte');
+            }
 
             // Debug: Log para verificar qué se está enviando al correo
             Log::info('Debug data para correo en enviar_correo_con_dte', [
@@ -2824,6 +2836,12 @@ class SaleController extends Controller
                 'numero' => $numero,
                 'json' => $jsonParaCorreo // Ya es un array
             ];
+
+            // CORRECCIÓN: Asegurar que el JSON sea un array, no string
+            if (is_string($dataCorreo["json"])) {
+                $dataCorreo["json"] = json_decode($dataCorreo["json"], true);
+                Log::info('JSON convertido de string a array en enviarCorreoAutomaticoVenta');
+            }
 
             // Debug: Log para verificar qué se está enviando al correo
             Log::info('Debug data para correo en enviarCorreoAutomaticoVenta', [
