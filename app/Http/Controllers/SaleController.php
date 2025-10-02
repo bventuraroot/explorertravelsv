@@ -2293,7 +2293,8 @@ class SaleController extends Controller
         }
         //print_r($data);
         //dd($data);
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"]
+            ?? ($data["json"]["identificacion"]["tipoDte"] ?? ($data["identificacion"]["tipoDte"] ?? null));
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
@@ -2316,8 +2317,13 @@ class SaleController extends Controller
                 # code...
                 break;
         }
-        @$fecha = $data["json"]["fhRecibido"];
-        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
+        @$fecha = $data["json"]["fhRecibido"] ?? ($data["fhRecibido"] ?? null);
+        $ambienteQr = $data["documento"][0]["ambiente"]
+            ?? ($data["json"]["identificacion"]["ambiente"] ?? ($data["identificacion"]["ambiente"] ?? null));
+        $codigoGenQr = $data["json"]["codigoGeneracion"] ?? ($data["identificacion"]["codigoGeneracion"] ?? null);
+        if ($ambienteQr && $codigoGenQr && $fecha) {
+            @$qr = base64_encode(codigoQR($ambienteQr, $codigoGenQr, $fecha));
+        }
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
