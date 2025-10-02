@@ -2211,6 +2211,14 @@ class SaleController extends Controller
         // Verificar si existe DTE para esta venta
         $dte = \App\Models\Dte::where('sale_id', $id_factura)->first();
 
+        // Debug: Log para verificar qué se está encontrando
+        Log::info('Debug envia_correo', [
+            'id_factura' => $id_factura,
+            'dte_encontrado' => $dte ? 'Sí' : 'No',
+            'dte_json' => $dte ? ($dte->json ? 'Sí' : 'No') : 'N/A',
+            'dte_codigoGeneracion' => $dte ? $dte->codigoGeneracion : 'N/A'
+        ]);
+
         if ($dte && $dte->json) {
             // Si hay DTE, usar PDF oficial y JSON enviado
             $pdf = $this->genera_pdf($id_factura);
@@ -2218,8 +2226,21 @@ class SaleController extends Controller
             $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
-            // Obtener nombre de archivo basado en sello de recepción
+            // Debug: Log para verificar el JSON
+            Log::info('Debug JSON en envia_correo', [
+                'json_root_keys' => $json_root ? array_keys($json_root) : 'No keys',
+                'json_enviado_keys' => $json_enviado ? array_keys($json_enviado) : 'No keys',
+                'codigoGeneracion_en_json' => $json_enviado['identificacion']['codigoGeneracion'] ?? 'No encontrado'
+            ]);
+
+            // Obtener nombre de archivo basado en código de generación
             $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
+
+            // Debug: Log para verificar el nombre del archivo
+            Log::info('Debug nombre archivo', [
+                'nombreArchivo_final' => $nombreArchivo,
+                'dte_codigoGeneracion' => $dte->codigoGeneracion
+            ]);
 
             $archivos = [
                 $nombreArchivo . '.pdf' => $pdf->output(),
