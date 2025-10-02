@@ -168,7 +168,13 @@
                     </tr>
                     <tr>
                         <td align="right"><strong>Dirección:</strong></td>
-                        <td>{{$cliente[0]["direccion"] ?? ($json["receptor"]["direccion"]["complemento"] ?? '')}}</td>
+                        <td>
+                            @if(isset($cliente[0]["direccion"]) && is_array($cliente[0]["direccion"]))
+                                {{$cliente[0]["direccion"]["complemento"] ?? ''}}
+                            @else
+                                {{$cliente[0]["direccion"] ?? ($json["receptor"]["direccion"]["complemento"] ?? '')}}
+                            @endif
+                        </td>
                         <td></td>
                     </tr>
 
