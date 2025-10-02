@@ -161,7 +161,7 @@
                     <tr>
                         <td><strong>Modélo facturación:</strong></td>
                         <td>Previo</td>
-                        <td><strong>Versión del Json:</strong> {{$documento[0]["versionjson"]}}</td>
+                        <td><strong>Versión del Json:</strong> {{ $documento[0]["versionjson"] ?? ($documento[0]["versionJson"] ?? ($documento[0]["version"] ?? '')) }}</td>
                     </tr>
                     <tr>
                         <td><strong>Tipo de transmisión</strong></td>
