@@ -2218,9 +2218,12 @@ class SaleController extends Controller
             $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
+            // Obtener nombre de archivo basado en sello de recepción
+            $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
+
             $archivos = [
-                $dte->codigoGeneracion . '.pdf' => $pdf->output(),
-                $dte->codigoGeneracion . '.json' => $json
+                $nombreArchivo . '.pdf' => $pdf->output(),
+                $nombreArchivo . '.json' => $json
             ];
 
             $data = [
@@ -2346,9 +2349,13 @@ class SaleController extends Controller
             $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
+            // Obtener nombre de archivo basado en sello de recepción
+            $dte = \App\Models\Dte::where('sale_id', $id_factura)->first();
+            $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
+
             $archivos = [
-                $comprobante[0]->codigoGeneracion . '.pdf' => $pdf->output(),
-                $comprobante[0]->codigoGeneracion . '.json' => $json
+                $nombreArchivo . '.pdf' => $pdf->output(),
+                $nombreArchivo . '.json' => $json
             ];
 
             $data = [
@@ -2715,6 +2722,30 @@ class SaleController extends Controller
     }
 
     /**
+     * Obtener nombre de archivo basado en código de generación
+     */
+    private function obtenerNombreArchivo($dte, $jsonEnviado = null): string
+    {
+        // Priorizar código de generación como estaba antes
+        if ($dte->codigoGeneracion) {
+            return $dte->codigoGeneracion;
+        }
+
+        // Si hay json_enviado, usar su código de generación
+        if ($jsonEnviado && isset($jsonEnviado['identificacion']['codigoGeneracion'])) {
+            return $jsonEnviado['identificacion']['codigoGeneracion'];
+        }
+
+        // Fallback a número de control
+        if ($jsonEnviado && isset($jsonEnviado['identificacion']['numeroControl'])) {
+            return $jsonEnviado['identificacion']['numeroControl'];
+        }
+
+        // Último fallback
+        return 'venta_' . $dte->sale_id;
+    }
+
+    /**
      * Enviar correo automático al cliente con el comprobante.
      * - Si hay DTE, adjunta PDF oficial y JSON enviado
      * - Si no hay DTE, adjunta PDF local
@@ -2750,6 +2781,9 @@ class SaleController extends Controller
             $jsonParaCorreo = $jsonEnviado ?: $jsonRoot;
             $jsonLimpio = $this->limpiarJsonParaCorreo($jsonParaCorreo);
 
+            // Obtener nombre de archivo basado en sello de recepción
+            $nombreArchivo = $this->obtenerNombreArchivo($dte, $jsonEnviado);
+
             $dataCorreo = [
                 'nombre' => $nombreCliente,
                 'numero' => $numero,
@@ -2759,8 +2793,8 @@ class SaleController extends Controller
             $correo = new EnviarCorreo($dataCorreo);
             $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
             $correo->subject($asunto);
-            $correo->attachData($pdf->output(), ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.pdf');
-            $correo->attachData($jsonLimpio, ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.json');
+            $correo->attachData($pdf->output(), $nombreArchivo . '.pdf');
+            $correo->attachData($jsonLimpio, $nombreArchivo . '.json');
             Mail::to($email)->send($correo);
             return;
         }

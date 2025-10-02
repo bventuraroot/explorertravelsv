@@ -383,13 +383,16 @@ class DteService
             try {
                 // Generar PDF oficial usando controlador existente
                 $pdf = app(\App\Http\Controllers\SaleController::class)->genera_pdf($dte->sale_id);
-                $baseNombre = $dte->codigoGeneracion ?: ($jsonDte['identificacion']['numeroControl'] ?? ('venta_' . $dte->sale_id));
+
+                // Usar código de generación como nombre de archivo
+                $baseNombre = $dte->codigoGeneracion ?: ($jsonDte['identificacion']['codigoGeneracion'] ?? ($jsonDte['identificacion']['numeroControl'] ?? ('venta_' . $dte->sale_id)));
                 $correo->attachData($pdf->output(), $baseNombre . '.pdf');
 
                 // Adjuntar JSON
-                $jsonRoot = json_decode($dte->json ?? $dte->jsonDte);
-                $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-                $jsonLimpio = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : json_encode($jsonRoot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                $jsonRoot = json_decode($dte->json ?? $dte->jsonDte, true);
+                $jsonEnviado = $jsonRoot['json']['json_enviado'] ?? null;
+                $jsonParaAdjuntar = $jsonEnviado ?: $jsonRoot;
+                $jsonLimpio = json_encode($jsonParaAdjuntar, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 $correo->attachData($jsonLimpio, $baseNombre . '.json');
             } catch (\Throwable $t) {
                 Log::warning('Fallo adjuntando PDF/JSON en correo automático', [

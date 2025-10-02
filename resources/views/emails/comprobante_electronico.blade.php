@@ -153,40 +153,35 @@
                                 </div>
 
                                 @if($data["json"])
+                                @php
+                                    // Asegurar que el JSON sea un array
+                                    $jsonData = is_string($data["json"]) ? json_decode($data["json"], true) : $data["json"];
+                                @endphp
                                 <div style="background-color:#ffffff;border:1px solid #e9ecef;border-radius:8px;padding:20px;margin-bottom:20px;">
                                     <h4 style="margin:0 0 15px 0;color:#495057;font-size:16px;font-weight:bold;border-bottom:2px solid #1e3c72;padding-bottom:8px;">
                                         <span class="travel-icon">📋</span> Detalles del Documento
                                     </h4>
 
-                                    <!-- Debug info (temporal) -->
-                                    <div style="background-color:#f8f9fa;padding:10px;margin-bottom:15px;font-size:12px;color:#666;">
-                                        <strong>Debug:</strong>
-                                        JSON existe: {{ isset($data["json"]) ? 'Sí' : 'No' }} |
-                                        Tipo: {{ gettype($data["json"]) }} |
-                                        Identificacion existe: {{ isset($data["json"]["identificacion"]) ? 'Sí' : 'No' }} |
-                                        Resumen existe: {{ isset($data["json"]["resumen"]) ? 'Sí' : 'No' }}
-                                    </div>
-
                                     <table class="details-table">
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;width:40%;">Número de Control:</td>
-                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["numeroControl"] ?? 'No disponible'}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;">{{$jsonData["identificacion"]["numeroControl"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Código de Generación:</td>
-                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:14px;">{{$data["json"]["identificacion"]["codigoGeneracion"] ?? 'No disponible'}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:14px;">{{$jsonData["identificacion"]["codigoGeneracion"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Fecha de Emisión:</td>
-                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["fecEmi"] ?? 'No disponible'}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;">{{$jsonData["identificacion"]["fecEmi"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Monto Total:</td>
-                                            <td style="padding:8px 0;color:#28a745;font-weight:bold;font-size:16px;">{{FNumero($data["json"]["resumen"]["montoTotalOperacion"] ?? 0)}}</td>
+                                            <td style="padding:8px 0;color:#28a745;font-weight:bold;font-size:16px;">{{FNumero($jsonData["resumen"]["montoTotalOperacion"] ?? 0)}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Sello Recibido:</td>
-                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:12px;word-break:break-all;">{{$data["json"]["selloRecibido"] ?? 'No disponible'}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:12px;word-break:break-all;">{{$jsonData["selloRecibido"] ?? 'No disponible'}}</td>
                                         </tr>
                                     </table>
                                 </div>
@@ -199,7 +194,7 @@
                                 @else
                                 <div style="background-color:#ffffff;border:1px solid #e9ecef;border-radius:8px;padding:20px;margin-bottom:20px;">
                                     <h4 style="margin:0 0 15px 0;color:#495057;font-size:16px;font-weight:bold;border-bottom:2px solid #1e3c72;padding-bottom:8px;">
-                                        <span class="travel-icon">📋</span> Detalles del Documento
+                                        <span class="travel-icon">📋</span> Información del Documento
                                     </h4>
                                     <p style="margin:0;color:#6c757d;font-size:16px;line-height:1.6;">
                                         <strong>Número de Documento:</strong> {{$data["numero"]}}
