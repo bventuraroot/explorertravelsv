@@ -90,7 +90,7 @@
                 <table width="100%">
                     <tr>
                         <td>
-
+                            <img src="{{ logo_pdf($emisor[0]['ncr']) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
                         </td>
                     </tr>
                     <tr>
