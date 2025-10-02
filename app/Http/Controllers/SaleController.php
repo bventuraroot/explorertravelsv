@@ -2279,7 +2279,19 @@ class SaleController extends Controller
         //dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["json"], true);
+        // Usar el JSON confirmado por Hacienda guardado en sales.json -> json.json_enviado
+        $data = json_decode($comprobante[0]["jsonlocal"] ?? $comprobante[0]["json"], true);
+        if (isset($data["json"])) {
+            if (is_array($data["json"]) && isset($data["json"]["json_enviado"])) {
+                $data["json"] = $data["json"]["json_enviado"]; // priorizar json_enviado
+            } elseif (is_string($data["json"])) {
+                $maybeArray = json_decode($data["json"], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                    // Si dentro hay json_enviado, usarlo
+                    $data["json"] = $maybeArray["json_enviado"] ?? $maybeArray;
+                }
+            }
+        }
         // Asegurar que $data["json"] sea un arreglo si viene como string
         if (isset($data["json"]) && is_string($data["json"])) {
             $maybeArray = json_decode($data["json"], true);
@@ -2378,11 +2390,15 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
-        // Normalizar si json viene como string
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $maybeArray = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                $data["json"] = $maybeArray;
+        // Usar json_enviado si existe dentro de sales.json->json
+        if (isset($data["json"])) {
+            if (is_array($data["json"]) && isset($data["json"]["json_enviado"])) {
+                $data["json"] = $data["json"]["json_enviado"];
+            } elseif (is_string($data["json"])) {
+                $maybeArray = json_decode($data["json"], true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                    $data["json"] = $maybeArray["json_enviado"] ?? $maybeArray;
+                }
             }
         }
         //dd($data);
