@@ -404,7 +404,7 @@
                 </tr>
                 <tr class="cuadro">
                     <td colspan="2" style="font-size:6px;"><span style="margin:0;padding=0;"><center>Condiciones generales de los servicios prestados por
-                        {{$emisor["nombre"]}}</center><br style="margin:0;padding=0;">
+                        {{$emisor[0]["nombre"]}}</center><br style="margin:0;padding=0;">
 
                     </td>
                 </tr>
