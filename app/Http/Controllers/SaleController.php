@@ -2359,7 +2359,7 @@ class SaleController extends Controller
                 ->select(
                     'sales.*',
                     'dte.json as JsonDTE',
-                    'sale.json',
+                    'sales.json',
                     'dte.codigoGeneracion',
                     'countries.name as PaisE',
                     'departments.name as DepartamentoE',
