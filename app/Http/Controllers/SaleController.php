@@ -2295,6 +2295,8 @@ class SaleController extends Controller
         //dd($data);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"]
             ?? ($data["json"]["identificacion"]["tipoDte"] ?? ($data["identificacion"]["tipoDte"] ?? null));
+        // Plantilla por defecto para evitar variable indefinida
+        $rptComprobante = 'pdf.fac';
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
