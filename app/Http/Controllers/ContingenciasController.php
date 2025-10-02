@@ -229,7 +229,7 @@ class ContingenciasController extends Controller
                 "numeroDocResponsable"  => str_replace("-", "", $encabezado[0]->nuDocResponsable),
                 "tipoEstablecimiento"   => $encabezado[0]->tipoEstablecimiento,
                 "codEstableMH"          => $encabezado[0]->codigo_establecimiento,
-                "codPuntoVenta"         => "1",
+                "codPuntoVenta"         => null,
                 "telefono"              => $encabezado[0]->telefono_emisor,
                 "correo"                => $encabezado[0]->correo,
             ];
