@@ -2427,8 +2427,17 @@ class SaleController extends Controller
     }
     public function print($id)
     {
-        //$pdf = $this->genera_pdf($id);
-        $pdf = $this->genera_pdflocal($id);
+        // Verificar si existe DTE para esta venta
+        $dte = \App\Models\Dte::where('sale_id', $id)->first();
+
+        if ($dte && $dte->json) {
+            // Si hay DTE, usar PDF oficial
+            $pdf = $this->genera_pdf($id);
+        } else {
+            // Si no hay DTE, usar PDF local
+            $pdf = $this->genera_pdflocal($id);
+        }
+
         return $pdf->stream('comprobante.pdf');
     }
 
