@@ -2390,6 +2390,7 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
+        dd($data);
         // Usar json_enviado si existe dentro de sales.json->json
         if (isset($data["json"])) {
             if (is_array($data["json"]) && isset($data["json"]["json_enviado"])) {
