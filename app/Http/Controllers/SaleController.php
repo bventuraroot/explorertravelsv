@@ -2346,6 +2346,14 @@ class SaleController extends Controller
             if (isset($salesJson["totales"]) && is_array($salesJson["totales"])) {
                 $data["totales"] = $salesJson["totales"]; // objeto asociativo
             }
+
+            // Para FAC, si tenemos json_enviado, usar su estructura de emisor que es compatible con el template
+            if (isset($json["emisor"]) && is_array($json["emisor"])) {
+                $data["emisor"] = [$json["emisor"]]; // convertir a arreglo como espera el template
+            }
+            if (isset($json["receptor"]) && is_array($json["receptor"])) {
+                $data["cliente"] = [$json["receptor"]]; // convertir a arreglo como espera el template
+            }
         }
         @$fecha = $json["fhRecibido"] ?? null;
         @$qr = base64_encode(codigoQR(($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null)), ($json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? null)), $fecha));

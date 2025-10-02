@@ -109,8 +109,15 @@
                         <td>Actividad económica:{{$emisor[0]["descActividad"]}}</td>
                     </tr>
                     <tr>
-                        <td>Dirección: {{$emisor[0]["direccion"]["complemento"]}}<br>
-                            {{$MunicipioE}},{{$DepartamentoE}}</td>
+                        <td>Dirección:
+                            @if(isset($emisor[0]["direccion"]["complemento"]))
+                                {{$emisor[0]["direccion"]["complemento"]}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @else
+                                {{$emisor[0]["direccion"]}}<br>
+                                {{$MunicipioE}},{{$DepartamentoE}}
+                            @endif
+                        </td>
                     </tr>
                     <tr>
                         <td>Número de teléfono:{{$emisor[0]["telefono"]}}</td>
