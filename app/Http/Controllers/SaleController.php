@@ -2277,7 +2277,8 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        $comprobante = json_decode($factura, true);
+        // Normalizar colección/objeto a arreglo asociativo
+        $comprobante = json_decode(json_encode($factura), true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["json"], true);
         //print_r($data);
@@ -2359,7 +2360,8 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        $comprobante = json_decode($factura, true);
+        // Normalizar colección/objeto a arreglo asociativo
+        $comprobante = json_decode(json_encode($factura), true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
         // Mantener estructura original; si json es string, normalizar a arreglo
