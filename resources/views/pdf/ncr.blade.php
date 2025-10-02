@@ -129,7 +129,7 @@
                     <tr>
                         <td><strong>Hora de emisión:</strong></td>
                         <td>{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? '') }}</td>
-                        <td><strong>Documento interno No:</strong>{{$documento[0]["actual"]}}</td>
+                        <td><strong>Documento interno No:</strong>{{$documento[0]["actual"] ?? ''}}</td>
                     </tr>
                     <tr>
                         <td colspan="3" align="center">
