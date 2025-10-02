@@ -182,11 +182,11 @@
                     <tr>
                         <td align="right"><strong>Municipio:</strong></td>
                         <td>{{$MunicipioR}}</td>
-                        <td><strong>Forma pago:</strong> @if($totales['condicionOperacion']=="1")
+                        <td><strong>Forma pago:</strong> @if(($totales['condicionOperacion'] ?? '')=="1")
                             CONTADO
-                            @elseif ($totales['condicionOperacion']=="2")
+                            @elseif (($totales['condicionOperacion'] ?? '')=="2")
                             CREDITO
-                            @elseif ($totales['condicionOperacion']=="3")
+                            @elseif (($totales['condicionOperacion'] ?? '')=="3")
                             OTRO
                         @endif</td>
                     </tr>
@@ -286,9 +286,9 @@
                                 <td width="245px">
                                     <table width="100%">
                                         <tr>
-                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "02")?$totales["totalPagar"]:0.00)}}</td>
-                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "01")?$totales["totalPagar"]:0.00)}}</td>
-                                            <td align="right">{{FNumero(($totales["condicionOperacion"] == "03")?$totales["totalPagar"]:0.00)}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] ?? '') == "02" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] ?? '') == "01" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
+                                            <td align="right">{{FNumero(($totales["condicionOperacion"] ?? '') == "03" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
                                         </tr>
                                     </table>
                                 </td>
