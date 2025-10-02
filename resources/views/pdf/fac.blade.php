@@ -103,7 +103,7 @@
                         <td>NIT:{{$emisor[0]["nit"]}}</td>
                     </tr>
                     <tr>
-                        <td>NRC:{{$emisor[0]["ncr"]}}</td>
+                        <td>NRC:{{$emisor[0]["nrc"]}}</td>
                     </tr>
                     <tr>
                         <td>Actividad económica:{{$emisor[0]["descActividad"]}}</td>
