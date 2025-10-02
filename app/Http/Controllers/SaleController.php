@@ -2280,9 +2280,17 @@ class SaleController extends Controller
             ->where('sales.id', '=', $id)
             ->get();
         $comprobante = json_decode($factura, true);
-        //dd(json_decode($comprobante[0]["json"]));
-        dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["json"]["json"]["json_enviado"], true);
+        // Tomar sales.json y priorizar json.json_enviado
+        $salesJsonRaw = $comprobante[0]["json"] ?? null;
+        $salesJson = is_string($salesJsonRaw) ? json_decode($salesJsonRaw, true) : (is_array($salesJsonRaw) ? $salesJsonRaw : []);
+        $json = [];
+        if (isset($salesJson["json"]["json_enviado"])) {
+            $json = $salesJson["json"]["json_enviado"];
+        } elseif (isset($salesJson["json"])) {
+            $json = $salesJson["json"];
+        }
+        // Documento meta si existe en sales.json
+        $documento = $salesJson["documento"] ?? [];
         //print_r($data);
         //dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
@@ -2315,8 +2323,7 @@ class SaleController extends Controller
         // Normalizar estructura para FSE con DTE oficial a las variables usadas en pdf.fse
         if ($tipo_comprobante === '14') {
             // Asegurar presencia de llaves
-            $json = isset($data["json"]) && is_array($data["json"]) ? $data["json"] : [];
-            $doc  = isset($data["documento"]) && is_array($data["documento"]) ? $data["documento"] : [];
+            $doc  = is_array($documento) ? $documento : [];
 
             // Emisor
             $emisorJson = isset($json["emisor"]) && is_array($json["emisor"]) ? $json["emisor"] : [];
@@ -2377,14 +2384,18 @@ class SaleController extends Controller
             ];
 
             // Asignar variables compatibles con la vista
-            $data["emisor"] = $emisor;
-            $data["cliente"] = $cliente;
-            $data["detalle"] = $detalle;
-            $data["totales"] = $totales;
+            $data = [
+                "json" => $json,
+                "documento" => $doc,
+                "emisor" => $emisor,
+                "cliente" => $cliente,
+                "detalle" => $detalle,
+                "totales" => $totales,
+            ];
         }
 
-        @$fecha = $data["json"]["fhRecibido"];
-        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
+        @$fecha = $json["fhRecibido"] ?? null;
+        @$qr = base64_encode(codigoQR($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null), $json["codigoGeneracion"] ?? null, $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
