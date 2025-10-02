@@ -2288,16 +2288,24 @@ class SaleController extends Controller
                 $data["json"] = $maybeArray;
             }
         }
-        // Asegurar que $data["json"] sea un arreglo si viene como string
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $maybeArray = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                $data["json"] = $maybeArray;
+        // Si $data aún es string o alguna subestructura viene como string, normalizar
+        if (!is_array($data)) {
+            $data = [];
+        }
+        if (isset($data["documento"]) && is_string($data["documento"])) {
+            $docMaybe = json_decode($data["documento"], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $data["documento"] = $docMaybe;
             }
         }
-        //print_r($data);
-        dd($data["documento"][0]["tipodocumento"]);
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $jsonMaybe = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $data["json"] = $jsonMaybe;
+            }
+        }
+        // Determinar tipo de comprobante de forma segura
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"] ?? ($data["json"]["identificacion"]["tipoDte"] ?? null);
         // Asignar plantilla por defecto para evitar variable indefinida
         $rptComprobante = 'pdf.fac';
         switch ($tipo_comprobante) {
