@@ -445,7 +445,7 @@ class FacturacionElectronicaController extends Controller
             // Preparar datos para el correo
             $data = [
                 'nombre' => $sale->client->name,
-                'json' => (object) $jsonDte
+                'json' => $jsonDte // Ya es un array
             ];
 
             // Crear correo y adjuntar PDF + JSON
@@ -464,8 +464,8 @@ class FacturacionElectronicaController extends Controller
                 // Preparar JSON adjunto (prioriza json_enviado si existe)
                 $jsonRoot = json_decode($dte->json ?? $dte->jsonDte);
                 $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-                $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
-                $correo->attachData($jsonPretty, $baseNombre . '.json');
+                $jsonLimpio = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : json_encode($jsonRoot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                $correo->attachData($jsonLimpio, $baseNombre . '.json');
             } catch (\Throwable $t) {
                 // Si falla la generación/adjunto, igual enviar el correo sin archivos
                 Log::warning('Fallo adjuntando PDF/JSON al correo', [

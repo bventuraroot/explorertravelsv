@@ -158,18 +158,27 @@
                                         <span class="travel-icon">📋</span> Detalles del Documento
                                     </h4>
 
+                                    <!-- Debug info (temporal) -->
+                                    <div style="background-color:#f8f9fa;padding:10px;margin-bottom:15px;font-size:12px;color:#666;">
+                                        <strong>Debug:</strong>
+                                        JSON existe: {{ isset($data["json"]) ? 'Sí' : 'No' }} |
+                                        Tipo: {{ gettype($data["json"]) }} |
+                                        Identificacion existe: {{ isset($data["json"]["identificacion"]) ? 'Sí' : 'No' }} |
+                                        Resumen existe: {{ isset($data["json"]["resumen"]) ? 'Sí' : 'No' }}
+                                    </div>
+
                                     <table class="details-table">
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;width:40%;">Número de Control:</td>
-                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["numeroControl"] ?? ''}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["numeroControl"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Código de Generación:</td>
-                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:14px;">{{$data["json"]["identificacion"]["codigoGeneracion"] ?? ''}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:14px;">{{$data["json"]["identificacion"]["codigoGeneracion"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Fecha de Emisión:</td>
-                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["fecEmi"] ?? ''}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;">{{$data["json"]["identificacion"]["fecEmi"] ?? 'No disponible'}}</td>
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Monto Total:</td>
@@ -177,7 +186,7 @@
                                         </tr>
                                         <tr>
                                             <td style="padding:8px 0;font-weight:bold;color:#495057;">Sello Recibido:</td>
-                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:12px;word-break:break-all;">{{$data["json"]["selloRecibido"] ?? ''}}</td>
+                                            <td style="padding:8px 0;color:#6c757d;font-family:monospace;font-size:12px;word-break:break-all;">{{$data["json"]["selloRecibido"] ?? 'No disponible'}}</td>
                                         </tr>
                                     </table>
                                 </div>

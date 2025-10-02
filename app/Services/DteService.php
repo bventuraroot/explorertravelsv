@@ -370,7 +370,7 @@ class DteService
             // Preparar datos para el correo
             $data = [
                 'nombre' => $sale->client->name,
-                'json' => (object) $jsonDte
+                'json' => $jsonDte // Ya es un array
             ];
 
             // Crear correo y adjuntar PDF + JSON
@@ -389,8 +389,8 @@ class DteService
                 // Adjuntar JSON
                 $jsonRoot = json_decode($dte->json ?? $dte->jsonDte);
                 $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-                $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
-                $correo->attachData($jsonPretty, $baseNombre . '.json');
+                $jsonLimpio = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : json_encode($jsonRoot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                $correo->attachData($jsonLimpio, $baseNombre . '.json');
             } catch (\Throwable $t) {
                 Log::warning('Fallo adjuntando PDF/JSON en correo automático', [
                     'dte_id' => $dte->id,

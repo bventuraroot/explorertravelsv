@@ -2216,7 +2216,7 @@ class SaleController extends Controller
             $pdf = $this->genera_pdf($id_factura);
             $json_root = json_decode($dte->json);
             $json_enviado = $json_root->json->json_enviado ?? $json_root;
-            $json = json_encode($json_enviado, JSON_PRETTY_PRINT);
+            $json = $this->limpiarJsonParaCorreo($json_enviado);
 
             $archivos = [
                 $dte->codigoGeneracion . '.pdf' => $pdf->output(),
@@ -2226,7 +2226,7 @@ class SaleController extends Controller
             $data = [
                 "nombre" => $json_enviado->receptor->nombre ?? $nombre,
                 "numero" => $numero,
-                "json" => $json_enviado
+                "json" => json_decode(json_encode($json_enviado), true) // Convertir objeto a array
             ];
 
             $asunto = "Comprobante de Venta No." . ($json_enviado->identificacion->numeroControl ?? $numero) . ' de Proveedor: ' . ($json_enviado->emisor->nombre ?? 'Empresa');
@@ -2289,7 +2289,7 @@ class SaleController extends Controller
             }
 
         } catch (\Exception $e) {
-            \Log::error("Error en enviar_correo_offline para venta ID: {$request->id_factura} - " . $e->getMessage());
+            Log::error("Error en enviar_correo_offline para venta ID: {$request->id_factura} - " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar el correo: ' . $e->getMessage()
@@ -2344,7 +2344,7 @@ class SaleController extends Controller
             $pdf = $this->genera_pdf($id_factura);
             $json_root = json_decode($comprobante[0]->JsonDTE);
             $json_enviado = $json_root->json->json_enviado ?? $json_root;
-            $json = json_encode($json_enviado, JSON_PRETTY_PRINT);
+            $json = $this->limpiarJsonParaCorreo($json_enviado);
 
             $archivos = [
                 $comprobante[0]->codigoGeneracion . '.pdf' => $pdf->output(),
@@ -2378,7 +2378,7 @@ class SaleController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error("Error en enviar_correo_con_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
+            Log::error("Error en enviar_correo_con_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar el correo con DTE: ' . $e->getMessage()
@@ -2437,7 +2437,7 @@ class SaleController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error("Error en enviar_correo_sin_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
+            Log::error("Error en enviar_correo_sin_dte para venta ID: {$request->id_factura} - " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar el correo sin DTE: ' . $e->getMessage()
@@ -2700,6 +2700,21 @@ class SaleController extends Controller
     }
 
     /**
+     * Limpiar JSON para envío por correo (quitar caracteres de escape)
+     */
+    private function limpiarJsonParaCorreo($jsonData): string
+    {
+        if (is_string($jsonData)) {
+            $jsonData = json_decode($jsonData, true);
+        }
+
+        // Codificar con formato bonito y sin caracteres de escape
+        $jsonLimpio = json_encode($jsonData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return $jsonLimpio;
+    }
+
+    /**
      * Enviar correo automático al cliente con el comprobante.
      * - Si hay DTE, adjunta PDF oficial y JSON enviado
      * - Si no hay DTE, adjunta PDF local
@@ -2730,19 +2745,19 @@ class SaleController extends Controller
             $pdf = $this->genera_pdf($saleId);
             $jsonRoot = json_decode($dte->json);
             $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
-            $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
+            $jsonLimpio = $this->limpiarJsonParaCorreo($jsonEnviado ?: $jsonRoot);
 
             $dataCorreo = [
                 'nombre' => $nombreCliente,
                 'numero' => $numero,
-                'json' => $jsonEnviado ?: $jsonRoot
+                'json' => json_decode(json_encode($jsonEnviado ?: $jsonRoot), true) // Convertir objeto a array
             ];
 
             $correo = new EnviarCorreo($dataCorreo);
             $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
             $correo->subject($asunto);
             $correo->attachData($pdf->output(), ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.pdf');
-            $correo->attachData($jsonPretty, ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.json');
+            $correo->attachData($jsonLimpio, ($dte->codigoGeneracion ?: ('venta_' . $saleId)) . '.json');
             Mail::to($email)->send($correo);
             return;
         }
