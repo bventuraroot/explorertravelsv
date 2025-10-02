@@ -2280,6 +2280,13 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["json"], true);
+        // Asegurar que $data["json"] sea un arreglo si viene como string
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $maybeArray = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                $data["json"] = $maybeArray;
+            }
+        }
         //print_r($data);
         //dd($data);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"];
@@ -2309,8 +2316,13 @@ class SaleController extends Controller
                 # code...
                 break;
         }
-        @$fecha = $data["json"]["fhRecibido"];
-        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
+        @$fecha = is_array($data["json"] ?? null) ? ($data["json"]["fhRecibido"] ?? null) : null;
+        $codigoGeneracion = is_array($data["json"] ?? null) ? ($data["json"]["codigoGeneracion"] ?? null) : null;
+        if ($codigoGeneracion && $fecha) {
+            @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $codigoGeneracion, $fecha));
+        } else {
+            @$qr = null;
+        }
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
@@ -2366,6 +2378,13 @@ class SaleController extends Controller
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
+        // Normalizar si json viene como string
+        if (isset($data["json"]) && is_string($data["json"])) {
+            $maybeArray = json_decode($data["json"], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
+                $data["json"] = $maybeArray;
+            }
+        }
         //dd($data);
 
         //print_r($data);
@@ -2400,8 +2419,13 @@ class SaleController extends Controller
         }
         //$fecha = $data["json"]["fhRecibido"];
         //dd($data);
-        $fecha = $data['documento'][0]['fechacreacion'];
-        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
+        $fecha = $data['documento'][0]['fechacreacion'] ?? null;
+        $codigoGeneracion = is_array($data["json"] ?? null) ? ($data["json"]["codigoGeneracion"] ?? null) : null;
+        if ($codigoGeneracion && $fecha) {
+            @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $codigoGeneracion, $fecha));
+        } else {
+            @$qr = null;
+        }
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
