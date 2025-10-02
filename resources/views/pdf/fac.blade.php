@@ -207,9 +207,11 @@
                         <td colspan="3">
                             <table width="100%">
                                 <tr>
-                                    <td  width="130px"><strong>Tipo Documento:</strong>    {{tipoDocumento($cliente["tipoDocumento"])}}</td>
-                                    <td  width="180px"><strong>No.Documento:</strong> {{$cliente["numDocumento"]}}</td>
-                                    <td ><strong>Correo electrónico:</strong>{{$cliente["correo"]}}</td>
+                                    <td  width="130px"><strong>Tipo Documento:</strong>
+                                        {{ tipoDocumento(($cliente["tipoDocumento"] ?? ($json["receptor"]["tipoDocumento"] ?? null))) }}
+                                    </td>
+                                    <td  width="180px"><strong>No.Documento:</strong> {{ $cliente["numDocumento"] ?? ($json["receptor"]["numDocumento"] ?? '') }}</td>
+                                    <td ><strong>Correo electrónico:</strong>{{ $cliente["correo"] ?? ($json["receptor"]["correo"] ?? '') }}</td>
                                 </tr>
                             </table>
 
