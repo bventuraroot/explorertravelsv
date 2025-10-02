@@ -152,7 +152,7 @@ class ContingenciasController extends Controller
             a.ambiente,
             a.codigoGeneracion,
             a.fechaCreacion,
-            TIME(NOW()) AS horaCreacion,
+            a.horaCreacion AS horaCreacion,
             REPLACE(b.nit, '-', '') AS nit_emisor,
             b.name AS nombre_empresa,
             a.nombreResponsable,
