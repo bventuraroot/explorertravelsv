@@ -2279,35 +2279,11 @@ class SaleController extends Controller
         //dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
-        // Mantener construcción desde DTE->json como en FAC/CCF
         $data = json_decode($comprobante[0]["json"], true);
-        // Asegurar que $data["json"] sea arreglo si viene como string
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $maybeArray = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                $data["json"] = $maybeArray;
-            }
-        }
-        // Si $data aún es string o alguna subestructura viene como string, normalizar
-        if (!is_array($data)) {
-            $data = [];
-        }
-        if (isset($data["documento"]) && is_string($data["documento"])) {
-            $docMaybe = json_decode($data["documento"], true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $data["documento"] = $docMaybe;
-            }
-        }
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $jsonMaybe = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $data["json"] = $jsonMaybe;
-            }
-        }
-        // Determinar tipo de comprobante de forma segura
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"] ?? ($data["json"]["identificacion"]["tipoDte"] ?? null);
-        // Asignar plantilla por defecto para evitar variable indefinida
-        $rptComprobante = 'pdf.fac';
+        //print_r($data);
+        //dd($data);
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crf';
@@ -2315,14 +2291,11 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.fac';
                 break;
-            case '14': // FSE - Sujeto Excluido
-                $rptComprobante = 'pdf.fse';
-                break;
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05': // NCR - usar plantilla de CCF como base
-                $rptComprobante = 'pdf.crf';
+            case '05':
+                $rptComprobante = 'pdf.ncr';
                 break;
             case '06':
                 $rptComprobante = 'pdf.ndb';
@@ -2332,28 +2305,8 @@ class SaleController extends Controller
                 # code...
                 break;
         }
-        // Solo para FSE (14) completar estructura mínima esperada por la vista
-        if ($tipo_comprobante === '14') {
-            if (!isset($data['emisor'])) {
-                $emisorFromJson = $data['json']['emisor'] ?? null;
-                if (is_array($emisorFromJson)) {
-                    $data['emisor'] = [ $emisorFromJson ];
-                }
-            }
-            if (!isset($data['cliente']) && isset($data['json'])) {
-                $receptor = $data['json']['sujetoExcluido'] ?? null;
-                if (is_array($receptor)) {
-                    $data['cliente'] = [ $receptor ];
-                }
-            }
-        }
-        @$fecha = is_array($data["json"] ?? null) ? ($data["json"]["fhRecibido"] ?? null) : null;
-        $codigoGeneracion = is_array($data["json"] ?? null) ? ($data["json"]["codigoGeneracion"] ?? null) : null;
-        if ($codigoGeneracion && $fecha) {
-            @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $codigoGeneracion, $fecha));
-        } else {
-            @$qr = null;
-        }
+        @$fecha = $data["json"]["fhRecibido"];
+        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
