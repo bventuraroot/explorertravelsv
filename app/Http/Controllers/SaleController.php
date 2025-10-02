@@ -2272,8 +2272,7 @@ class SaleController extends Controller
                 'municipalities.name as MunicipioE',
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
-                'muni.name as MunicipioR',
-                'typedoc.codemh'
+                'muni.name as MunicipioR'
             )
             ->where('sales.id', '=', $id)
             ->get();
@@ -2349,7 +2348,7 @@ class SaleController extends Controller
             ->join('countries as cou', 'cou.id', '=', 'add.country_id')
             ->join('departments as dep', 'dep.id', '=', 'add.department_id')
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
-            ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
+            // En esta consulta no necesitamos unir typedocuments; se obtiene codemh desde JSON guardado
             ->select(
                 'sales.*',
                 'dte.json',
@@ -2359,8 +2358,7 @@ class SaleController extends Controller
                 'municipalities.name as MunicipioE',
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
-                'muni.name as MunicipioR',
-                'typedoc.codemh'
+                'muni.name as MunicipioR'
             )
             ->where('sales.id', '=', $id)
             ->get();
