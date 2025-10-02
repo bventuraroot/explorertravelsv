@@ -2383,19 +2383,38 @@ class SaleController extends Controller
             // Debug: Verificar el tipo de JsonDTE
             Log::info('Debug JsonDTE type', [
                 'json_dte_type' => gettype($comprobante[0]->JsonDTE),
-                'is_string' => is_string($comprobante[0]->JsonDTE) ? 'Sí' : 'No'
+                'is_string' => is_string($comprobante[0]->JsonDTE) ? 'Sí' : 'No',
+                'json_dte_length' => is_string($comprobante[0]->JsonDTE) ? strlen($comprobante[0]->JsonDTE) : 'N/A',
+                'json_dte_preview' => is_string($comprobante[0]->JsonDTE) ? substr($comprobante[0]->JsonDTE, 0, 100) . '...' : 'N/A'
             ]);
 
-            $json_root = json_decode($comprobante[0]->JsonDTE, true); // Decodificar como array
+            // El JSON está doble-escaped, necesitamos decodificarlo dos veces
+            $json_intermedio = json_decode($comprobante[0]->JsonDTE, true);
 
-            // Verificar que se decodificó correctamente
-            if (!is_array($json_root)) {
-                Log::error('Error: JsonDTE no se pudo decodificar como array', [
-                    'json_dte' => $comprobante[0]->JsonDTE
+            if (!is_string($json_intermedio)) {
+                Log::error('Error: JsonDTE no se pudo decodificar como string intermedio', [
+                    'json_dte' => $comprobante[0]->JsonDTE,
+                    'json_intermedio_type' => gettype($json_intermedio)
                 ]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el JSON del DTE'
+                    'message' => 'Error al procesar el JSON del DTE: formato inesperado'
+                ], 500);
+            }
+
+            $json_root = json_decode($json_intermedio, true); // Segunda decodificación
+
+            // Verificar que se decodificó correctamente
+            if (!is_array($json_root)) {
+                $json_error = json_last_error_msg();
+                Log::error('Error: JsonDTE no se pudo decodificar como array en segunda pasada', [
+                    'json_intermedio' => $json_intermedio,
+                    'json_error' => $json_error,
+                    'json_last_error' => json_last_error()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al procesar el JSON del DTE: ' . $json_error
                 ], 500);
             }
 
