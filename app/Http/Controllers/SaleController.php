@@ -2379,11 +2379,29 @@ class SaleController extends Controller
 
             // Generar PDF oficial
             $pdf = $this->genera_pdf($id_factura);
+
+            // Debug: Verificar el tipo de JsonDTE
+            Log::info('Debug JsonDTE type', [
+                'json_dte_type' => gettype($comprobante[0]->JsonDTE),
+                'is_string' => is_string($comprobante[0]->JsonDTE) ? 'Sí' : 'No'
+            ]);
+
             $json_root = json_decode($comprobante[0]->JsonDTE, true); // Decodificar como array
+
+            // Verificar que se decodificó correctamente
+            if (!is_array($json_root)) {
+                Log::error('Error: JsonDTE no se pudo decodificar como array', [
+                    'json_dte' => $comprobante[0]->JsonDTE
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al procesar el JSON del DTE'
+                ], 500);
+            }
 
             // Debug: Log para verificar la estructura del JSON
             Log::info('Debug JSON root structure', [
-                'json_root_keys' => array_keys($json_root),
+                'json_root_keys' => is_array($json_root) ? array_keys($json_root) : 'No es array',
                 'tiene_json_enviado' => isset($json_root['json']['json_enviado']) ? 'Sí' : 'No'
             ]);
 
