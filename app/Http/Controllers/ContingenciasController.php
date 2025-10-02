@@ -318,7 +318,6 @@ class ContingenciasController extends Controller
                 ];
                 try {
                     $response_enviado = Http::withToken($token)->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
-                    dd($response_enviado);
                 } catch (\Throwable $th) {
                     \Log::error('Error con Servicios de Hacienda', ['error' => $th->getMessage()]);
                     return redirect()->route('dte.contingencias')
@@ -330,6 +329,7 @@ class ContingenciasController extends Controller
 
             if (count($comprobante[0]) > 0) {
                 $objEnviado = json_decode($response_enviado);
+                dd($objEnviado);
                 if (isset($objEnviado->estado)) {
                     $estado_envio = $objEnviado->estado;
                     $dateString = $objEnviado->fechaHora ?? null;
