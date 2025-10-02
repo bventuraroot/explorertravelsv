@@ -2284,7 +2284,8 @@ class SaleController extends Controller
         //print_r($data);
         //dd($data);
         $tipo_comprobante = $data["documento"][0]["tipodocumento"];
-        //dd($tipo_comprobante);
+        // Asignar plantilla por defecto para evitar variable indefinida
+        $rptComprobante = 'pdf.fac';
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crf';
@@ -2373,6 +2374,8 @@ class SaleController extends Controller
         //dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
         $tipo_comprobante = $comprobante[0]['codemh'];
+        // Asignar plantilla local por defecto para evitar variable indefinida
+        $rptComprobante = 'pdf.faclocal';
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crflocal';
