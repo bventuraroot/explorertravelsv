@@ -91,10 +91,6 @@
                 <table width="100%">
                     <tr>
                         <td>
-
-                            @php
-                                dd($emisor);
-                            @endphp
                         </td>
                     </tr>
                     <tr>
@@ -107,7 +103,7 @@
                         <td>NIT:{{$emisor[0]["nit"]}}</td>
                     </tr>
                     <tr>
-                        <td>NRC:{{$emisor[0]["nrc"]}}</td>
+                        <td>NRC:{{$emisor[0]["ncr"]}}</td>
                     </tr>
                     <tr>
                         <td>Actividad económica:{{$emisor[0]["descActividad"]}}</td>
