@@ -302,7 +302,7 @@
                     <td width="490px">
                         <table width="100%">
                             <tr>
-                                <td colspan="2"><strong>Valor en Letras:</strong> {{$totales["totalLetras"]}}</td>
+                                <td colspan="2"><strong>Valor en Letras:</strong> {{$totales["totalLetras"] ?? $totales["totalLetras"] ?? ''}}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" align="center" style="background-color: lightgray;"><strong>EXTENSIÓN</strong></td>
@@ -358,9 +358,9 @@
                         <table style="border-spacing: 0 0;">
                             <tr>
                                 <td width="80px">Sumas $</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalNoSuj"])}}</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalExenta"])}}</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalGravada"])}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalNoSuj"] ?? $totales["totalNoSuj"] ?? 0)}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalExenta"] ?? $totales["totalExenta"] ?? 0)}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero($totales["totalGravada"] ?? $totales["totalGravada"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
@@ -400,17 +400,17 @@
                             </tr>
                             <tr>
                                 <td colspan="3">Total otros montos no afectos</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($totales["totalNoGravado"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["totalNoGravado"] ?? $totales["totalNoGravado"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">Retencion Renta</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($totales["reteRenta"])}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["reteRenta"] ?? $totales["reteRenta"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3" ><strong>TOTAL A PAGAR</strong></td>
-                                <td align="right" class="cuadro-izq"><strong>{{FNumero($totales["totalPagar"]-$totales["reteRenta"])}}</strong></td>
+                                <td align="right" class="cuadro-izq"><strong>{{FNumero(($totales["totalPagar"] ?? $totales["totalPagar"] ?? 0) - ($totales["reteRenta"] ?? $totales["reteRenta"] ?? 0))}}</strong></td>
 
                             </tr>
 
