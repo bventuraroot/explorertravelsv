@@ -2380,7 +2380,21 @@ class SaleController extends Controller
             // Generar PDF oficial
             $pdf = $this->genera_pdf($id_factura);
             $json_root = json_decode($comprobante[0]->JsonDTE, true); // Decodificar como array
+
+            // Debug: Log para verificar la estructura del JSON
+            Log::info('Debug JSON root structure', [
+                'json_root_keys' => array_keys($json_root),
+                'tiene_json_enviado' => isset($json_root['json']['json_enviado']) ? 'Sí' : 'No'
+            ]);
+
             $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
+
+            // Debug: Log para verificar qué JSON se está usando
+            Log::info('Debug JSON enviado structure', [
+                'json_enviado_keys' => array_keys($json_enviado),
+                'tiene_identificacion' => isset($json_enviado['identificacion']) ? 'Sí' : 'No'
+            ]);
+
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
             // Obtener nombre de archivo basado en sello de recepción
