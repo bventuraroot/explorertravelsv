@@ -2267,7 +2267,8 @@ class SaleController extends Controller
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
             ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
             ->select(
-                'dte.json',
+                'dte.json as jsondte',
+                'sales.json as json',
                 'countries.name as PaisE',
                 'departments.name as DepartamentoE',
                 'municipalities.name as MunicipioE',
