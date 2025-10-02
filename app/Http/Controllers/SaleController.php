@@ -811,7 +811,20 @@ class SaleController extends Controller
 
                 // Envío automático de correo tras confirmación exitosa en Hacienda (solo producción)
                 if (($dtecreate->codEstado ?? null) === '02' && (string)($dtecreate->ambiente_id ?? '') === '01') {
-                    $this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
+                    try {
+                        $this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
+                        Log::info('Correo automático enviado tras confirmación exitosa de Hacienda', [
+                            'dte_id' => $dtecreate->id,
+                            'sale_id' => $dtecreate->sale_id,
+                            'codigo_generacion' => $dtecreate->codigoGeneracion
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Error enviando correo automático tras confirmación de Hacienda', [
+                            'dte_id' => $dtecreate->id,
+                            'sale_id' => $dtecreate->sale_id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 }
             } else {
                 // DTE deshabilitado - solo guardar la venta sin emisión
@@ -2381,25 +2394,8 @@ class SaleController extends Controller
             // Generar PDF oficial
             $pdf = $this->genera_pdf($id_factura);
 
-            // Debug: Verificar el tipo de JsonDTE
-            Log::info('Debug JsonDTE type', [
-                'json_dte_type' => gettype($comprobante[0]->JsonDTE),
-                'is_string' => is_string($comprobante[0]->JsonDTE) ? 'Sí' : 'No',
-                'json_dte_length' => is_string($comprobante[0]->JsonDTE) ? strlen($comprobante[0]->JsonDTE) : 'N/A',
-                'json_dte_preview' => is_string($comprobante[0]->JsonDTE) ? substr($comprobante[0]->JsonDTE, 0, 100) . '...' : 'N/A'
-            ]);
-
-            // Usar sale.json que contiene la respuesta de Hacienda
+            // Usar sales.json que contiene la respuesta de Hacienda
             $sale_json = $comprobante[0]->json;
-
-            // Debug: Verificar el tipo de sale.json
-            Log::info('Debug Sale JSON type', [
-                'sale_json_type' => gettype($sale_json),
-                'is_string' => is_string($sale_json) ? 'Sí' : 'No',
-                'sale_json_length' => is_string($sale_json) ? strlen($sale_json) : 'N/A',
-                'sale_json_preview' => is_string($sale_json) ? substr($sale_json, 0, 100) . '...' : 'N/A'
-            ]);
-
             $json_root = json_decode($sale_json, true);
 
             // Verificar que se decodificó correctamente
@@ -2407,8 +2403,7 @@ class SaleController extends Controller
                 $json_error = json_last_error_msg();
                 Log::error('Error: Sale JSON no se pudo decodificar como array', [
                     'sale_json' => $sale_json,
-                    'json_error' => $json_error,
-                    'json_last_error' => json_last_error()
+                    'json_error' => $json_error
                 ]);
                 return response()->json([
                     'success' => false,
@@ -2416,35 +2411,8 @@ class SaleController extends Controller
                 ], 500);
             }
 
-            // Debug: Log para verificar la estructura del JSON
-            Log::info('Debug JSON root structure', [
-                'json_root_keys' => is_array($json_root) ? array_keys($json_root) : 'No es array',
-                'tiene_json_enviado' => isset($json_root['json']['json_enviado']) ? 'Sí' : 'No',
-                'tiene_json' => isset($json_root['json']) ? 'Sí' : 'No'
-            ]);
-
-            // Buscar json_enviado en diferentes ubicaciones posibles
-            $json_enviado = null;
-            if (isset($json_root['json']['json_enviado'])) {
-                $json_enviado = $json_root['json']['json_enviado'];
-                Log::info('JSON enviado encontrado en: json.json_enviado');
-            } elseif (isset($json_root['json_enviado'])) {
-                $json_enviado = $json_root['json_enviado'];
-                Log::info('JSON enviado encontrado en: json_enviado');
-            } elseif (isset($json_root['json'])) {
-                $json_enviado = $json_root['json'];
-                Log::info('JSON enviado encontrado en: json');
-            } else {
-                $json_enviado = $json_root;
-                Log::info('Usando JSON root como json_enviado');
-            }
-
-            // Debug: Log para verificar qué JSON se está usando
-            Log::info('Debug JSON enviado structure', [
-                'json_enviado_keys' => array_keys($json_enviado),
-                'tiene_identificacion' => isset($json_enviado['identificacion']) ? 'Sí' : 'No',
-                'tiene_codigoGeneracion' => isset($json_enviado['identificacion']['codigoGeneracion']) ? 'Sí' : 'No'
-            ]);
+            // Obtener json_enviado de la respuesta de Hacienda
+            $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
 
             $json = $this->limpiarJsonParaCorreo($json_enviado);
 
