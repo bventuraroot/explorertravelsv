@@ -2359,6 +2359,7 @@ class SaleController extends Controller
                 ->select(
                     'sales.*',
                     'dte.json as JsonDTE',
+                    'sale.json',
                     'dte.codigoGeneracion',
                     'countries.name as PaisE',
                     'departments.name as DepartamentoE',
@@ -2388,48 +2389,61 @@ class SaleController extends Controller
                 'json_dte_preview' => is_string($comprobante[0]->JsonDTE) ? substr($comprobante[0]->JsonDTE, 0, 100) . '...' : 'N/A'
             ]);
 
-            // El JSON está doble-escaped, necesitamos decodificarlo dos veces
-            $json_intermedio = json_decode($comprobante[0]->JsonDTE, true);
+            // Usar sale.json que contiene la respuesta de Hacienda
+            $sale_json = $comprobante[0]->json;
 
-            if (!is_string($json_intermedio)) {
-                Log::error('Error: JsonDTE no se pudo decodificar como string intermedio', [
-                    'json_dte' => $comprobante[0]->JsonDTE,
-                    'json_intermedio_type' => gettype($json_intermedio)
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al procesar el JSON del DTE: formato inesperado'
-                ], 500);
-            }
+            // Debug: Verificar el tipo de sale.json
+            Log::info('Debug Sale JSON type', [
+                'sale_json_type' => gettype($sale_json),
+                'is_string' => is_string($sale_json) ? 'Sí' : 'No',
+                'sale_json_length' => is_string($sale_json) ? strlen($sale_json) : 'N/A',
+                'sale_json_preview' => is_string($sale_json) ? substr($sale_json, 0, 100) . '...' : 'N/A'
+            ]);
 
-            $json_root = json_decode($json_intermedio, true); // Segunda decodificación
+            $json_root = json_decode($sale_json, true);
 
             // Verificar que se decodificó correctamente
             if (!is_array($json_root)) {
                 $json_error = json_last_error_msg();
-                Log::error('Error: JsonDTE no se pudo decodificar como array en segunda pasada', [
-                    'json_intermedio' => $json_intermedio,
+                Log::error('Error: Sale JSON no se pudo decodificar como array', [
+                    'sale_json' => $sale_json,
                     'json_error' => $json_error,
                     'json_last_error' => json_last_error()
                 ]);
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el JSON del DTE: ' . $json_error
+                    'message' => 'Error al procesar el JSON de la venta: ' . $json_error
                 ], 500);
             }
 
             // Debug: Log para verificar la estructura del JSON
             Log::info('Debug JSON root structure', [
                 'json_root_keys' => is_array($json_root) ? array_keys($json_root) : 'No es array',
-                'tiene_json_enviado' => isset($json_root['json']['json_enviado']) ? 'Sí' : 'No'
+                'tiene_json_enviado' => isset($json_root['json']['json_enviado']) ? 'Sí' : 'No',
+                'tiene_json' => isset($json_root['json']) ? 'Sí' : 'No'
             ]);
 
-            $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
+            // Buscar json_enviado en diferentes ubicaciones posibles
+            $json_enviado = null;
+            if (isset($json_root['json']['json_enviado'])) {
+                $json_enviado = $json_root['json']['json_enviado'];
+                Log::info('JSON enviado encontrado en: json.json_enviado');
+            } elseif (isset($json_root['json_enviado'])) {
+                $json_enviado = $json_root['json_enviado'];
+                Log::info('JSON enviado encontrado en: json_enviado');
+            } elseif (isset($json_root['json'])) {
+                $json_enviado = $json_root['json'];
+                Log::info('JSON enviado encontrado en: json');
+            } else {
+                $json_enviado = $json_root;
+                Log::info('Usando JSON root como json_enviado');
+            }
 
             // Debug: Log para verificar qué JSON se está usando
             Log::info('Debug JSON enviado structure', [
                 'json_enviado_keys' => array_keys($json_enviado),
-                'tiene_identificacion' => isset($json_enviado['identificacion']) ? 'Sí' : 'No'
+                'tiene_identificacion' => isset($json_enviado['identificacion']) ? 'Sí' : 'No',
+                'tiene_codigoGeneracion' => isset($json_enviado['identificacion']['codigoGeneracion']) ? 'Sí' : 'No'
             ]);
 
             $json = $this->limpiarJsonParaCorreo($json_enviado);
