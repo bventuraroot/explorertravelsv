@@ -260,7 +260,7 @@ class ContingenciasController extends Controller
                 "detalleDTE" => $detalleDTE,
                 "motivo" => $motivo
             ];
-            dd($comprobante_electronico);
+            //dd($comprobante_electronico);
             if (empty($comprobante_electronico)) {
                 $cola->codEstado = "10";
                 $cola->estado = "Revision";
