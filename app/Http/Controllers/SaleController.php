@@ -2272,31 +2272,18 @@ class SaleController extends Controller
                 'municipalities.name as MunicipioE',
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
-                'muni.name as MunicipioR'
+                'muni.name as MunicipioR',
+                'typedoc.codemh'
             )
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        // Normalizar colección y decodificar JSON de DTE como antes, sin abortar
-        $comprobante = $factura instanceof \Illuminate\Support\Collection ? $factura->toArray() : json_decode(json_encode($factura), true);
-        $jsonRaw = $comprobante[0]["json"] ?? '{}';
-        $data = is_string($jsonRaw) ? json_decode($jsonRaw, true) : (is_array($jsonRaw) ? $jsonRaw : []);
-        if (!is_array($data)) { $data = []; }
-        // Compatibilidad: si alguna subestructura viene serializada
-        if (isset($data["documento"]) && is_string($data["documento"])) {
-            $docMaybe = json_decode($data["documento"], true);
-            if (json_last_error() === JSON_ERROR_NONE) { $data["documento"] = $docMaybe; }
-        }
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $jsonMaybe = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE) { $data["json"] = $jsonMaybe; }
-        }
+        $comprobante = json_decode($factura, true);
+        //dd(json_decode($comprobante[0]["json"]));
+        $data = json_decode($comprobante[0]["json"], true);
         //print_r($data);
         //dd($data);
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"]
-            ?? ($data["json"]["identificacion"]["tipoDte"] ?? ($data["identificacion"]["tipoDte"] ?? null));
-        // Plantilla por defecto para evitar variable indefinida
-        $rptComprobante = 'pdf.fac';
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
@@ -2305,11 +2292,14 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.fac';
                 break;
+            case '04': // FSE - Sujeto Excluido
+                $rptComprobante = 'pdf.fse';
+                break;
             case '11':  //FEX
                 $rptComprobante = 'pdf.fex';
                 break;
-            case '05':
-                $rptComprobante = 'pdf.ncr';
+            case '05': // NCR - usar plantilla de CCF como base
+                $rptComprobante = 'pdf.crf';
                 break;
             case '06':
                 $rptComprobante = 'pdf.ndb';
@@ -2319,14 +2309,8 @@ class SaleController extends Controller
                 # code...
                 break;
         }
-        $qr = '';
-        @$fecha = $data["json"]["fhRecibido"] ?? ($data["fhRecibido"] ?? null);
-        $ambienteQr = $data["documento"][0]["ambiente"]
-            ?? ($data["json"]["identificacion"]["ambiente"] ?? ($data["identificacion"]["ambiente"] ?? null));
-        $codigoGenQr = $data["json"]["codigoGeneracion"] ?? ($data["identificacion"]["codigoGeneracion"] ?? null);
-        if ($ambienteQr && $codigoGenQr && $fecha) {
-            @$qr = base64_encode(codigoQR($ambienteQr, $codigoGenQr, $fecha));
-        }
+        @$fecha = $data["json"]["fhRecibido"];
+        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
@@ -2364,7 +2348,7 @@ class SaleController extends Controller
             ->join('countries as cou', 'cou.id', '=', 'add.country_id')
             ->join('departments as dep', 'dep.id', '=', 'add.department_id')
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
-            // En esta consulta no necesitamos unir typedocuments; se obtiene codemh desde JSON guardado
+            ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
             ->select(
                 'sales.*',
                 'dte.json',
@@ -2374,31 +2358,21 @@ class SaleController extends Controller
                 'municipalities.name as MunicipioE',
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
-                'muni.name as MunicipioR'
+                'muni.name as MunicipioR',
+                'typedoc.codemh'
             )
             ->where('sales.id', '=', $id)
             ->get();
         //dd($factura);
-        // Normalizar colección/objeto a arreglo asociativo
-        $comprobante = json_decode(json_encode($factura), true);
+        $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["jsonlocal"], true);
-        // Mantener estructura original; si json es string, normalizar a arreglo
-        if (isset($data["json"]) && is_string($data["json"])) {
-            $maybeArray = json_decode($data["json"], true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
-                $data["json"] = $maybeArray;
-            }
-        }
         //dd($data);
 
         //print_r($data);
         //dd($data);
-        // Determinar tipo de comprobante desde los datos locales (sin depender de joins)
-        $tipo_comprobante = $data["documento"][0]["tipodocumento"]
-            ?? ($data["json"]["identificacion"]["tipoDte"] ?? null);
-        // Asignar plantilla local por defecto para evitar variable indefinida
-        $rptComprobante = 'pdf.faclocal';
+        //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        $tipo_comprobante = $comprobante[0]['codemh'];
         switch ($tipo_comprobante) {
             case '03': //CRF
                 $rptComprobante = 'pdf.crflocal';
@@ -2406,7 +2380,7 @@ class SaleController extends Controller
             case '01': //FAC
                 $rptComprobante = 'pdf.faclocal';
                 break;
-            case '14': // FSE - Sujeto Excluido (local)
+            case '04': // FSE - Sujeto Excluido (local)
                 $rptComprobante = 'pdf.fse';
                 break;
             case '11':  //FEX
@@ -2425,13 +2399,8 @@ class SaleController extends Controller
         }
         //$fecha = $data["json"]["fhRecibido"];
         //dd($data);
-        $fecha = $data['documento'][0]['fechacreacion'] ?? null;
-        $codigoGeneracion = is_array($data["json"] ?? null) ? ($data["json"]["codigoGeneracion"] ?? null) : null;
-        if ($codigoGeneracion && $fecha) {
-            @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $codigoGeneracion, $fecha));
-        } else {
-            @$qr = null;
-        }
+        $fecha = $data['documento'][0]['fechacreacion'];
+        @$qr = base64_encode(codigoQR($data["documento"][0]["ambiente"], $data["json"]["codigoGeneracion"], $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
         $data["codTransaccion"] = "01";
         $data["PaisE"] = $factura[0]['PaisE'];
@@ -2458,9 +2427,8 @@ class SaleController extends Controller
     }
     public function print($id)
     {
-        // Si existe DTE para esta venta, imprimir PDF oficial; de lo contrario, PDF local
-        $tieneDte = \App\Models\Dte::where('sale_id', $id)->exists();
-        $pdf = $tieneDte ? $this->genera_pdf($id) : $this->genera_pdflocal($id);
+        //$pdf = $this->genera_pdf($id);
+        $pdf = $this->genera_pdflocal($id);
         return $pdf->stream('comprobante.pdf');
     }
 
@@ -2494,9 +2462,8 @@ class SaleController extends Controller
             // Armar PDF oficial y JSON
             $pdf = $this->genera_pdf($saleId);
             $jsonRoot = json_decode($dte->json);
-            // Adjuntar SIEMPRE el json_enviado si existe, como solicitaste
-            $jsonEnviado = $jsonRoot->json->json_enviado ?? ($jsonRoot->json ?? $jsonRoot);
-            $jsonPretty = json_encode($jsonEnviado, JSON_PRETTY_PRINT);
+            $jsonEnviado = $jsonRoot->json->json_enviado ?? null;
+            $jsonPretty = $jsonEnviado ? json_encode($jsonEnviado, JSON_PRETTY_PRINT) : json_encode($jsonRoot, JSON_PRETTY_PRINT);
 
             $dataCorreo = [
                 'nombre' => $nombreCliente,
