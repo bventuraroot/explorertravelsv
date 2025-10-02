@@ -2283,7 +2283,7 @@ class SaleController extends Controller
         //dd(json_decode($comprobante[0]["json"]));
         $data = json_decode($comprobante[0]["json"], true);
         //print_r($data);
-        //dd($data);
+        dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
         $tipo_comprobante = $comprobante[0]['codemh'];
         //dd($tipo_comprobante);
