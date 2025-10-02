@@ -2304,21 +2304,6 @@ class SaleController extends Controller
                 $data["json"] = $jsonMaybe;
             }
         }
-        // Completar estructura mínima esperada por vistas PDF
-        if (!isset($data['emisor'])) {
-            // Intentar mapear desde json.enviado.emisor a arreglo indexado
-            $emisorFromJson = $data['json']['emisor'] ?? null;
-            if (is_array($emisorFromJson)) {
-                $data['emisor'] = [ $emisorFromJson ];
-            }
-        }
-        if (!isset($data['cliente']) && isset($data['json'])) {
-            // Para FAC y CCF el receptor está en 'receptor'; para FSE en 'sujetoExcluido'
-            $receptor = $data['json']['receptor'] ?? ($data['json']['sujetoExcluido'] ?? null);
-            if (is_array($receptor)) {
-                $data['cliente'] = [ $receptor ];
-            }
-        }
         // Determinar tipo de comprobante de forma segura
         $tipo_comprobante = $data["documento"][0]["tipodocumento"] ?? ($data["json"]["identificacion"]["tipoDte"] ?? null);
         // Asignar plantilla por defecto para evitar variable indefinida
@@ -2346,6 +2331,21 @@ class SaleController extends Controller
             default:
                 # code...
                 break;
+        }
+        // Solo para FSE (14) completar estructura mínima esperada por la vista
+        if ($tipo_comprobante === '14') {
+            if (!isset($data['emisor'])) {
+                $emisorFromJson = $data['json']['emisor'] ?? null;
+                if (is_array($emisorFromJson)) {
+                    $data['emisor'] = [ $emisorFromJson ];
+                }
+            }
+            if (!isset($data['cliente']) && isset($data['json'])) {
+                $receptor = $data['json']['sujetoExcluido'] ?? null;
+                if (is_array($receptor)) {
+                    $data['cliente'] = [ $receptor ];
+                }
+            }
         }
         @$fecha = is_array($data["json"] ?? null) ? ($data["json"]["fhRecibido"] ?? null) : null;
         $codigoGeneracion = is_array($data["json"] ?? null) ? ($data["json"]["codigoGeneracion"] ?? null) : null;
