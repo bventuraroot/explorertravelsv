@@ -2267,9 +2267,7 @@ class SaleController extends Controller
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
             ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
             ->select(
-                'sales.*',
                 'dte.json',
-                'sales.json as jsonlocal',
                 'countries.name as PaisE',
                 'departments.name as DepartamentoE',
                 'municipalities.name as MunicipioE',
@@ -2280,13 +2278,13 @@ class SaleController extends Controller
             )
             ->where('sales.id', '=', $id)
             ->get();
+        dd($factura);
         $comprobante = json_decode($factura, true);
         //dd(json_decode($comprobante[0]["json"]));
-        $data = json_decode($comprobante[0]["jsonlocal"], true);
+        $data = json_decode($comprobante[0]["json"], true);
         //print_r($data);
         //dd($data);
-        //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
-        $tipo_comprobante = $comprobante[0]['codemh'];
+        $tipo_comprobante = $data["documento"][0]["tipodocumento"];
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
             case '03': //CRF
