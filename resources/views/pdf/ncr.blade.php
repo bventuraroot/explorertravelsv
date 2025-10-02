@@ -31,14 +31,14 @@
         .cuadro-izq{
         border-left:1px solid #000;
         border-spacing: 0 0;
-       
+
         }
         .sumas{
         border-left:1px solid #000;
         border-bottom:1px solid #000;
         border-spacing: 0 0;
         margin: 0;
-       
+
         }
     </style>
 
@@ -52,7 +52,7 @@
                 <table width="100%">
                     <tr>
                         <td>
-                            <img src="data:image/png;base64,{{$logo}}" alt="logo">
+                            <img src="{{ logo_pdf($comprobante[0][0]['nrc_emisor']) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
                         </td>
                     </tr>
                     <tr>
@@ -60,7 +60,7 @@
                             <strong>{{$comprobante[0][0]["nombre_empresa"]}}</strong>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <td>NIT:{{$comprobante[0][0]["nit_emisor"]}}</td>
                     </tr>
@@ -138,15 +138,15 @@
 
     </table>
 
- <!-- Final de Encabezado y QR -->  
+ <!-- Final de Encabezado y QR -->
 
  <!-- Datos Receptor -->
     <table width="100%" style="border-collapse:collapse;"">
         <tr valign="top" >
-            
+
             <td width="480px">
                 <table width="100%" style="border-top:1px solid #000;">
-                    
+
                     <tr>
                         <td align="right" width="100px"><strong>Nombre:</strong></td>
                         <td colspan="2" >{{$comprobante[0][0]["id_cliente"]}} - {{$comprobante[0][0]["nombre"]}}  </td>
@@ -166,8 +166,8 @@
                         <td>{{$comprobante[0][0]["complemento_receptor"]}}</td>
                         <td><strong>Teléfono:</strong> {{$comprobante[0][0]["telefono_receptor"]}}</td>
                     </tr>
-                    
-                    
+
+
                     <tr>
                         <td align="right"><strong>Municipio:</strong></td>
                         <td>{{$comprobante[0][0]["municipio_receptor"]}}</td>
@@ -178,7 +178,7 @@
                         <td>{{$comprobante[0][0]["departamento_receptor"]}}</td>
                         <td><strong>Moneda:</strong>USD</td>
                     </tr>
-                    
+
                 </table>
             </td>
         </tr>
@@ -187,7 +187,7 @@
 
 <!-- Datos Receptor -->
 @if (!empty($comprobante[3]))
-    
+
 
     <table width="100%" style="border-top:1px solid #000;">
         <tr align="center" >
@@ -219,8 +219,8 @@
         </thead>
         <tbody>
             @foreach ($comprobante[1] as $d)
-                
-            
+
+
             <tr>
                 <th>{{$loop->index+1}}</th>
                 <td>1</td>
@@ -235,7 +235,7 @@
             @endforeach
         </tbody>
 
-        
+
     </table>
     <footer>
         <div class="footer" style="position: absolute; bottom: 0;border-spacing: 0 0;border-collapse:collapse;margin-top:0;">
@@ -260,7 +260,7 @@
                             <tr>
                                 <td colspan="2" align="center" style="background-color: lightgray;"><strong>OBSERVACIONES</strong></td>
                             </tr>
-                            <tr> 
+                            <tr>
                                 <td width="245px">
                                    <center><strong>Forma de Pago</strong></center>
                                 </td>
@@ -272,9 +272,9 @@
                                     <tr>
                                         <td align="center"><strong>Credito</strong></td>
                                         <td align="center"><strong>Contado</strong></td>
-                                        <td align="center"><strong>Tarjeta</strong></td>         
+                                        <td align="center"><strong>Tarjeta</strong></td>
                                     </tr>
-                                </table>    
+                                </table>
                                 </td>
                                 <td></td>
                             </tr>
@@ -293,7 +293,7 @@
                                 <td>&nbsp;</td>
                             </tr>
                         </table>
-                    
+
                     </td>
                     <td style="border:1px solid #000;" width="230px">
                         <!--- Totales-->
@@ -303,58 +303,58 @@
                                 <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_nosujeto"])}}</td>
                                 <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_exento"])}}</td>
                                 <td align="right" width="50px" class="sumas">{{FNumero($comprobante[0][0]["tot_gravado"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="3" width="160px">Suma total de operaciones</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotalVentas"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="3">Total descuentos</td>
                                 <td align="right" class="cuadro-izq">{{FNumero(0.00)}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="3" width="160px">Impuestos al Valor Agregado 13%</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["iva"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="3">Sub-Total</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="3">IVA Percibido</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["ivaPerci1"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="3">IVA Retenido</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["ivaRete1"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="3">Monto Total de la operación</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="3">Total otros montos no afectos</td>
                                 <td align="right" class="cuadro-izq">{{FNumero($comprobante[0][0]["totalNoGravado"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="3" ><strong>TOTAL A PAGAR</strong></td>
                                 <td align="right" class="cuadro-izq"><strong>{{FNumero($comprobante[0][0]["totalPagar"])}}</strong></td>
-                            
+
                             </tr>
-                    
+
                         </table>
                         <!--- Fin Totales-->
                     </td>
-                </tr> 
+                </tr>
                 <tr class="cuadro">
                     <td colspan="2" style="font-size:6px;"><span style="margin:0;padding=0;"><center>Condiciones generales de los servicios prestados por
                         {{$comprobante[0][0]["nombre_empresa"]}}</center><br style="margin:0;padding=0;">
@@ -379,8 +379,8 @@
                     {{$comprobante[0][0]["nombre_empresa"]}}, explicaron cada una de las condiciones descritas anteriormente, entendiéndolas
                     y aceptándolas, eximiéndola
                     de tal forma de cualquier responsabilidad que se derive de ellas.</span>
-                    </td>    
-                </tr>     
+                    </td>
+                </tr>
             </table>
         </div>
     </footer>
