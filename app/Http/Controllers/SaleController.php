@@ -220,6 +220,34 @@ class SaleController extends Controller
         );
     }
 
+    /**
+     * Actualiza metadatos simples de la venta (cliente y/o fecha) de forma segura.
+     */
+    public function updateMeta(Request $request)
+    {
+        $request->validate([
+            'sale_id' => 'required|numeric|exists:sales,id',
+            'client_id' => 'nullable|numeric|exists:clients,id',
+            'date' => 'nullable|date|before_or_equal:today',
+        ]);
+
+        $sale = Sale::find($request->sale_id);
+
+        // Permitir cambiar cliente en borrador o antes de confirmar
+        if ($request->filled('client_id')) {
+            $sale->client_id = $request->client_id;
+        }
+
+        // Permitir ajustar fecha antes de crear DTE (solo en typesale borrador 2)
+        if ($request->filled('date') && (string)$sale->typesale !== '1') {
+            $sale->date = $request->date;
+        }
+
+        $sale->save();
+
+        return response()->json(['ok' => true]);
+    }
+
     public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada')
     {
         // Limpiar parámetros que vienen como 'SIN_VALOR'

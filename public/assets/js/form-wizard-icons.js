@@ -169,6 +169,39 @@ $(function () {
         });
     }
 
+    // Persistir cliente al cambiar selección
+    $(document).on('change', '#client', function(){
+        var corrid = $('#corr').val() || $('#valcorr').val();
+        var clientid = $('#client').val();
+        if(!corrid || !clientid || clientid==='0') return;
+        $.ajax({
+            url: '/sale/update-meta',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { sale_id: corrid, client_id: clientid },
+            success: function(){
+                // Si la vista de revisión está presente, refrescarla
+                if ($('#review-submit').length) { getinfodoc(); }
+            }
+        });
+    });
+
+    // Persistir fecha al cambiar
+    $(document).on('change', '#date', function(){
+        var corrid = $('#corr').val() || $('#valcorr').val();
+        var date = $('#date').val();
+        if(!corrid || !date) return;
+        $.ajax({
+            url: '/sale/update-meta',
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { sale_id: corrid, date: date },
+            success: function(){
+                if ($('#review-submit').length) { getinfodoc(); }
+            }
+        });
+    });
+
     function formatState(state) {
         if (!state || state.id==0) {
           return state && state.text ? state.text : '';
@@ -1324,7 +1357,8 @@ function draftdocument(corr, draft) {
                     $("#iva").val(value.iva);
                     $("#iva_entre").val(value.iva_entre);
                     $("#typecontribuyenteclient").val(value.client_contribuyente);
-                    $('#date').prop('disabled', true);
+                    // Mantener fecha editable para permitir correcciones antes de crear el DTE
+                    $('#date').prop('disabled', false);
                     $("#corr").val(corr);
                     $("#date").val(value.date);
                     //campo cliente - cargar todos los clientes disponibles para permitir cambio

@@ -157,7 +157,7 @@
                             <div class="col-sm-2">
                                 <label class="form-label" for="date">Fecha</label>
                                 <input type="date" id="date" name="date" class="form-control"
-                                    value="{{ now()->format('Y-m-d') }}" readonly />
+                                    value="{{ now()->format('Y-m-d') }}" />
                             </div>
                             <div class="col-sm-8">
                                 <label for="client" class="form-label">Cliente</label>

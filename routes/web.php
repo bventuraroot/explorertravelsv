@@ -157,6 +157,8 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::get('createdocument/{corr}/{amount}', [SaleController::class, 'createdocument'])->name('createdocument');
         Route::get('impdoc/{corr}', [SaleController::class, 'impdoc'])->name('impdoc');
         Route::get('destroy/{id}', [SaleController::class, 'destroy'])->name('destroy');
+        // Endpoint simple para actualizar fecha/cliente de venta (draft)
+        Route::post('update-meta', [SaleController::class, 'updateMeta'])->name('update-meta');
         // Nuevo endpoint POST seguro
         Route::post('savefactemp', [SaleController::class, 'savefactempPost'])->name('savefactemp.post');
         // Mantener compatibilidad GET temporalmente
