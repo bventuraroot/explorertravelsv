@@ -1402,20 +1402,31 @@ function draftdocument(corr, draft) {
                     $('#date').prop('disabled', false);
                     $("#corr").val(corr);
 
-                    // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
+                    // Convertir fecha de ISO o DD/MM/YYYY a YYYY-MM-DD para el input date
                     var fechaBD = value.date;
                     console.log("DEBUG - Fecha original de BD:", fechaBD);
-                    if (fechaBD && fechaBD.includes('/')) {
-                        var partes = fechaBD.split('/');
-                        if (partes.length === 3) {
-                            // DD/MM/YYYY -> YYYY-MM-DD
-                            var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
-                            $("#date").val(fechaFormateada);
-                            console.log("DEBUG - Fecha convertida:", fechaFormateada);
+
+                    if (fechaBD) {
+                        var fechaFormateada = '';
+
+                        if (fechaBD.includes('T')) {
+                            // Formato ISO: 2025-10-01T00:00:00.000000Z -> 2025-10-01
+                            fechaFormateada = fechaBD.split('T')[0];
+                            console.log("DEBUG - Fecha ISO convertida:", fechaFormateada);
+                        } else if (fechaBD.includes('/')) {
+                            // Formato DD/MM/YYYY -> YYYY-MM-DD
+                            var partes = fechaBD.split('/');
+                            if (partes.length === 3) {
+                                fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
+                                console.log("DEBUG - Fecha DD/MM/YYYY convertida:", fechaFormateada);
+                            }
+                        } else {
+                            // Asumir que ya está en formato YYYY-MM-DD
+                            fechaFormateada = fechaBD;
+                            console.log("DEBUG - Fecha sin conversión:", fechaFormateada);
                         }
-                    } else if (fechaBD) {
-                        $("#date").val(fechaBD);
-                        console.log("DEBUG - Fecha sin conversión:", fechaBD);
+
+                        $("#date").val(fechaFormateada);
                     }
 
                     //campo cliente - cargar todos los clientes disponibles para permitir cambio
@@ -1430,21 +1441,32 @@ function draftdocument(corr, draft) {
 
                     // Asegurar que la fecha se mantenga después de cargar
                     setTimeout(function() {
-                        // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
+                        // Convertir fecha de ISO o DD/MM/YYYY a YYYY-MM-DD para el input date
                         var fechaBD = value.date;
                         console.log("DEBUG - Reforzando fecha:", fechaBD);
-                        if (fechaBD && fechaBD.includes('/')) {
-                            var partes = fechaBD.split('/');
-                            if (partes.length === 3) {
-                                // DD/MM/YYYY -> YYYY-MM-DD
-                                var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
-                                $("#date").val(fechaFormateada);
-                                $("#date").attr('value', fechaFormateada);
-                                console.log("DEBUG - Fecha reforzada:", fechaBD, "->", fechaFormateada);
+
+                        if (fechaBD) {
+                            var fechaFormateada = '';
+
+                            if (fechaBD.includes('T')) {
+                                // Formato ISO: 2025-10-01T00:00:00.000000Z -> 2025-10-01
+                                fechaFormateada = fechaBD.split('T')[0];
+                                console.log("DEBUG - Fecha ISO reforzada:", fechaFormateada);
+                            } else if (fechaBD.includes('/')) {
+                                // Formato DD/MM/YYYY -> YYYY-MM-DD
+                                var partes = fechaBD.split('/');
+                                if (partes.length === 3) {
+                                    fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
+                                    console.log("DEBUG - Fecha DD/MM/YYYY reforzada:", fechaFormateada);
+                                }
+                            } else {
+                                // Asumir que ya está en formato YYYY-MM-DD
+                                fechaFormateada = fechaBD;
+                                console.log("DEBUG - Fecha sin conversión reforzada:", fechaFormateada);
                             }
-                        } else if (fechaBD) {
-                            $("#date").val(fechaBD);
-                            $("#date").attr('value', fechaBD);
+
+                            $("#date").val(fechaFormateada);
+                            $("#date").attr('value', fechaFormateada);
                         }
 
                         if (draftClientId && draftClientId != '' && draftClientId != '0') {
