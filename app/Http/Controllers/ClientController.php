@@ -333,46 +333,60 @@ class ClientController extends Controller
      */
     public function update(ClientRequest $request, Client $client)
     {
-        $id_user = auth()->user()->id;
-        $phone = Phone::find($request->phoneeditid);
-        $phone->phone = $request->tel1edit;
-        $phone->phone_fijo = $request->tel2edit;
-        $phone->save();
+        try {
+            $id_user = auth()->user()->id;
+            $phone = Phone::find($request->phoneeditid);
+            $phone->phone = $request->tel1edit;
+            $phone->phone_fijo = $request->tel2edit;
+            $phone->save();
 
-        $address = Address::find($request->addresseditid);
-        $address->country_id = $request->countryedit;
-        $address->department_id = (!empty($request->departamentedit) && $request->departamentedit != '0') ? $request->departamentedit : null;
-        $address->municipality_id = (!empty($request->municipioedit) && $request->municipioedit != '0') ? $request->municipioedit : null;
-        $address->reference = $request->addressedit;
-        $address->save();
-        //dd($request);
-        $client = Client::find($request->idedit);
-        $client->firstname = $request->firstnameedit;
-        $client->secondname = $request->secondnameedit;
-        $client->firstlastname = $request->firstlastnameedit;
-        $client->secondlastname = $request->secondlastnameedit;
-        $client->comercial_name = $request->comercial_nameedit;
-        $client->name_contribuyente = $request->name_contribuyenteedit;
-        $client->email = $request->emailedit;
-        $client->ncr = str_replace(['-', ' '], '', $request->ncredit);
-        $client->giro = $request->giroedit;
-        $client->nit = str_replace(['-', ' '], '', $request->nitedit);
-        $client->legal = $request->legaledit;
-        $client->tpersona = $request->tpersonaedit;
-        $client->contribuyente = $request->contribuyenteeditvalor;
-        $client->extranjero = $request->extranjeroedit == 'on' ? '1' : '0';
-        $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporteedit);
-        $client->tipoContribuyente = $request->tipocontribuyenteedit;
-        $client->economicactivity_id = $request->acteconomicaedit;
-        $client->birthday = date('Ymd', strtotime($request->birthdayedit));
-        $client->empresa = $request->empresaedit;
-        $client->address_id = $address['id'];
-        $client->phone_id = $phone['id'];
-        $client->phone_id = $phone['id'];
-        $client->user_id_update = $id_user;
-        $client->save();
-        $com = $request->companyselectededit;
-        return redirect()->route('client.index', base64_encode($com));
+            $address = Address::find($request->addresseditid);
+            $address->country_id = $request->countryedit;
+            $address->department_id = (!empty($request->departamentedit) && $request->departamentedit != '0') ? $request->departamentedit : null;
+            $address->municipality_id = (!empty($request->municipioedit) && $request->municipioedit != '0') ? $request->municipioedit : null;
+            $address->reference = $request->addressedit;
+            $address->save();
+
+            $client = Client::find($request->idedit);
+            $client->firstname = $request->firstnameedit;
+            $client->secondname = $request->secondnameedit;
+            $client->firstlastname = $request->firstlastnameedit;
+            $client->secondlastname = $request->secondlastnameedit;
+            $client->comercial_name = $request->comercial_nameedit;
+            $client->name_contribuyente = $request->name_contribuyenteedit;
+            $client->email = $request->emailedit;
+            $client->ncr = str_replace(['-', ' '], '', $request->ncredit);
+            $client->giro = $request->giroedit;
+            $client->nit = str_replace(['-', ' '], '', $request->nitedit);
+            $client->legal = $request->legaledit;
+            $client->tpersona = $request->tpersonaedit;
+            $client->contribuyente = $request->contribuyenteeditvalor;
+            $client->extranjero = $request->extranjeroedit == 'on' ? '1' : '0';
+            $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporteedit);
+            $client->tipoContribuyente = $request->tipocontribuyenteedit;
+            $client->economicactivity_id = $request->acteconomicaedit;
+            $client->birthday = date('Ymd', strtotime($request->birthdayedit));
+            $client->empresa = $request->empresaedit;
+            $client->address_id = $address['id'];
+            $client->phone_id = $phone['id'];
+            $client->user_id_update = $id_user;
+            $client->save();
+
+            $com = $request->companyselectededit;
+
+            // Devolver respuesta JSON para AJAX
+            return response()->json([
+                'success' => true,
+                'message' => 'Cliente actualizado correctamente',
+                'redirect_url' => route('client.index', base64_encode($com))
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el cliente: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

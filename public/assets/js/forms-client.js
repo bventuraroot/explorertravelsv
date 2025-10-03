@@ -1133,7 +1133,7 @@ $(document).ready(function() {
         // Enviar datos
         $.ajax({
             url: $(this).attr('action'),
-            method: 'POST',
+            method: 'PATCH',
             data: formData,
             processData: false,
             contentType: false,
@@ -1141,11 +1141,15 @@ $(document).ready(function() {
                 Swal.close();
                 Swal.fire({
                     title: '¡Éxito!',
-                    text: 'Cliente actualizado correctamente',
+                    text: response.message || 'Cliente actualizado correctamente',
                     icon: 'success',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    location.reload();
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        location.reload();
+                    }
                 });
             },
             error: function(xhr) {
