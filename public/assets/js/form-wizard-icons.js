@@ -525,14 +525,12 @@ function agregarp() {
     console.log("DEBUG TIPO VENTA:", type);
     console.log("DEBUG POST:", postUrl, dataPost);
 
-    var ajaxOpts = {
+    $.ajax({
         url: postUrl,
         method: "POST",
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        data: dataPost
-    };
-
-    ajaxOpts.success = function (response) {
+        data: dataPost,
+        success: function (response) {
             if (response.res == 1) {
                 var row =
                     '<tr id="pro' +
@@ -681,10 +679,9 @@ function agregarp() {
                 var msg = response.message || 'No se pudo procesar la venta';
                 Swal.fire({ title: 'Error', text: msg, icon: 'error' });
             }
-        }
-    };
-
-    ajaxOpts.error = function (xhr, status, error) {
+            }
+        },
+        error: function (xhr, status, error) {
         var title = 'Error al agregar producto';
         var message = '';
         if (xhr.responseJSON) {
@@ -705,9 +702,8 @@ function agregarp() {
         }
         console.error('Agregar producto - AJAX error:', { status: xhr.status, error: error, response: xhr.responseText });
         Swal.fire({ title: title, html: message, icon: 'error' });
-    };
-
-    $.ajax(ajaxOpts);
+        }
+    });
     $('#precio').val(0.00);
     $('#fee').val(0.00);
     // No resetear ivarete13 para Crédito Fiscal ya que se calcula en totalamount()
