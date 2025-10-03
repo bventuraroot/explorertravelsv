@@ -52,30 +52,27 @@ function nitDuiMask(inputField) {
     // Guardar la posición del cursor
     var cursorPos = inputField.selectionStart;
 
-    // Aplicar formato basado en la longitud
+    // Aplicar formato basado en la longitud - SIN LIMITAR
     var formattedValue = '';
 
-    if (cleanValue.length <= 8) {
-        // DUI incompleto: sin formato
+    if (cleanValue.length <= 4) {
+        // Primeros 4 dígitos: sin formato
         formattedValue = cleanValue;
-    } else if (cleanValue.length == 9) {
-        // DUI completo: xxxxxxxx-x
-        formattedValue = cleanValue.substring(0, 8) + '-' + cleanValue.substring(8);
+    } else if (cleanValue.length <= 8) {
+        // 5-8 dígitos: xxxx-xxxx
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4);
+    } else if (cleanValue.length <= 10) {
+        // 9-10 dígitos: xxxx-xxxx-xx (DUI o NIT corto)
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 8) + '-' + cleanValue.substring(8);
     } else if (cleanValue.length <= 13) {
-        // NIT corto: xxxx-xxxxxx-xxx
-        if (cleanValue.length <= 4) {
-            formattedValue = cleanValue;
-        } else if (cleanValue.length <= 10) {
-            formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4);
-        } else {
-            formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10);
-        }
-    } else if (cleanValue.length == 14) {
-        // NIT estándar: xxxx-xxxxxx-xxx-x
-        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10, 13) + '-' + cleanValue.substring(13);
+        // 11-13 dígitos: xxxx-xxxx-xxx (NIT medio)
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 8) + '-' + cleanValue.substring(8);
+    } else if (cleanValue.length <= 14) {
+        // 14 dígitos: xxxx-xxxx-xxx-x (NIT estándar)
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 8) + '-' + cleanValue.substring(8, 11) + '-' + cleanValue.substring(11);
     } else {
-        // NIT largo: xxxx-xxxxxx-xxx-x-xxxxx
-        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10, 13) + '-' + cleanValue.substring(13, 14) + '-' + cleanValue.substring(14);
+        // 15+ dígitos: xxxx-xxxx-xxx-x-xxxxx (NIT largo)
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 8) + '-' + cleanValue.substring(8, 11) + '-' + cleanValue.substring(11, 12) + '-' + cleanValue.substring(12);
     }
 
     // Solo actualizar si el valor cambió
