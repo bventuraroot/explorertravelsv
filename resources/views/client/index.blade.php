@@ -329,7 +329,7 @@ $configData = Helper::appClasses();
                 <div class="mb-3" id="siextranjeroduinit">
                     <label class="form-label" for="nit">DUI/NIT</label>
                     <input type="text" id="nit" class="form-control" placeholder="xxxxxxxx-x"
-                        onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nit"
+                        onkeyup="nitDuiMask(this);" maxlength="20" aria-label="nit" name="nit"
                         onblur="validateClientKey(this, document.getElementById('tpersona').value, document.getElementById('companyselected').value);" />
                 </div>
                 <div id="siextranjero" style="display: none;">
@@ -543,7 +543,7 @@ $configData = Helper::appClasses();
             <div class="mb-3" id="dui_fields">
                 <label class="form-label" for="nitedit">DUI/NIT</label>
                 <input type="text" id="nitedit" class="form-control" placeholder="xxxxxxxx-x"
-                    onkeyup="nitDuiMask(this);" maxlength="25" aria-label="nit" name="nitedit"
+                    onkeyup="nitDuiMask(this);" maxlength="20" aria-label="nit" name="nitedit"
                     onblur="validateClientKey(this, document.getElementById('tpersonaedit').value, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
             </div>
             <div class="mb-3" id="pasaporte_fields_edit" style="display: none;">
