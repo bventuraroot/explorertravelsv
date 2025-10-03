@@ -45,14 +45,42 @@ $(document).ready(function (){
 });
 
 function nitDuiMask(inputField) {
-    var separator = '-';
+    var separator = "-";
     var nitPattern;
-    if (inputField.value.length == 9) {
-        nitPattern = new Array(8, 1);
+    var cleanValue = inputField.value.replace(/[- ]/g, ''); // Quitar guiones y espacios
+
+    // Solo permitir números y letras
+    cleanValue = cleanValue.replace(/[^A-Z0-9]/gi, "");
+    inputField.value = cleanValue; // Actualiza el campo sin caracteres no permitidos
+
+    var length = cleanValue.length;
+
+    if (length <= 9) {
+        // DUI: formato xxxxxxxx-x (8 dígitos + 1 dígito verificador)
+        if (length == 9) {
+            nitPattern = new Array(8, 1);
+        } else {
+            nitPattern = new Array(length); // Sin separador hasta completar
+        }
+    } else if (length <= 14) {
+        // NIT: formato xxxx-xxxxxx-xxx-x (4 + 6 + 3 + 1)
+        if (length >= 14) {
+            nitPattern = new Array(4, 6, 3, 1);
+        } else if (length >= 10) {
+            nitPattern = new Array(4, 6, length - 10);
+        } else {
+            nitPattern = new Array(4, length - 4);
+        }
     } else {
-        nitPattern = new Array(4, 6, 3, 1);
+        // Para NIT más largos, usar formato flexible
+        if (length <= 17) {
+            nitPattern = new Array(4, 6, 3, length - 13);
+        } else {
+            nitPattern = new Array(4, 6, 3, 1, length - 14);
+        }
     }
-    mask(inputField, separator, nitPattern, true);
+
+    mask(inputField, separator, nitPattern, false); // Cambiar a false para permitir letras y números
 }
 
 function NRCMask(inputField) {
