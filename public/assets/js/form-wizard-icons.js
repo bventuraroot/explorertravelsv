@@ -1167,8 +1167,12 @@ function loadClientsAndSelectDraft(idcompany, draftClientId) {
             });
 
             // Después de cargar todos los clientes, seleccionar el cliente del borrador
-            if (draftClientId != null && draftClientId != '') {
-                $("#client").val(draftClientId);
+            if (draftClientId != null && draftClientId != '' && draftClientId != '0') {
+                // Usar setTimeout para asegurar que el select2 esté completamente cargado
+                setTimeout(function() {
+                    $("#client").val(draftClientId).trigger('change');
+                    console.log("DEBUG - Cliente seleccionado:", draftClientId);
+                }, 100);
             }
         },
     });
@@ -1392,6 +1396,7 @@ function draftdocument(corr, draft) {
                     $('#date').prop('disabled', false);
                     $("#corr").val(corr);
                     $("#date").val(value.date);
+
                     //campo cliente - cargar todos los clientes disponibles para permitir cambio
                     // Primero limpiar el select para evitar duplicados
                     $("#client").empty();
@@ -1401,6 +1406,14 @@ function draftdocument(corr, draft) {
 
                     // Cargar clientes y seleccionar el del borrador
                     loadClientsAndSelectDraft(value.id, draftClientId);
+
+                    // Asegurar que la fecha se mantenga después de cargar
+                    setTimeout(function() {
+                        $("#date").val(value.date);
+                        if (draftClientId && draftClientId != '') {
+                            $("#client").val(draftClientId).trigger('change');
+                        }
+                    }, 500);
                     if(value.waytopay != null){
                         $("#fpago option[value="+ value.waytopay +"]").attr("selected",true);
                     }
