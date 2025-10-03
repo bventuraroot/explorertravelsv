@@ -1401,7 +1401,19 @@ function draftdocument(corr, draft) {
                     // Mantener fecha editable para permitir correcciones antes de crear el DTE
                     $('#date').prop('disabled', false);
                     $("#corr").val(corr);
-                    $("#date").val(value.date);
+
+                    // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
+                    var fechaBD = value.date;
+                    if (fechaBD && fechaBD.includes('/')) {
+                        var partes = fechaBD.split('/');
+                        if (partes.length === 3) {
+                            // DD/MM/YYYY -> YYYY-MM-DD
+                            var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
+                            $("#date").val(fechaFormateada);
+                        }
+                    } else {
+                        $("#date").val(fechaBD);
+                    }
 
                     //campo cliente - cargar todos los clientes disponibles para permitir cambio
                     // Primero limpiar el select para evitar duplicados
@@ -1415,7 +1427,20 @@ function draftdocument(corr, draft) {
 
                     // Asegurar que la fecha se mantenga después de cargar
                     setTimeout(function() {
-                        $("#date").val(value.date);
+                        // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
+                        var fechaBD = value.date;
+                        if (fechaBD && fechaBD.includes('/')) {
+                            var partes = fechaBD.split('/');
+                            if (partes.length === 3) {
+                                // DD/MM/YYYY -> YYYY-MM-DD
+                                var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
+                                $("#date").val(fechaFormateada);
+                                console.log("DEBUG - Fecha convertida:", fechaBD, "->", fechaFormateada);
+                            }
+                        } else {
+                            $("#date").val(fechaBD);
+                        }
+
                         if (draftClientId && draftClientId != '' && draftClientId != '0') {
                             // Forzar la selección del cliente
                             $("#client").val(draftClientId);
