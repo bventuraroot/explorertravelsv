@@ -1798,10 +1798,11 @@ function agregarfacdetails(corr) {
                     // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
                     var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
                     if(isGravado) {
-                        preciogravadas = parseFloat(value.pricesale); // Sin IVA (solo producto)
-                        // IVA de la línea = 13% de (producto sin IVA + fee sin IVA)
-                        //var baseIvaLinea = preciogravadas + feeSinIvaLinea;
-                        var baseIvaLinea = preciogravadas;
+                        // En draft: price_sale ya incluye el fee, calcular precio base
+                        var precioBase = parseFloat(value.pricesale) - feeSinIvaLinea; // Precio sin fee
+                        preciogravadas = parseFloat(value.pricesale); // Total con fee para mostrar
+                        // IVA de la línea = 13% de (precio base sin IVA + fee sin IVA)
+                        var baseIvaLinea = precioBase + feeSinIvaLinea; // Precio base + fee
                         var iva13Line = parseFloat(baseIvaLinea * 0.13);
                         ivarete13total += iva13Line;
                         // Mostrar en tabla precio unitario SIN IVA (sin fee)
@@ -1813,8 +1814,8 @@ function agregarfacdetails(corr) {
                         preciounitario = parseFloat(value.priceunit);
                     }
                     // Total de la fila (CCF) debe mostrarse SIN IVA
-                    // Total base = (no sujetas + exentas) + (gravadas sin IVA + fee sin IVA)
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + (parseFloat(preciogravadas) + feeSinIvaLinea));
+                    // En draft: price_sale ya incluye fee, no sumarlo nuevamente
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     ivarete13total += parseFloat(0.00);
                     preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
