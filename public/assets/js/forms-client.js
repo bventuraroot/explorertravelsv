@@ -1113,8 +1113,22 @@ function mask(inputField, separator, pattern, nums) {
 
 // Manejo específico del formulario de edición de clientes
 $(document).ready(function() {
-    $('#addNewClientForm').on('submit', function(e) {
+    console.log('=== DEBUG: forms-client.js cargado ===');
+
+    // Debug: Verificar que el formulario existe
+    console.log('Formulario encontrado:', $('#addNewClientForm').length);
+    console.log('Todos los formularios:', $('form').length);
+
+    // Debug: Listar todos los formularios
+    $('form').each(function(index) {
+        console.log('Formulario ' + index + ':', $(this).attr('id'), $(this).attr('class'));
+    });
+
+    // Usar delegación de eventos para asegurar que funcione
+    $(document).on('submit', '#addNewClientForm', function(e) {
+        console.log('Formulario enviado - previniendo envío normal');
         e.preventDefault();
+        e.stopPropagation();
 
         // Mostrar loading
         Swal.fire({
