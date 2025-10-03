@@ -572,26 +572,31 @@ function agregarp() {
                 // Calcular totales después de agregar la fila
                 if(typedoc==3){
                     // Para Crédito Fiscal, calcular totales sumando todos los productos de la tabla
-                    var totalGravadas = 0;
+                    var totalSumas = 0;
                     var totalIva = 0;
 
                     // Sumar todos los productos de la tabla
                     $("#tblproduct tbody tr").each(function(index) {
+                        var totalText = $(this).find("td:eq(6)").text(); // Columna TOTAL
                         var gravadasText = $(this).find("td:eq(5)").text(); // Columna GRAVADAS
+                        var total = parseFloat(totalText.replace(/[$,]/g, '')) || 0;
                         var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
 
-                        // Para Crédito Fiscal, la columna GRAVADAS ya incluye (precio + fee) × cantidad
-                        totalGravadas += gravadas;
-                        console.log("DEBUG NUEVO PRODUCTO - Fila", index, "gravadas:", gravadas, "totalGravadas:", totalGravadas);
+                        // SUMAS = suma de todos los TOTAL por fila
+                        totalSumas += total;
+
+                        // IVA = 13% de las GRAVADAS
+                        if(gravadas > 0) {
+                            totalIva += gravadas * 0.13;
+                        }
+
+                        console.log("DEBUG NUEVO PRODUCTO - Fila", index, "total:", total, "gravadas:", gravadas, "totalSumas:", totalSumas, "totalIva:", totalIva);
                     });
 
-                    // Calcular IVA sobre el total de gravadas
-                    totalIva = totalGravadas * 0.13;
-
-                    sumasl = totalGravadas;
+                    sumasl = totalSumas;
                     iva13l = totalIva;
 
-                    console.log("DEBUG NUEVO PRODUCTO FINAL - totalGravadas:", totalGravadas, "totalIva:", totalIva);
+                    console.log("DEBUG NUEVO PRODUCTO FINAL - totalSumas:", totalSumas, "totalIva:", totalIva);
                 } else {
                     // Para otros documentos, calcular correctamente:
                     // SUMAS = subtotal de productos (sin IVA ni retenciones)
