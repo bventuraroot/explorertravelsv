@@ -20,7 +20,8 @@ $(document).ready(function (){
 
     //input mask
     $("#ncredit").inputmask("999999-9");
-    $("#nitedit").inputmask("99999999-9");
+    // Remover máscara fija para permitir DUI y NIT flexibles
+    // $("#nitedit").inputmask("99999999-9");
     $("#tel1edit").inputmask("9999-9999");
     $("#tel2edit").inputmask("9999-9999");
 
