@@ -972,45 +972,57 @@ function deleteClient(id) {
 }
 
 function nitDuiMask(inputField) {
-    var separator = "-";
-    var nitPattern;
-    var cleanValue = inputField.value.replace(/[- ]/g, ''); // Quitar guiones y espacios
+    // Obtener el valor actual y limpiarlo
+    var value = inputField.value;
+    var cleanValue = value.replace(/[^A-Z0-9]/gi, ''); // Solo números y letras
 
-    // Solo permitir números y letras
-    cleanValue = cleanValue.replace(/[^A-Z0-9]/gi, "");
+    // Guardar la posición del cursor
+    var cursorPos = inputField.selectionStart;
 
-    var length = cleanValue.length;
+    // Aplicar formato basado en la longitud
+    var formattedValue = '';
 
-    // Determinar el patrón basado en la longitud
-    if (length <= 8) {
-        // DUI incompleto: sin separador hasta completar 8 dígitos
-        nitPattern = new Array(length);
-    } else if (length == 9) {
-        // DUI completo: formato xxxxxxxx-x
-        nitPattern = new Array(8, 1);
-    } else if (length <= 13) {
-        // NIT corto: formato xxxx-xxxxxx-xxx
-        if (length <= 4) {
-            nitPattern = new Array(length);
-        } else if (length <= 10) {
-            nitPattern = new Array(4, length - 4);
+    if (cleanValue.length <= 8) {
+        // DUI incompleto: sin formato
+        formattedValue = cleanValue;
+    } else if (cleanValue.length == 9) {
+        // DUI completo: xxxxxxxx-x
+        formattedValue = cleanValue.substring(0, 8) + '-' + cleanValue.substring(8);
+    } else if (cleanValue.length <= 13) {
+        // NIT corto: xxxx-xxxxxx-xxx
+        if (cleanValue.length <= 4) {
+            formattedValue = cleanValue;
+        } else if (cleanValue.length <= 10) {
+            formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4);
         } else {
-            nitPattern = new Array(4, 6, length - 10);
+            formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10);
         }
-    } else if (length == 14) {
-        // NIT estándar: formato xxxx-xxxxxx-xxx-x
-        nitPattern = new Array(4, 6, 3, 1);
+    } else if (cleanValue.length == 14) {
+        // NIT estándar: xxxx-xxxxxx-xxx-x
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10, 13) + '-' + cleanValue.substring(13);
     } else {
-        // NIT largo: formato flexible
-        if (length <= 17) {
-            nitPattern = new Array(4, 6, 3, length - 13);
-        } else {
-            nitPattern = new Array(4, 6, 3, 1, length - 14);
-        }
+        // NIT largo: xxxx-xxxxxx-xxx-x-xxxxx
+        formattedValue = cleanValue.substring(0, 4) + '-' + cleanValue.substring(4, 10) + '-' + cleanValue.substring(10, 13) + '-' + cleanValue.substring(13, 14) + '-' + cleanValue.substring(14);
     }
 
-    // Aplicar la máscara
-    mask(inputField, separator, nitPattern, false);
+    // Solo actualizar si el valor cambió
+    if (inputField.value !== formattedValue) {
+        inputField.value = formattedValue;
+
+        // Restaurar la posición del cursor ajustada por los guiones
+        var newCursorPos = cursorPos;
+        if (formattedValue.length > value.length) {
+            newCursorPos += (formattedValue.length - value.length);
+        }
+
+        // Asegurar que el cursor no esté fuera de rango
+        newCursorPos = Math.min(newCursorPos, formattedValue.length);
+
+        // Restaurar la posición del cursor
+        setTimeout(function() {
+            inputField.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+    }
 }
 
 function pasaporteMask(inputField) {
