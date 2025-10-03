@@ -1170,9 +1170,15 @@ function loadClientsAndSelectDraft(idcompany, draftClientId) {
             if (draftClientId != null && draftClientId != '' && draftClientId != '0') {
                 // Usar setTimeout para asegurar que el select2 esté completamente cargado
                 setTimeout(function() {
-                    $("#client").val(draftClientId).trigger('change');
-                    console.log("DEBUG - Cliente seleccionado:", draftClientId);
-                }, 100);
+                    // Verificar que la opción existe antes de seleccionarla
+                    if ($("#client option[value='" + draftClientId + "']").length > 0) {
+                        $("#client").val(draftClientId);
+                        $("#client").trigger('change.select2');
+                        console.log("DEBUG - Cliente seleccionado correctamente:", draftClientId);
+                    } else {
+                        console.log("DEBUG - Cliente no encontrado en opciones:", draftClientId);
+                    }
+                }, 200);
             }
         },
     });
@@ -1410,10 +1416,13 @@ function draftdocument(corr, draft) {
                     // Asegurar que la fecha se mantenga después de cargar
                     setTimeout(function() {
                         $("#date").val(value.date);
-                        if (draftClientId && draftClientId != '') {
-                            $("#client").val(draftClientId).trigger('change');
+                        if (draftClientId && draftClientId != '' && draftClientId != '0') {
+                            // Forzar la selección del cliente
+                            $("#client").val(draftClientId);
+                            $("#client").trigger('change.select2');
+                            console.log("DEBUG - Forzando selección de cliente:", draftClientId);
                         }
-                    }, 500);
+                    }, 1000);
                     if(value.waytopay != null){
                         $("#fpago option[value="+ value.waytopay +"]").attr("selected",true);
                     }
