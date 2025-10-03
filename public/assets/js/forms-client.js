@@ -978,28 +978,30 @@ function nitDuiMask(inputField) {
 
     // Solo permitir números y letras
     cleanValue = cleanValue.replace(/[^A-Z0-9]/gi, "");
-    inputField.value = cleanValue; // Actualiza el campo sin caracteres no permitidos
 
     var length = cleanValue.length;
 
-    if (length <= 9) {
-        // DUI: formato xxxxxxxx-x (8 dígitos + 1 dígito verificador)
-        if (length == 9) {
-            nitPattern = new Array(8, 1);
-        } else {
-            nitPattern = new Array(length); // Sin separador hasta completar
-        }
-    } else if (length <= 14) {
-        // NIT: formato xxxx-xxxxxx-xxx-x (4 + 6 + 3 + 1)
-        if (length >= 14) {
-            nitPattern = new Array(4, 6, 3, 1);
-        } else if (length >= 10) {
-            nitPattern = new Array(4, 6, length - 10);
-        } else {
+    // Determinar el patrón basado en la longitud
+    if (length <= 8) {
+        // DUI incompleto: sin separador hasta completar 8 dígitos
+        nitPattern = new Array(length);
+    } else if (length == 9) {
+        // DUI completo: formato xxxxxxxx-x
+        nitPattern = new Array(8, 1);
+    } else if (length <= 13) {
+        // NIT corto: formato xxxx-xxxxxx-xxx
+        if (length <= 4) {
+            nitPattern = new Array(length);
+        } else if (length <= 10) {
             nitPattern = new Array(4, length - 4);
+        } else {
+            nitPattern = new Array(4, 6, length - 10);
         }
+    } else if (length == 14) {
+        // NIT estándar: formato xxxx-xxxxxx-xxx-x
+        nitPattern = new Array(4, 6, 3, 1);
     } else {
-        // Para NIT más largos, usar formato flexible
+        // NIT largo: formato flexible
         if (length <= 17) {
             nitPattern = new Array(4, 6, 3, length - 13);
         } else {
@@ -1007,7 +1009,8 @@ function nitDuiMask(inputField) {
         }
     }
 
-    mask(inputField, separator, nitPattern, false); // Cambiar a false para permitir letras y números
+    // Aplicar la máscara
+    mask(inputField, separator, nitPattern, false);
 }
 
 function pasaporteMask(inputField) {
