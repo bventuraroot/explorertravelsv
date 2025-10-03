@@ -1113,20 +1113,8 @@ function mask(inputField, separator, pattern, nums) {
 
 // Manejo específico del formulario de edición de clientes
 $(document).ready(function() {
-    console.log('=== DEBUG: forms-client.js cargado ===');
-
-    // Debug: Verificar que el formulario existe
-    console.log('Formulario encontrado:', $('#addNewClientForm').length);
-    console.log('Todos los formularios:', $('form').length);
-
-    // Debug: Listar todos los formularios
-    $('form').each(function(index) {
-        console.log('Formulario ' + index + ':', $(this).attr('id'), $(this).attr('class'));
-    });
-
     // Usar delegación de eventos para asegurar que funcione
     $(document).on('submit', '#addNewClientForm', function(e) {
-        console.log('Formulario enviado - previniendo envío normal');
         e.preventDefault();
         e.stopPropagation();
 
@@ -1143,16 +1131,6 @@ $(document).ready(function() {
 
         // Obtener datos del formulario
         var formData = new FormData(this);
-
-        // Debug: Mostrar datos del formulario
-        console.log('URL:', $(this).attr('action'));
-        console.log('Datos del formulario:');
-        var formDataArray = [];
-        for (var pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
-            formDataArray.push(pair[0] + ': ' + pair[1]);
-        }
-        console.log('Total de campos enviados:', formDataArray.length);
 
         // Enviar datos
         $.ajax({
@@ -1179,17 +1157,10 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
                 Swal.close();
 
-                // Debug: Mostrar información completa del error
-                console.error('Error completo:', xhr);
-                console.error('Status:', status);
-                console.error('Error:', error);
-                console.error('Response Text:', xhr.responseText);
-
                 var errorMessage = 'Error al guardar el cliente';
                 var errorDetails = '';
 
                 if (xhr.responseJSON) {
-                    console.log('Response JSON:', xhr.responseJSON);
                     if (xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }

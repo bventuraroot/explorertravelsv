@@ -27,19 +27,6 @@ class ClientRequest extends FormRequest
     {
         $clientId = $this->route('client') ? $this->route('client')->id : null;
 
-        // Debug: Log de los datos recibidos
-        \Log::info('ClientRequest validation', [
-            'all_data' => $this->all(),
-            'tpersona' => $this->input('tpersona'),
-            'tpersonaedit' => $this->input('tpersonaedit'),
-            'country' => $this->input('country'),
-            'countryedit' => $this->input('countryedit'),
-            'address' => $this->input('address'),
-            'addressedit' => $this->input('addressedit'),
-            'tel1' => $this->input('tel1'),
-            'tel1edit' => $this->input('tel1edit')
-        ]);
-
         return [
             'firstname' => 'required_if:tpersona,N|nullable|string|max:255',
             'firstnameedit' => 'required_if:tpersonaedit,N|nullable|string|max:255',
