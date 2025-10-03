@@ -1147,9 +1147,12 @@ $(document).ready(function() {
         // Debug: Mostrar datos del formulario
         console.log('URL:', $(this).attr('action'));
         console.log('Datos del formulario:');
+        var formDataArray = [];
         for (var pair of formData.entries()) {
             console.log(pair[0] + ': ' + pair[1]);
+            formDataArray.push(pair[0] + ': ' + pair[1]);
         }
+        console.log('Total de campos enviados:', formDataArray.length);
 
         // Enviar datos
         $.ajax({

@@ -27,6 +27,19 @@ class ClientRequest extends FormRequest
     {
         $clientId = $this->route('client') ? $this->route('client')->id : null;
 
+        // Debug: Log de los datos recibidos
+        \Log::info('ClientRequest validation', [
+            'all_data' => $this->all(),
+            'tpersona' => $this->input('tpersona'),
+            'tpersonaedit' => $this->input('tpersonaedit'),
+            'country' => $this->input('country'),
+            'countryedit' => $this->input('countryedit'),
+            'address' => $this->input('address'),
+            'addressedit' => $this->input('addressedit'),
+            'tel1' => $this->input('tel1'),
+            'tel1edit' => $this->input('tel1edit')
+        ]);
+
         return [
             'firstname' => 'required_if:tpersona,N|nullable|string|max:255',
             'firstnameedit' => 'required_if:tpersonaedit,N|nullable|string|max:255',
@@ -38,8 +51,8 @@ class ClientRequest extends FormRequest
             'name_contribuyenteedit' => 'required_if:tpersonaedit,J|nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'emailedit' => 'nullable|email|max:255',
-            'tpersona' => 'required|in:N,J',
-            'tpersonaedit' => 'required|in:N,J',
+            'tpersona' => 'required_without:tpersonaedit|in:N,J',
+            'tpersonaedit' => 'required_without:tpersona|in:N,J',
             'nit' => [
                 'nullable',
                 'string',
@@ -240,8 +253,8 @@ class ClientRequest extends FormRequest
             'companyselected' => 'required_without:companyselectededit|nullable|exists:companies,id',
             'companyselectededit' => 'required_without:companyselected|nullable|exists:companies,id',
             'economicactivity_id' => 'nullable|exists:economicactivities,id',
-            'country' => 'required|exists:countries,id',
-            'countryedit' => 'required|exists:countries,id',
+            'country' => 'required_without:countryedit|exists:countries,id',
+            'countryedit' => 'required_without:country|exists:countries,id',
             'departament' => [
                 'nullable',
                 function ($attribute, $value, $fail) {
@@ -282,10 +295,10 @@ class ClientRequest extends FormRequest
                     }
                 }
             ],
-            'address' => 'required|string|max:500',
-            'addressedit' => 'required|string|max:500',
-            'tel1' => 'required|string|max:20',
-            'tel1edit' => 'required|string|max:20',
+            'address' => 'required_without:addressedit|string|max:500',
+            'addressedit' => 'required_without:address|string|max:500',
+            'tel1' => 'required_without:tel1edit|string|max:20',
+            'tel1edit' => 'required_without:tel1|string|max:20',
             'tel2' => 'nullable|string|max:20',
             'tel2edit' => 'nullable|string|max:20',
         ];

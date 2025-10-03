@@ -337,7 +337,15 @@ class ClientController extends Controller
             // Debug: Log de la petición
             \Log::info('Actualizando cliente', [
                 'request_data' => $request->all(),
-                'user_id' => auth()->user()->id
+                'user_id' => auth()->user()->id,
+                'tpersona' => $request->input('tpersona'),
+                'tpersonaedit' => $request->input('tpersonaedit'),
+                'country' => $request->input('country'),
+                'countryedit' => $request->input('countryedit'),
+                'address' => $request->input('address'),
+                'addressedit' => $request->input('addressedit'),
+                'tel1' => $request->input('tel1'),
+                'tel1edit' => $request->input('tel1edit')
             ]);
 
             $id_user = auth()->user()->id;
