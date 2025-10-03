@@ -674,8 +674,35 @@ function agregarp() {
                 $('#ventatotallhidden').val(ventatotall);
                 $("#ventatotal").val(ventatotall);
             } else if (response == 0) {
+                // sin cambios
+            } else if (response && response.error) {
+                var msg = response.message || 'No se pudo procesar la venta';
+                Swal.fire({ title: 'Error', text: msg, icon: 'error' });
             }
-        },
+        }
+    },
+    error: function (xhr, status, error) {
+        var title = 'Error al agregar producto';
+        var message = '';
+        if (xhr.responseJSON) {
+            if (xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            } else {
+                try { message = JSON.stringify(xhr.responseJSON); } catch(e) { message = String(xhr.responseJSON); }
+            }
+        } else if (xhr.responseText) {
+            try {
+                var parsed = JSON.parse(xhr.responseText);
+                message = parsed.message || xhr.responseText;
+            } catch(e) {
+                message = xhr.responseText;
+            }
+        } else {
+            message = error || 'Error desconocido';
+        }
+        console.error('Agregar producto - AJAX error:', { status: xhr.status, error: error, response: xhr.responseText });
+        Swal.fire({ title: title, html: message, icon: 'error' });
+    }
     });
     $('#precio').val(0.00);
     $('#fee').val(0.00);

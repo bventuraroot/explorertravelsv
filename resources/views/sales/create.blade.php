@@ -18,7 +18,7 @@
 @endsection
 
 @section('page-script')
-    <script src="{{ asset('assets/js/form-wizard-icons.js') }}"></script>
+    <script src="{{ asset('assets/js/form-wizard-icons.js') }}"></script> 
 @endsection
 
 @section('content')
