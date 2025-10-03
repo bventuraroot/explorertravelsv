@@ -334,6 +334,12 @@ class ClientController extends Controller
     public function update(ClientRequest $request, Client $client)
     {
         try {
+            // Debug: Log de la petición
+            \Log::info('Actualizando cliente', [
+                'request_data' => $request->all(),
+                'user_id' => auth()->user()->id
+            ]);
+
             $id_user = auth()->user()->id;
             $phone = Phone::find($request->phoneeditid);
             $phone->phone = $request->tel1edit;
@@ -382,9 +388,21 @@ class ClientController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Debug: Log del error
+            \Log::error('Error al actualizar cliente', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar el cliente: ' . $e->getMessage()
+                'message' => 'Error al actualizar el cliente: ' . $e->getMessage(),
+                'debug' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString()
+                ]
             ], 500);
         }
     }

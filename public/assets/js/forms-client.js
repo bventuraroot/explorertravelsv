@@ -1130,10 +1130,17 @@ $(document).ready(function() {
         // Obtener datos del formulario
         var formData = new FormData(this);
 
+        // Debug: Mostrar datos del formulario
+        console.log('URL:', $(this).attr('action'));
+        console.log('Datos del formulario:');
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+
         // Enviar datos
         $.ajax({
             url: $(this).attr('action'),
-            method: 'PATCH',
+            method: 'POST', // Usar POST con _method PATCH
             data: formData,
             processData: false,
             contentType: false,
@@ -1152,13 +1159,20 @@ $(document).ready(function() {
                     }
                 });
             },
-            error: function(xhr) {
+            error: function(xhr, status, error) {
                 Swal.close();
+
+                // Debug: Mostrar información completa del error
+                console.error('Error completo:', xhr);
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response Text:', xhr.responseText);
 
                 var errorMessage = 'Error al guardar el cliente';
                 var errorDetails = '';
 
                 if (xhr.responseJSON) {
+                    console.log('Response JSON:', xhr.responseJSON);
                     if (xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
@@ -1170,14 +1184,15 @@ $(document).ready(function() {
                         errorDetails += '</ul>';
                     }
                 } else if (xhr.responseText) {
-                    errorDetails = xhr.responseText;
+                    errorDetails = '<p><strong>Respuesta del servidor:</strong></p><pre>' + xhr.responseText + '</pre>';
                 }
 
                 Swal.fire({
                     title: 'Error',
                     html: '<strong>' + errorMessage + '</strong>' + (errorDetails ? '<br><br>' + errorDetails : ''),
                     icon: 'error',
-                    confirmButtonText: 'OK'
+                    confirmButtonText: 'OK',
+                    width: '600px'
                 });
             }
         });
