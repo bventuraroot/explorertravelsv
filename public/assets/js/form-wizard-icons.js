@@ -679,7 +679,6 @@ function agregarp() {
                 var msg = response.message || 'No se pudo procesar la venta';
                 Swal.fire({ title: 'Error', text: msg, icon: 'error' });
             }
-            }
         },
         error: function (xhr, status, error) {
         var title = 'Error al agregar producto';
