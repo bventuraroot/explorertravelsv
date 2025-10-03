@@ -1800,7 +1800,8 @@ function agregarfacdetails(corr) {
                     if(isGravado) {
                         preciogravadas = parseFloat(value.pricesale); // Sin IVA (solo producto)
                         // IVA de la línea = 13% de (producto sin IVA + fee sin IVA)
-                        var baseIvaLinea = preciogravadas + feeSinIvaLinea;
+                        //var baseIvaLinea = preciogravadas + feeSinIvaLinea;
+                        var baseIvaLinea = preciogravadas;
                         var iva13Line = parseFloat(baseIvaLinea * 0.13);
                         ivarete13total += iva13Line;
                         // Mostrar en tabla precio unitario SIN IVA (sin fee)
