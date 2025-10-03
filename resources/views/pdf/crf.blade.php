@@ -373,17 +373,14 @@
                                 <td align="right" class="cuadro-izq">{{FNumero(0.00)}}</td>
 
                             </tr>
-                            @php
-                                dd($totales);
-                            @endphp
                             <tr>
                                 <td colspan="3" width="160px">Impuestos al Valor Agregado 13%</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0)}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["tributos"][0]["valor"] ?? $totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0)}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3">Sub-Total</td>
-                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotal"] ?? 0)+($totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0))}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotal"] ?? 0)+($totales["tributos"][0]["valor"] ?? $totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
@@ -398,7 +395,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3">Monto Total de la operación</td>
-                                <td align="right" class="cuadro-izq">{{FNumero(($totales["montoTotalOperacion"] ?? 0)+($totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0))}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["montoTotalOperacion"] ?? 0)+($totales["tributos"][0]["valor"] ?? $totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
