@@ -1404,15 +1404,18 @@ function draftdocument(corr, draft) {
 
                     // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
                     var fechaBD = value.date;
+                    console.log("DEBUG - Fecha original de BD:", fechaBD);
                     if (fechaBD && fechaBD.includes('/')) {
                         var partes = fechaBD.split('/');
                         if (partes.length === 3) {
                             // DD/MM/YYYY -> YYYY-MM-DD
                             var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
                             $("#date").val(fechaFormateada);
+                            console.log("DEBUG - Fecha convertida:", fechaFormateada);
                         }
-                    } else {
+                    } else if (fechaBD) {
                         $("#date").val(fechaBD);
+                        console.log("DEBUG - Fecha sin conversión:", fechaBD);
                     }
 
                     //campo cliente - cargar todos los clientes disponibles para permitir cambio
@@ -1429,16 +1432,19 @@ function draftdocument(corr, draft) {
                     setTimeout(function() {
                         // Convertir fecha de DD/MM/YYYY a YYYY-MM-DD para el input date
                         var fechaBD = value.date;
+                        console.log("DEBUG - Reforzando fecha:", fechaBD);
                         if (fechaBD && fechaBD.includes('/')) {
                             var partes = fechaBD.split('/');
                             if (partes.length === 3) {
                                 // DD/MM/YYYY -> YYYY-MM-DD
                                 var fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
                                 $("#date").val(fechaFormateada);
-                                console.log("DEBUG - Fecha convertida:", fechaBD, "->", fechaFormateada);
+                                $("#date").attr('value', fechaFormateada);
+                                console.log("DEBUG - Fecha reforzada:", fechaBD, "->", fechaFormateada);
                             }
-                        } else {
+                        } else if (fechaBD) {
                             $("#date").val(fechaBD);
+                            $("#date").attr('value', fechaBD);
                         }
 
                         if (draftClientId && draftClientId != '' && draftClientId != '0') {
