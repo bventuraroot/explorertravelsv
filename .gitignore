@@ -19,7 +19,6 @@ yarn-error.log
 /Recursos
 *.sql
 *.sql.gz
-<<<<<<< HEAD
 *.sql.bz2
 *.sql.xz
 *.sql.tar
@@ -28,68 +27,3 @@ yarn-error.log
 *.sql.tar.xz
 *.sql.tar.tar.gz
 /RomaCopies
-=======
-*.sql.zip
-*.sh
-
-# Archivos generados
-#public/barcodes/
-#public/css/
-#public/js/
-#public/mix-manifest.json
-#public/storage
-
-# Carpetas de backup y recursos temporales
-Resplado modulo de ventas roma/
-Recursos */
-backup*.sql
-bd*.sql
-
-# Carpetas y archivos de desarrollo
-.idea/
-.vscode/
-*.sublime-project
-*.sublime-workspace
-
-# Archivos de logs
-*.log
-laravel.log
-
-# Archivos de configuración específicos del IDE
-.phpstorm.meta.php
-_ide_helper.php
-_ide_helper_models.php
-.phpunit.result.cache
-
-# Archivos de pruebas
-.phpunit.cache
-coverage/
-
-# Archivos de caché
-#*.cache
-
-# Carpetas de distribución
-dist/
-#build/
-
-# Archivos de Docker (si no los usas)
-docker-compose.override.yml
-
-# Rutas específicas problemáticas que veo en tu proyecto
-"C:\laragon\www\explorertravelsv\storage\logs/"
-full-version/
-
-# Archivos de audio y multimedia grandes
-*.mp3
-*.mp4
-*.avi
-*.mov
-*.wav
-
-# Archivos de imagen grandes (mantén solo los necesarios)
-*.psd
-*.ai
-*.sketch
-Agroservicio Milagro de Dios/.gitold/
-Agroservicio Milagro de Dios/explorertravelsv/.gitold/
->>>>>>> cdb1c48b (Rehacer cambios excluyendo .gitold (archivo >100MB no versionado))
