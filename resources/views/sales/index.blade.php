@@ -466,6 +466,41 @@
                                         @default
                                     @endswitch
                                 </td>
+<<<<<<< HEAD
+=======
+                                <td>
+                                    @if($sale->tiene_nota_credito > 0 || $sale->tiene_nota_debito > 0)
+                                        <div class="gap-1 d-flex flex-column">
+                                            @if($sale->tiene_nota_credito > 0)
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge bg-warning text-dark me-2">
+                                                        <i class="ti ti-file-minus me-1"></i>NC
+                                                    </span>
+                                                    <div class="flex-grow-1">
+                                                        <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1.2;">
+                                                            {{ $sale->notas_credito }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            @if($sale->tiene_nota_debito > 0)
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge bg-info text-dark me-2">
+                                                        <i class="ti ti-file-plus me-1"></i>ND
+                                                    </span>
+                                                    <div class="flex-grow-1">
+                                                        <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1.2;">
+                                                            {{ $sale->notas_debito }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+>>>>>>> f8780941 (Se optimiza la función 'corregirDatosCreditoFiscal' en SaleController, mejorando el manejo de correcciones de precios y IVA según el tipo de documento. Se eliminan logs innecesarios y se ajusta la lógica para actualizar solo si hay diferencias relevantes. También se mejora la estructura del código en 'form-wizard-icons.js' y se ajusta el orden de clases en 'index.blade.php' para una mejor presentación.)
 
                             </tr>
                             @empty

@@ -1828,6 +1828,31 @@ function creardocuments() {
 
 function agregarfacdetails(corr) {
     var typedoc = $('#typedocument').val()
+<<<<<<< HEAD
+=======
+
+    // Si es Factura o Crédito Fiscal, corregir datos antes de cargar
+    if(typedoc == '3' || typedoc == '6') {
+        $.ajax({
+            url: "corregir-credito-fiscal/" + corr,
+            method: "POST",
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            async: false,
+            success: function (response) {
+                if(response.success) {
+                    if(response.correcciones > 0) {
+                    }
+                }
+            },
+            error: function (error) {
+            }
+        });
+    } else {
+    }
+
+>>>>>>> f8780941 (Se optimiza la función 'corregirDatosCreditoFiscal' en SaleController, mejorando el manejo de correcciones de precios y IVA según el tipo de documento. Se eliminan logs innecesarios y se ajusta la lógica para actualizar solo si hay diferencias relevantes. También se mejora la estructura del código en 'form-wizard-icons.js' y se ajusta el orden de clases en 'index.blade.php' para una mejor presentación.)
     $.ajax({
         url: "getdetailsdoc/" + btoa(corr),
         method: "GET",
