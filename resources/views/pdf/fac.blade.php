@@ -370,7 +370,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3">IVA Percibido</td>
-                                <td align="right" class="cuadro-izq">{{FNumero($totales["ivaPerci1"] ?? $totales["totalIva"] ?? 0)}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero($totales["ivaPerci1"] ?? 0.00 ?? 0)}}</td>
 
                             </tr>
                             <tr>
