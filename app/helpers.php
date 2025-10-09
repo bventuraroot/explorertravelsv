@@ -380,8 +380,9 @@ if (!function_exists('crf')) {
         $uuid = $uuid_generado;
         $numero_documento = CerosIzquierda($encabezado->actual, 15);
         $tipo_documento = $encabezado->tipodocumento;
-        $caja = "0001";
-        $tipo_establecimiento = CerosIzquierda($emisor_data[0]->tipoEstablecimiento, 4);
+        $caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($emisor_data[0]->tipoEstablecimiento, 4);
+        $tipo_establecimiento = "M001";
         $empresa = $comprobante_procesar["emisor"];
         $identificacion = [
             "version"           => intval($encabezado->versionJson),
@@ -655,9 +656,11 @@ if (!function_exists('fac')) {
         $numero_documento = CerosIzquierda($encabezado->actual, 15);
         $tipo_documento = $encabezado->tipodocumento;
         //dd($encabezado);
-        $caja = "0001";
+        $caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($emisor_data[0]->tipoEstablecimiento, 4);
         $testablecimiento = "1";
-        $tipo_establecimiento = CerosIzquierda($testablecimiento,4);//$encabezado["tipo_establecimiento"], 4);
+        //$tipo_establecimiento = CerosIzquierda($testablecimiento,4);//$encabezado["tipo_establecimiento"], 4);
+        $tipo_establecimiento = "M001";
         $empresa = $comprobante_procesar["emisor"];
         $identificacion = [
             "version"           => intval($encabezado->versionJson),
@@ -1224,9 +1227,12 @@ if (!function_exists('fex')) {
 
         $numero_documento = CerosIzquierda($encabezado->actual, 15);
         $tipo_documento = $encabezado->tipodocumento; // Código FEX según schema
-        $caja = "0001";
+        $caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($emisor_data[0]->tipoEstablecimiento, 4);
+        $tipo_establecimiento = "M001";
         $testablecimiento = $emisor_data[0]->tipoEstablecimiento;
-        $tipo_establecimiento = CerosIzquierda($testablecimiento, 4);
+        //$tipo_establecimiento = CerosIzquierda($testablecimiento, 4);
+        $tipo_establecimiento = "M001";
         $empresa = $comprobante_procesar["emisor"];
 
         $identificacion = [
@@ -1458,8 +1464,10 @@ if (!function_exists('ncr')) {
         $uuid = $uuid_generado;
         $numero_documento = CerosIzquierda($encabezado["nu_doc"], 15);
         $tipo_documento = $encabezado["tipodocumento"];
-        $caja = "0001";
-        $tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        $caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        $tipo_establecimiento = "M001";
+        //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
         $empresa = $comprobante_procesar["emisor"];
         $identificacion = [
             "version"           => intval($encabezado["version"]),
@@ -1761,9 +1769,12 @@ if (!function_exists('fse')) {
         $uuid = $uuid_generado;
         $numero_documento = CerosIzquierda($encabezado->actual, 15);
         $tipo_documento = $encabezado->tipodocumento;
-        $caja = "0001";
+        $caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        $tipo_establecimiento = "M001";
         $testablecimiento = "1";
-        $tipo_establecimiento = CerosIzquierda($testablecimiento,4);
+        //$tipo_establecimiento = CerosIzquierda($testablecimiento,4);
+        $tipo_establecimiento = "M001";
         $empresa = $comprobante_procesar["emisor"];
 
         $identificacion = [
@@ -2596,7 +2607,10 @@ if (!function_exists('ndb')) {
         $numero_documento = CerosIzquierda($encabezado["nu_doc"], 15);
         $tipo_documento = $encabezado["cod_tipo_documento"];
         $caja = $encabezado["cod_establecimiento"];; // "0001";
-        $tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        //$caja = "P001";
+        //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
+        $tipo_establecimiento = "M001";
+        //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
         $empresa = $comprobante_procesar["empresa"][0];
         $identificacion = [
             "version"           => intval($encabezado["version"]),
