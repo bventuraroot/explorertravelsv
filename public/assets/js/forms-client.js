@@ -686,6 +686,10 @@ function llamarselected(pais, departamento, municipio, acteconomica) {
 function editClient(id) {
     //Get data edit companies
     //alert('entro');
+
+    // Establecer el ID del cliente en el campo oculto para la validación
+    $("#idedit").val(id);
+
     $.ajax({
         url: "/client/getClientid/" + btoa(id),
         method: "GET",
