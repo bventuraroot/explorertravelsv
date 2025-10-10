@@ -543,14 +543,12 @@ $configData = Helper::appClasses();
             <div class="mb-3" id="dui_fields">
                 <label class="form-label" for="nitedit">DUI/NIT</label>
                 <input type="text" id="nitedit" class="form-control" placeholder="xxxxxxxx-x"
-                    onkeyup="nitDuiMask(this);" maxlength="20" aria-label="nit" name="nitedit"
-                    onblur="validateClientKey(this, document.getElementById('tpersonaedit').value, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
+                    onkeyup="nitDuiMask(this);" maxlength="20" aria-label="nit" name="nitedit" />
             </div>
             <div class="mb-3" id="pasaporte_fields_edit" style="display: none;">
                 <label class="form-label" for="pasaporteedit">Pasaporte</label>
                 <input type="text" id="pasaporteedit" class="form-control" placeholder="Número de Pasaporte"
-                    onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporteedit"
-                    onblur="validateClientKey(this, 'E', document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
+                    onkeyup="pasaporteMask(this);" maxlength="15" aria-label="pasaporte" name="pasaporteedit" />
             </div>
             <div id="siescontriedit" style="display: none;">
                 <div class="mb-3">
@@ -561,8 +559,7 @@ $configData = Helper::appClasses();
                 <div class="mb-3">
                     <label class="form-label" for="ncredit">NRC</label>
                     <input type="text" id="ncredit" class="form-control" onkeyup="NRCMask(this);" maxlength="15"
-                        placeholder="xxxxxx-x" aria-label="ncr" name="ncredit"
-                        onblur="validateNcr(this, document.getElementById('companyselectededit').value, document.getElementById('idedit').value);" />
+                        placeholder="xxxxxx-x" aria-label="ncr" name="ncredit" />
                 </div>
                 <div class="mb-3">
                     <label for="tipocontribuyenteedit" class="form-label">Tipo de contribuyente</label>

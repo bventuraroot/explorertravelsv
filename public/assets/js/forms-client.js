@@ -827,6 +827,44 @@ function editClient(id) {
                 "#offcanvasUpdateClient"
             ).show();
 
+            // Configurar validación después de que el formulario esté cargado
+            setTimeout(function() {
+                // Configurar validación para DUI/NIT
+                $("#nitedit").off('blur').on('blur', function() {
+                    const clientId = $("#idedit").val();
+                    const tpersona = $("#tpersonaedit").val();
+                    const companyId = $("#companyselectededit").val();
+
+                    console.log('Validación DUI - clientId:', clientId);
+                    console.log('Validación DUI - tpersona:', tpersona);
+                    console.log('Validación DUI - companyId:', companyId);
+
+                    if (clientId && tpersona && companyId) {
+                        validateClientKey(this, tpersona, companyId, clientId);
+                    }
+                });
+
+                // Configurar validación para pasaporte
+                $("#pasaporteedit").off('blur').on('blur', function() {
+                    const clientId = $("#idedit").val();
+                    const companyId = $("#companyselectededit").val();
+
+                    if (clientId && companyId) {
+                        validateClientKey(this, 'E', companyId, clientId);
+                    }
+                });
+
+                // Configurar validación para NRC
+                $("#ncredit").off('blur').on('blur', function() {
+                    const clientId = $("#idedit").val();
+                    const companyId = $("#companyselectededit").val();
+
+                    if (clientId && companyId) {
+                        validateNcr(this, companyId, clientId);
+                    }
+                });
+            }, 100);
+
             // Forzar visibilidad del switch extranjero después de que se abra el modal
             setTimeout(function() {
                 if ($("#tpersonaedit").val() == "N") {

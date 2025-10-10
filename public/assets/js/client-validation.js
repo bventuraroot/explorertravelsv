@@ -23,6 +23,12 @@ let isValidationInProgress = false;
 function validateClientKey(inputElement, tpersona, companyId, clientId = null) {
     const value = inputElement.value.trim();
 
+    // Debug: verificar valores
+    console.log('validateClientKey - clientId:', clientId);
+    console.log('validateClientKey - tpersona:', tpersona);
+    console.log('validateClientKey - companyId:', companyId);
+    console.log('validateClientKey - value:', value);
+
     // Limpiar timeout anterior
     if (validationTimeout) {
         clearTimeout(validationTimeout);
