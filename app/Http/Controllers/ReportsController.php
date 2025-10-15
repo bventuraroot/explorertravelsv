@@ -162,9 +162,12 @@ class ReportsController extends Controller
      */
     public function consumidorsearch(Request $request){
         $Company = Company::find($request['company']);
-        $sales = Sale::join('clients', 'sales.client_id', '=', 'clients.id')
+        $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
+        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
-        'clients.ncr AS ncrC',)
+        'clients.ncr AS ncrC',
+        'dte.id_doc AS numeroControl',
+        'dte.codigoGeneracion AS codigoGeneracion')
         ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS dateF ")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
@@ -176,6 +179,11 @@ class ReportsController extends Controller
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
+        // Solo incluir DTE que fueron enviados exitosamente o ventas sin DTE
+        ->where(function($query) {
+            $query->whereNull('dte.codEstado')
+                  ->orWhere('dte.codEstado', '=', '02');
+        })
         ->orderBy('sales.id')
         ->get();
         return view('reports.consumidor', array(

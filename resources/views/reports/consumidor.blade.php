@@ -176,8 +176,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             <?php echo $sale['dateF']; ?>
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
-                            <?php echo $sale['correlativo'] ?>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 9px;">
+                            <?php echo ($sale['numeroControl'] ?? '-') ?><br>
+                            <small style="font-size: 7px;"><?php echo ($sale['codigoGeneracion'] ?? '-') ?></small>
                         </td>
                         <td class="text-uppercase" style="text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
