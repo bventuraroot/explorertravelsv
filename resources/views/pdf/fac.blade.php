@@ -257,6 +257,7 @@
             </tr>
         </thead>
         <tbody>
+            @dd($detalle)
             @foreach ($detalle as $d)
 
 
