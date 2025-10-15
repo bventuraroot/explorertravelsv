@@ -257,9 +257,6 @@
             </tr>
         </thead>
         <tbody>
-            @php
-                    dd($detalle);
-                @endphp
             @foreach ($detalle as $d)
 
 
@@ -267,12 +264,12 @@
                 <th>{{$loop->index+1}}</th>
                 <td>{{$d["cantidad"]}}</td>
                 <td>{{$d["descripcion"]}}</td>
-                <td align="right">{{FNumero(($d["precio_unitario"] ?? $d["precioUni"] ?? 0) + ($d["iva"] ?? $d["ivaItem"] ?? 0))}}</td>
+                <td align="right">{{FNumero($d["precioUni"])}}</td>
                 <td align="right">0.00</td>
                 <td align="right">{{FNumero($d["no_imponible"] ?? $d["noGravado"] ?? 0)}}</td>
                 <td align="right">{{FNumero($d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0)}}</td>
                 <td align="right">{{FNumero($d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
-                <td align="right">{{FNumero(($d["gravadas"] ?? $d["ventaGravada"] ?? 0) + ($d["iva"] ?? $d["ivaItem"] ?? 0))}}</td>
+                <td align="right">{{FNumero($d["ventaGravada"])}}</td>
             </tr>
             @if (($loop->index+1) % 37 == 0)
             <tr style='page-break-after: always;'>
