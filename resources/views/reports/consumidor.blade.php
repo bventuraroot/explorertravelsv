@@ -129,12 +129,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table">
             <thead>
                 <tr>
-                    <th class="text-center" colspan="9">
+                    <th class="text-center" colspan="10">
                         <b>LIBRO DE VENTAS CONSUMIDOR</b>
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="9">
+                    <td class="text-center" colspan="10">
                         <b>Nombre del Contribuyente: </b> <?php echo $heading['name']; ?>
                         <b>N.R.C.: </b> <?php echo $heading['ncr']; ?> <b>MES: </b><?php echo $mesesDelAnoMayuscula[(int)$period-1] ?>
                         <b>Año: </b> <?php echo $yearB; ?><p>(Valores expresados en Dolares Estadounidenses)</p>
@@ -149,6 +149,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td>No. Doc.</td>
                     <td style="text-align: left;">CLIENTE</td>
                     <td>EXENTAS</td>
+                    <td style="text-align: right;">NO SUJETAS</td>
                     <td style="text-align: right;">INTERNAS GRAVADAS</td>
                     <td style="text-align: right;">DEBITO FISCAL</td>
                     <td style="text-align: right;">VENTA TOTAL</td>
@@ -201,6 +202,16 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             $dfe = $sale['exenta'];
                             ?>
                         </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                            @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                             {{ number_format($sale['nosujeta'], 2) }}
+                        @endif
+                            <?php
+                            $tot_nosujetas += $sale['nosujeta'];
+                            ?>
+                        </td>
                         <td style="text-align: center;">
                             @if($sale['typesale']=='0')
                             ANULADO
@@ -251,6 +262,11 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                     <td class="text-center">
                         <?php
+                        echo number_format($tot_nosujetas,2);
+                        ?>
+                    </td>
+                    <td class="text-center">
+                        <?php
                         echo number_format($tot_int_grav,2);
                         ?>
                     </td>
@@ -271,7 +287,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr>
-                    <td style="text-align: right" colspan="5">
+                    <td style="text-align: right" colspan="6">
                         GRAVADAS SIN IVA
                     </td>
                     <td style="text-align: center">
@@ -279,7 +295,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="5">
                         VENTAS EXENTAS
                     </td>
                     <td>
@@ -297,7 +313,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="3">
+                    <td colspan="5">
                         VENTA LOCALES GRAVADAS
                     </td>
                     <td>
