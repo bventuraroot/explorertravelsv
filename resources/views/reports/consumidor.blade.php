@@ -288,7 +288,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 </tr>
                 <tr>
                     <td colspan="6" style="text-align: right;">
-                        <b>GRAVADAS SIN IVA</b>
+                        <b>GRAVADAS, NO SUJETAS, EXENTAS, SIN IVA</b>
                     </td>
                     <td colspan="2" style="text-align: right;">
                         <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
