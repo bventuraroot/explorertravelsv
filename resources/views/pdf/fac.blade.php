@@ -247,7 +247,6 @@
             <tr>
                 <th class="cuadro">No</th>
                 <th class="cuadro">Cnt</th>
-
                 <th class="cuadro">Descripcion</th>
                 <th class="cuadro">Precio<br>Unitario</th>
                 <th class="cuadro">Descuento<br>por Item</th>
@@ -258,6 +257,9 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                    dd($detalle);
+                @endphp
             @foreach ($detalle as $d)
 
 
