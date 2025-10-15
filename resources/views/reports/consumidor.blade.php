@@ -282,67 +282,66 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="4">
-                        <br><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS
+                    <td colspan="10" style="text-align: center;">
+                        <br><br><b>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</b>
                     </td>
                 </tr>
                 <tr>
-                    <td style="text-align: right" colspan="6">
-                        GRAVADAS SIN IVA
+                    <td colspan="6" style="text-align: right;">
+                        <b>GRAVADAS SIN IVA</b>
                     </td>
-                    <td style="text-align: center">
-                    <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
+                    <td colspan="2" style="text-align: right;">
+                        <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
                     </td>
+                    <td colspan="2"></td>
                 </tr>
                 <tr>
-                    <td colspan="5">
+                    <td colspan="3">
                         VENTAS EXENTAS
                     </td>
-                    <td>
-                        <?php
-                        echo number_format($tot_exentas, 2);
-                        ?>
+                    <td style="text-align: right;">
+                        <?php echo number_format($tot_exentas, 2); ?>
                     </td>
-                    <td style="text-align: right" colspan="1">
+                    <td style="text-align: right;">
                         13 %
                     </td>
-                    <td style="text-align: center">
-                    <?php
-                    echo number_format($tot_debfiscal, 2);
-                    ?>
+                    <td style="text-align: right;">
+                        <?php echo number_format($tot_debfiscal, 2); ?>
                     </td>
+                    <td colspan="4"></td>
                 </tr>
                 <tr>
-                    <td colspan="5">
+                    <td colspan="3">
                         VENTAS NO SUJETAS
                     </td>
-                    <td>
-                        <?php
-                        echo number_format($tot_nosujetas, 2);
-                        ?>
+                    <td style="text-align: right;">
+                        <?php echo number_format($tot_nosujetas, 2); ?>
                     </td>
-                    <td style="text-align: right" colspan="2">
+                    <td style="text-align: right;">
+                        0 %
+                    </td>
+                    <td style="text-align: right;">
                         0.00
                     </td>
+                    <td colspan="4"></td>
                 </tr>
                 <tr>
-                    <td colspan="5">
-                        VENTA LOCALES GRAVADAS
+                    <td colspan="3">
+                        <b>VENTA LOCALES GRAVADAS</b>
                     </td>
-                    <td>
+                    <td style="text-align: right;">
+                        <?php echo number_format($tot_int_grav, 2); ?>
+                    </td>
+                    <td style="text-align: right;">
+                        <b>TOTAL</b>
+                    </td>
+                    <td style="text-align: right;">
                         <?php
-                        echo number_format($tot_int_grav, 2);
+                        $totales = $tot_int_grav + $tot_debfiscal;
+                        echo number_format($totales, 2);
                         ?>
                     </td>
-                    <td style="text-align: right">
-                        TOTAL
-                    </td>
-                    <td style="text-align: center">
-<?php
-$totales = $tot_int_grav + $tot_debfiscal;
-echo number_format($totales, 2);
-?>
-                    </td>
+                    <td colspan="4"></td>
                 </tr>
             </tbody>
         </table>
