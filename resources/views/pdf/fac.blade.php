@@ -257,10 +257,7 @@
             </tr>
         </thead>
         <tbody>
-            @dd($detalle)
             @foreach ($detalle as $d)
-
-
             <tr>
                 <th>{{$loop->index+1}}</th>
                 <td>{{$d["cantidad"]}}</td>
@@ -346,12 +343,12 @@
                                 <td width="80px">Sumas $</td>
                                 <td align="right" width="50px" class="sumas">{{FNumero($totales["totalNoSuj"] ?? 0)}}</td>
                                 <td align="right" width="50px" class="sumas">{{FNumero($totales["totalExenta"] ?? 0)}}</td>
-                                <td align="right" width="50px" class="sumas">{{FNumero(($totales["totalGravada"] ?? 0) + ($totales["totalIva"] ?? 0))}}</td>
+                                <td align="right" width="50px" class="sumas">{{FNumero(($totales["totalGravada"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
                                 <td colspan="3" width="160px">Suma total de operaciones</td>
-                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotalVentas"] ?? 0) + ($totales["totalIva"] ?? 0))}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotalVentas"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
@@ -365,7 +362,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3">Sub-Total</td>
-                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotal"] ?? $totales["subTotal"] ?? 0) + ($totales["totalIva"] ?? $totales["totalIva"] ?? 0))}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["subTotal"] ?? $totales["subTotal"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
@@ -380,7 +377,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3">Monto Total de la operación</td>
-                                <td align="right" class="cuadro-izq">{{FNumero(($totales["montoTotalOperacion"] ?? 0) + ($totales["totalIva"] ?? 0))}}</td>
+                                <td align="right" class="cuadro-izq">{{FNumero(($totales["montoTotalOperacion"] ?? 0))}}</td>
 
                             </tr>
                             <tr>
