@@ -291,7 +291,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         GRAVADAS SIN IVA
                     </td>
                     <td style="text-align: center">
-                    <?php echo number_format($tot_int_grav+$tot_exentas, 2); ?>
+                    <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
                     </td>
                 </tr>
                 <tr>
@@ -310,6 +310,19 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <?php
                     echo number_format($tot_debfiscal, 2);
                     ?>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5">
+                        VENTAS NO SUJETAS
+                    </td>
+                    <td>
+                        <?php
+                        echo number_format($tot_nosujetas, 2);
+                        ?>
+                    </td>
+                    <td style="text-align: right" colspan="2">
+                        0.00
                     </td>
                 </tr>
                 <tr>
