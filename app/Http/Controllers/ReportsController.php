@@ -87,12 +87,14 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
-        ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
+        ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id AND sdi.exempt = 0 AND sdi.nosujeta = 0) AS iva")
         ->where('sales.typedocument_id', "=", "3")
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
+        // Solo incluir DTE que fueron enviados exitosamente (estado "Enviado")
+        ->where('dte.codEstado', '=', '02')
         ->orderBy('sales.id')
         ->get();
         return view('reports.contribuyentes', array(
