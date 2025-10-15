@@ -272,10 +272,11 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
-                             {{ number_format($sale['gravada'], 2) }}
+                             $ 0.00
                         @endif
                         <?php
-                        $total_gv2 = $total_gv2 + $sale['gravada'];
+                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
+                        $total_gv2 = $total_gv2 + 0;
                             ?>
                     </td>
                     <td
@@ -283,10 +284,11 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
-                             {{ number_format($sale['iva'], 2) }}
+                             $ 0.00
                         @endif
                         <?php
-                        $total_iva2 = $total_iva2 + $sale['iva'];
+                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
+                        $total_iva2 = $total_iva2 + 0;
                             ?>
                     </td>
                     <td
@@ -294,9 +296,11 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
-                             {{ number_format($sale['ivaP'], 2) }}
+                             $ 0.00
                         @endif
-                        <?php $total_iva2P = $total_iva2P + $sale['ivaP']; ?>
+                        <?php
+                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
+                        $total_iva2P = $total_iva2P + 0; ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
