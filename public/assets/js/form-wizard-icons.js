@@ -719,12 +719,17 @@ function agregarp() {
     });
     $('#precio').val(0.00);
     $('#fee').val(0.00);
-    // No resetear ivarete13 para Crédito Fiscal ya que se calcula en totalamount()
-    if($("#typedocument").val() !== '3'){
-        $('#ivarete13').val(0.00);
-    }
+    $('#ivarete13').val(0.00);
     $('#ivarete').val(0.00);
     $('#rentarete').val(0.00);
+    $('#total').val(0.00);
+    // Limpiar campos específicos de Crédito Fiscal si existen
+    if($("#precioConIva").length) {
+        $('#precioConIva').val(0.00);
+    }
+    if($("#feeSinIva").length) {
+        $('#feeSinIva').val(0.00);
+    }
     $('#reserva').val();
     $('#ruta').val();
     $('#destino').val(null).trigger('change');
