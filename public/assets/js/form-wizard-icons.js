@@ -877,6 +877,8 @@ function totalamount() {
 
     // Total general: precio + fee*cantidad + IVA - retenciones (como en Roma Copies)
     totalfee = parseFloat(fee * cantidad);
+
+    // Total general: precio + fee + IVA - retenciones
     var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
 
     $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
