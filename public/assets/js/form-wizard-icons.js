@@ -534,9 +534,6 @@ function agregarp() {
         tipoVenta: type
     };
 
-    console.log("DEBUG TIPO VENTA:", type);
-    console.log("DEBUG POST:", postUrl, dataPost);
-
     $.ajax({
         url: postUrl,
         method: "POST",
@@ -567,7 +564,10 @@ function agregarp() {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    pricegravada.toLocaleString("en-US", {
+                    (type!='gravada' && fee>0) ? (pricegravada+fee).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                    }) : pricegravada.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
