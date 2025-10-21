@@ -20,10 +20,112 @@
     window.productosMasVendidos = @json($productosMasVendidos);
 </script>
 <script src="{{asset('assets/js/dashboards-crm.js')}}"></script>
+<script>
+    // Script para controlar la visibilidad de los filtros según el tipo seleccionado
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterType = document.getElementById('filter_type');
+        const filterDayContainer = document.getElementById('filter_day_container');
+        const filterMonthContainer = document.getElementById('filter_month_container');
+        const filterYearContainer = document.getElementById('filter_year_container');
+        const filterCustomFromContainer = document.getElementById('filter_custom_from_container');
+        const filterCustomToContainer = document.getElementById('filter_custom_to_container');
+
+        function toggleFilters() {
+            const selectedType = filterType.value;
+
+            // Ocultar todos los filtros
+            filterDayContainer.style.display = 'none';
+            filterMonthContainer.style.display = 'none';
+            filterYearContainer.style.display = 'none';
+            filterCustomFromContainer.style.display = 'none';
+            filterCustomToContainer.style.display = 'none';
+
+            // Mostrar el filtro correspondiente
+            switch(selectedType) {
+                case 'day':
+                    filterDayContainer.style.display = 'block';
+                    break;
+                case 'month':
+                    filterMonthContainer.style.display = 'block';
+                    break;
+                case 'year':
+                    filterYearContainer.style.display = 'block';
+                    break;
+                case 'custom':
+                    filterCustomFromContainer.style.display = 'block';
+                    filterCustomToContainer.style.display = 'block';
+                    break;
+            }
+        }
+
+        filterType.addEventListener('change', toggleFilters);
+
+        // Inicializar visibilidad al cargar la página
+        toggleFilters();
+    });
+</script>
 @endsection
 
 @section('content')
 <div class="row">
+  <!-- Filtros de Fecha -->
+  <div class="mb-4 col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Filtros de Fecha</h5>
+        <small class="text-muted">Período actual: {{ $startDate }} - {{ $endDate }}</small>
+      </div>
+      <div class="card-body">
+        <form method="GET" action="{{ url('/dashboard') }}" id="filterForm">
+          <div class="row g-3">
+            <div class="col-md-2">
+              <label class="form-label">Tipo de Filtro</label>
+              <select name="filter_type" id="filter_type" class="form-select">
+                <option value="all" {{ $filterType == 'all' ? 'selected' : '' }}>Último Año</option>
+                <option value="day" {{ $filterType == 'day' ? 'selected' : '' }}>Por Día</option>
+                <option value="month" {{ $filterType == 'month' ? 'selected' : '' }}>Por Mes</option>
+                <option value="year" {{ $filterType == 'year' ? 'selected' : '' }}>Por Año</option>
+                <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>Rango Personalizado</option>
+              </select>
+            </div>
+            <div class="col-md-2" id="filter_day_container" style="display: {{ $filterType == 'day' ? 'block' : 'none' }};">
+              <label class="form-label">Día</label>
+              <input type="date" name="filter_date" class="form-control" value="{{ $filterDate }}">
+            </div>
+            <div class="col-md-2" id="filter_month_container" style="display: {{ $filterType == 'month' ? 'block' : 'none' }};">
+              <label class="form-label">Mes</label>
+              <input type="month" name="filter_month" class="form-control" value="{{ $filterMonth }}">
+            </div>
+            <div class="col-md-2" id="filter_year_container" style="display: {{ $filterType == 'year' ? 'block' : 'none' }};">
+              <label class="form-label">Año</label>
+              <input type="number" name="filter_year" class="form-control" value="{{ $filterYear }}" min="2000" max="2099">
+            </div>
+            <div class="col-md-2" id="filter_custom_from_container" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+              <label class="form-label">Desde</label>
+              <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
+            </div>
+            <div class="col-md-2" id="filter_custom_to_container" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+              <label class="form-label">Hasta</label>
+              <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="ti ti-filter me-1"></i>Aplicar Filtro
+              </button>
+            </div>
+            @if($filterType != 'all')
+            <div class="col-md-2 d-flex align-items-end">
+              <a href="{{ url('/dashboard') }}" class="btn btn-label-secondary w-100">
+                <i class="ti ti-refresh me-1"></i>Limpiar
+              </a>
+            </div>
+            @endif
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Estadísticas Generales -->
   <div class="mb-4 col-12">
     <div class="row">
@@ -97,6 +199,50 @@
                 <div class="card-info">
                   <h5 class="mb-0">{{ $tsales }}</h5>
                   <small>Ventas</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjetas de Fees -->
+  <div class="mb-4 col-12">
+    <div class="row">
+      <div class="mb-4 col-xl-6 col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div class="gap-3 d-flex align-items-center">
+                <div class="avatar">
+                  <span class="rounded avatar-initial bg-label-success">
+                    <i class="ti ti-wallet ti-sm"></i>
+                  </span>
+                </div>
+                <div class="card-info">
+                  <h5 class="mb-0">${{ number_format($totalFees, 2) }}</h5>
+                  <small>Total Fee (Período Filtrado)</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-4 col-xl-6 col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div class="gap-3 d-flex align-items-center">
+                <div class="avatar">
+                  <span class="rounded avatar-initial bg-label-warning">
+                    <i class="ti ti-receipt-tax ti-sm"></i>
+                  </span>
+                </div>
+                <div class="card-info">
+                  <h5 class="mb-0">${{ number_format($totalFeesIva, 2) }}</h5>
+                  <small>Total Fee IVA (Período Filtrado)</small>
                 </div>
               </div>
             </div>

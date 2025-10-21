@@ -14,27 +14,76 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function home()
+    public function home(Request $request)
     {
         $user = auth()->user();
+        $now = Carbon::now();
+
+        // Procesar filtros de fecha
+        $filterType = $request->input('filter_type', 'all'); // all, day, month, year, custom
+        $filterDate = $request->input('filter_date', $now->format('Y-m-d'));
+        $filterMonth = $request->input('filter_month', $now->format('Y-m'));
+        $filterYear = $request->input('filter_year', $now->format('Y'));
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        // Determinar rango de fechas según el filtro
+        switch ($filterType) {
+            case 'day':
+                $startDate = Carbon::parse($filterDate)->startOfDay();
+                $endDate = Carbon::parse($filterDate)->endOfDay();
+                break;
+            case 'month':
+                $startDate = Carbon::parse($filterMonth . '-01')->startOfMonth();
+                $endDate = Carbon::parse($filterMonth . '-01')->endOfMonth();
+                break;
+            case 'year':
+                $startDate = Carbon::parse($filterYear . '-01-01')->startOfYear();
+                $endDate = Carbon::parse($filterYear . '-01-01')->endOfYear();
+                break;
+            case 'custom':
+                if ($dateFrom && $dateTo) {
+                    $startDate = Carbon::parse($dateFrom)->startOfDay();
+                    $endDate = Carbon::parse($dateTo)->endOfDay();
+                } else {
+                    // Si no hay fechas personalizadas, usar el último año
+                    $startDate = $now->copy()->subYear()->startOfDay();
+                    $endDate = $now->copy()->endOfDay();
+                }
+                break;
+            default: // 'all'
+                $startDate = $now->copy()->subYear()->startOfDay();
+                $endDate = $now->copy()->endOfDay();
+                break;
+        }
+
+        // Contadores generales (sin filtro)
         $tclientes = Client::count();
         $tproviders = Provider::count();
         $tproducts = Product::count();
         $tsales = Sale::count();
 
-        $now = Carbon::now();
-
-        // Rangos de tiempo
+        // Rangos de tiempo para comparación
         $startOfYearWindow = $now->copy()->subYear()->startOfDay();
         $startOfPrevYearWindow = $now->copy()->subYears(2)->startOfDay();
         $endOfPrevYearWindow = $now->copy()->subYear()->endOfDay();
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfWeek = $now->copy()->startOfWeek();
 
-        // Totales por ventanas
-        $totalVentas = (float) (Sale::whereDate('date', '>=', $startOfYearWindow)->sum('totalamount') ?? 0);
-        $totalVentasMes = (float) (Sale::whereDate('date', '>=', $startOfMonth)->sum('totalamount') ?? 0);
-        $totalVentasSemana = (float) (Sale::whereDate('date', '>=', $startOfWeek)->sum('totalamount') ?? 0);
+        // Totales por ventanas con filtro aplicado
+        $totalVentas = (float) (Sale::whereBetween('date', [$startDate, $endDate])->sum('totalamount') ?? 0);
+        $totalVentasMes = (float) (Sale::whereDate('date', '>=', $startOfMonth)->whereBetween('date', [$startDate, $endDate])->sum('totalamount') ?? 0);
+        $totalVentasSemana = (float) (Sale::whereDate('date', '>=', $startOfWeek)->whereBetween('date', [$startDate, $endDate])->sum('totalamount') ?? 0);
+
+        // Calcular total de fees con filtro aplicado
+        $totalFees = (float) (Salesdetail::join('sales', 'sales.id', '=', 'salesdetails.sale_id')
+            ->whereBetween('sales.date', [$startDate, $endDate])
+            ->sum('salesdetails.fee') ?? 0);
+
+        // Calcular total de feeiva con filtro aplicado
+        $totalFeesIva = (float) (Salesdetail::join('sales', 'sales.id', '=', 'salesdetails.sale_id')
+            ->whereBetween('sales.date', [$startDate, $endDate])
+            ->sum('salesdetails.feeiva') ?? 0);
 
         $ventasPrevioAnio = (float) (Sale::whereBetween('date', [$startOfPrevYearWindow, $endOfPrevYearWindow])->sum('totalamount') ?? 0);
         $crecimientoVentas = 0.0;
@@ -75,12 +124,12 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Top productos más vendidos (por cantidad) en el último año
+        // Top productos más vendidos (por cantidad) con filtro aplicado
         $productosMasVendidos = Salesdetail::query()
             ->select('products.id', 'products.name', DB::raw('SUM(salesdetails.amountp) as cantidad_vendida'))
             ->join('sales', 'sales.id', '=', 'salesdetails.sale_id')
             ->join('products', 'products.id', '=', 'salesdetails.product_id')
-            ->whereDate('sales.date', '>=', $startOfYearWindow)
+            ->whereBetween('sales.date', [$startDate, $endDate])
             ->groupBy('products.id', 'products.name')
             ->orderByDesc(DB::raw('SUM(salesdetails.amountp)'))
             ->limit(5)
@@ -102,12 +151,22 @@ class DashboardController extends Controller
             ->with('totalVentas', round($totalVentas, 2))
             ->with('totalVentasMes', round($totalVentasMes, 2))
             ->with('totalVentasSemana', round($totalVentasSemana, 2))
+            ->with('totalFees', round($totalFees, 2))
+            ->with('totalFeesIva', round($totalFeesIva, 2))
             ->with('crecimientoVentas', $crecimientoVentas)
             ->with('ventasUltimoAno', $ventasUltimoAno)
             ->with('ventasUltimoMes', $ventasUltimoMes)
             ->with('ventasUltimaSemana', $ventasUltimaSemana)
             ->with('ventasPorMes', $ventasPorMes)
             ->with('ventasPorDia', $ventasPorDia)
-            ->with('productosMasVendidos', $productosMasVendidos);
+            ->with('productosMasVendidos', $productosMasVendidos)
+            ->with('filterType', $filterType)
+            ->with('filterDate', $filterDate)
+            ->with('filterMonth', $filterMonth)
+            ->with('filterYear', $filterYear)
+            ->with('dateFrom', $dateFrom)
+            ->with('dateTo', $dateTo)
+            ->with('startDate', $startDate->format('d/m/Y'))
+            ->with('endDate', $endDate->format('d/m/Y'));
     }
 }
