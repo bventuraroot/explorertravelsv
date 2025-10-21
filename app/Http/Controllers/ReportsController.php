@@ -259,8 +259,9 @@ class ReportsController extends Controller
     public function ivacontrolsearch(Request $request){
         $Company = Company::find($request['company']);
 
-        // Obtener totales de ventas del mes
+        // Obtener totales de ventas del mes (solo facturas con DTE emitido)
         $salesData = Sale::join('salesdetails','salesdetails.sale_id', '=','sales.id')
+            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
             ->selectRaw("SUM(salesdetails.detained13) as debito_fiscal")
             ->selectRaw("SUM(salesdetails.pricesale) as ventas_gravadas")
             ->selectRaw("SUM(salesdetails.exempt) as ventas_exentas")
@@ -269,6 +270,8 @@ class ReportsController extends Controller
             ->whereRaw('MONTH(sales.date)=?', $request['period'])
             ->where('sales.company_id', '=', $request['company'])
             ->where('sales.state', '<>', 0)
+            // Solo incluir DTE que fueron enviados exitosamente (estado "Enviado")
+            ->where('dte.codEstado', '=', '02')
             ->first();
 
         // Obtener totales de compras del mes
