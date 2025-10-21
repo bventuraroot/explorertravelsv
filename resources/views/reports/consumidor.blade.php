@@ -126,7 +126,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         </div>
     </div>
     <div id="areaImprimir">
-        <table class="table">
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="table" style="min-width: 1200px;">
             <thead>
                 <tr>
                     <th class="text-center" colspan="13">
@@ -144,18 +145,18 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
 
             <tbody>
                 <tr class="text-center">
-                    <td>Corr.</td>
-                    <td>FECHA</td>
-                    <td>No. Doc.</td>
-                    <td style="text-align: left;">CLIENTE</td>
-                    <td>EXENTAS</td>
-                    <td style="text-align: right;">NO SUJETAS</td>
-                    <td style="text-align: right;">INTERNAS GRAVADAS</td>
-                    <td style="text-align: right;">DEBITO FISCAL</td>
-                    <td style="text-align: right;">VENTA TOTAL</td>
-                    <td style="text-align: center;">NÚMERO CONTROL DTE</td>
-                    <td style="text-align: center;">CÓDIGO GENERACIÓN</td>
-                    <td style="text-align: center;">SELLO RECEPCIÓN</td>
+                    <td style="width: 40px;">Corr.</td>
+                    <td style="width: 80px;">FECHA</td>
+                    <td style="width: 60px;">No. Doc.</td>
+                    <td style="text-align: left; width: 150px;">CLIENTE</td>
+                    <td style="width: 80px;">EXENTAS</td>
+                    <td style="text-align: right; width: 80px;">NO SUJETAS</td>
+                    <td style="text-align: right; width: 100px;">INTERNAS GRAVADAS</td>
+                    <td style="text-align: right; width: 80px;">DEBITO FISCAL</td>
+                    <td style="text-align: right; width: 80px;">VENTA TOTAL</td>
+                    <td style="text-align: center; width: 120px;">NÚMERO CONTROL DTE</td>
+                    <td style="text-align: center; width: 120px;">CÓDIGO GENERACIÓN</td>
+                    <td style="text-align: center; width: 120px;">SELLO RECEPCIÓN</td>
                 </tr>
                         <?php
                         $i = 1;
@@ -250,21 +251,21 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             $tot_final = $tot_final + $tot;
                             ?>
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 7px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['numeroControl'] ?? '-' }}">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
                             {{ $sale['numeroControl'] ?? '-' }}
                         @endif
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 7px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['codigoGeneracion'] ?? '-' }}">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
                         @endif
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 7px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['selloRecibido'] ?? '-' }}">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -378,6 +379,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 </tr>
             </tbody>
         </table>
+        </div>
     </div>
 </div>
     @endisset

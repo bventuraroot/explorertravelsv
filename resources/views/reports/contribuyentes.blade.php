@@ -129,7 +129,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         </div>
     </div>
     <div id="areaImprimir" class="table-responsive">
-        <table class="table" style="">
+        <div style="overflow-x: auto; max-width: 100%;">
+        <table class="table" style="min-width: 1400px;">
             <thead style="font-size: 13px;">
                 <tr>
                     <th class="text-center" colspan="17">
@@ -156,23 +157,23 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr style="text-transform: uppercase;">
-                    <td style="font-size: 10px; text-align: left;"><b>NUM. <br> CORR.</b></td>
-                    <td style="font-size: 10px; text-align: left;"><b>Fecha<br>Emisión</b></td>
-                    <td style="font-size: 10px; text-align: left;"><b>No. Doc.</b></td>
-                    <td style="font-size: 10px;"><b>Nombre del Cliente</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>NRC</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Exentas</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Internas <br>Gravadas</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Debito<br>Fiscal</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>No<br>Sujetas</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Exentas</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Internas<br>Gravadas</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>Debito<br>Fiscal</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>IVA<br>Percibido</b></td>
-                    <td style="font-size: 10px; text-align: right;"><b>TOTAL</b></td>
-                    <td style="font-size: 10px; text-align: center;"><b>NÚMERO CONTROL DTE</b></td>
-                    <td style="font-size: 10px; text-align: center;"><b>CÓDIGO GENERACIÓN</b></td>
-                    <td style="font-size: 10px; text-align: center;"><b>SELLO<br>RECEPCIÓN</b></td>
+                    <td style="font-size: 10px; text-align: left; width: 40px;"><b>NUM. <br> CORR.</b></td>
+                    <td style="font-size: 10px; text-align: left; width: 80px;"><b>Fecha<br>Emisión</b></td>
+                    <td style="font-size: 10px; text-align: left; width: 60px;"><b>No. Doc.</b></td>
+                    <td style="font-size: 10px; width: 150px;"><b>Nombre del Cliente</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>NRC</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>Exentas</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 100px;"><b>Internas <br>Gravadas</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>Debito<br>Fiscal</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>No<br>Sujetas</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>Exentas</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 100px;"><b>Internas<br>Gravadas</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>Debito<br>Fiscal</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA<br>Percibido</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>TOTAL</b></td>
+                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>NÚMERO CONTROL DTE</b></td>
+                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>CÓDIGO GENERACIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>SELLO<br>RECEPCIÓN</b></td>
                 </tr>
             </thead>
             <tbody>
@@ -317,7 +318,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
 
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
+                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['numeroControl'] ?? '-' }}">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -325,7 +326,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
+                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['codigoGeneracion'] ?? '-' }}">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -333,7 +334,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
+                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['selloRecibido'] ?? '-' }}">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -419,6 +420,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 </tr>
             </tbody>
         </table>
+        </div>
         <?php
                                         ?>
         <table style="text-align: center; font-size: 10px" align="center" border="1">
