@@ -496,6 +496,11 @@ if (!function_exists('crf')) {
             $tributos_properties_items_cuerpoDocumento = ($item->iva != 0) ? "20" : "C3";
 
             $properties_items_cuerpoDocumento = array();
+            if(($item->no_sujetas > 0 || $item->exentas > 0) && $item->fee > 0){
+                $precioUnitario = $item->precio_unitario + $item->fee;
+            } else {
+                $precioUnitario = $item->precio_unitario;
+            }
 
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i,
@@ -506,14 +511,14 @@ if (!function_exists('crf')) {
                 "codTributo"        => null,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => (float)($item->precio_unitario),
+                "precioUni"         => round((float)$precioUnitario, 8),
                 "montoDescu"        => 0.00,
-                "ventaNoSuj"        => (float)($item->no_sujetas),
-                "ventaExenta"       => (float)($item->exentas),
-                "ventaGravada"      => round((float)($item->gravadas),2),
+                "ventaNoSuj"        => round((float)$item->no_sujetas, 8),
+                "ventaExenta"       => round((float)$item->exentas, 8),
+                "ventaGravada"      => round((float)$item->gravadas, 8),
                 "tributos"          => ($item->gravadas != 0 || $item->iva != 0) ? ["20"] : null,
-                "psv"               => (float)"0.00",
-                "noGravado"         => (float)$item->no_imponible
+                "psv"               => round((float)"0.00", 8),
+                "noGravado"         => round((float)$item->no_imponible, 8)
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
@@ -780,11 +785,16 @@ if (!function_exists('fac')) {
             // Puede haber gravadas (fee) incluso con exentas/no sujetas
             if($item->gravadas > 0 || $item->iva > 0){
                 // Hay venta gravada (puede ser del fee aunque el producto sea exento)
-                $ventagravada = round((float)($item->gravadas + $item->iva), 2);
-                $ivaItem = round((float)$item->iva, 2);
+                $ventagravada = round((float)($item->gravadas + $item->iva), 8);
+                $ivaItem = round((float)$item->iva, 8);
             } else {
                 $ventagravada = 0;
                 $ivaItem = 0;
+            }
+            if(($item->no_sujetas > 0 || $item->exentas > 0) && $item->fee > 0){
+                $precioUnitario = $item->precio_unitario + $item->fee;
+            } else {
+                $precioUnitario = $item->precio_unitario;
             }
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i, //intval($item["corr"]),
@@ -795,15 +805,15 @@ if (!function_exists('fac')) {
                 "codTributo"        => null,
                 "uniMedida"         => intval($item->uniMedida),
                 "descripcion"       => $item->descripcion,
-                "precioUni"         => round((float)($item->precio_unitario + $iva_calculadofac), 2),
+                "precioUni"         => round((float)($precioUnitario + $iva_calculadofac), 8),
                 "montoDescu"        => 0.00,
-                "ventaNoSuj"        => (float)$item->no_sujetas,
-                "ventaExenta"       => (float)$item->exentas,
-                "ventaGravada"      => $ventagravada,
+                "ventaNoSuj"        => round((float)$item->no_sujetas, 8),
+                "ventaExenta"       => round((float)$item->exentas, 8),
+                "ventaGravada"      => round((float)$ventagravada, 8),
                 "tributos"          =>  null,
                 "psv"               => (float)"0.00",
-                "noGravado"         => (float)$item->no_imponible,
-                "ivaItem"           => $ivaItem
+                "noGravado"         => round((float)$item->no_imponible, 8),
+                "ivaItem"           => round((float)$ivaItem, 8)
             ];
 
             $items_cuerpoDocumento[] = $properties_items_cuerpoDocumento;
@@ -872,7 +882,6 @@ if (!function_exists('fac')) {
             "totalDescu"            => (float)$totales["totalDescu"],
             "tributos"              => $codigos_tributos,
             "subTotal"              => round((float)($totales["subTotal"] + $totales["totalIva"]), 2),
-
             "ivaRete1"              => (float)$totales["ivaRete1"],
             "reteRenta"             => (float)$totales["reteRenta"],
             "montoTotalOperacion"   => round((float)($totales["subTotal"] + $totales["totalIva"]), 2), //(float)$totales["montoTotalOperacion"],
