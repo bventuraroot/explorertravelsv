@@ -1923,18 +1923,20 @@ function agregarfacdetails(corr) {
                     }
                 }
 
-                // Determinar si el item es gravado, exento o no sujeto (como Roma Copies)
-                var isGravado = parseFloat(value.pricesale) > 0 && parseFloat(value.nosujeta) == 0 && parseFloat(value.exempt) == 0;
+                // Determinar si el item es gravado, exento o no sujeto
+                // Si hay nosujeta o exempt > 0, es exento/no sujeto (incluso si tiene fee en pricesale)
                 var isExento = parseFloat(value.exempt) > 0;
                 var isNoSujeto = parseFloat(value.nosujeta) > 0;
+                var isGravado = parseFloat(value.pricesale) > 0 && !isExento && !isNoSujeto;
 
                 if(typedoc=='3'){
                     // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
                     var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
                     if(isGravado) {
-                        // En draft: price_sale ya incluye el fee, calcular precio base
-                        var precioBase = parseFloat(value.pricesale) - feeSinIvaLinea; // Precio sin fee
-                        preciogravadas = parseFloat(value.pricesale); // Total con fee para mostrar
+                        // Para productos gravados: pricesale incluye precio + fee
+                        // Separar: precio del producto + fee
+                        var precioBase = parseFloat(value.pricesale) - feeSinIvaLinea; // Precio del producto sin fee
+                        preciogravadas = parseFloat(value.pricesale); // Total (precio + fee) para mostrar
                         // IVA de la línea = 13% de (precio base sin IVA + fee sin IVA)
                         var baseIvaLinea = precioBase + feeSinIvaLinea; // Precio base + fee
                         var iva13Line = parseFloat(baseIvaLinea * 0.13);
@@ -1962,7 +1964,8 @@ function agregarfacdetails(corr) {
                         // Para exentas/no sujetas con fee: no mostrar IVA del fee
                         ivarete13total += parseFloat(0.00);
                         preciounitario = parseFloat(value.priceunit);
-                        preciogravadas = parseFloat(value.pricesale); // Ya incluye el fee sin IVA
+                        // Para Facturas: pricesale ya contiene el fee sin IVA (correcto)
+                        preciogravadas = parseFloat(value.pricesale);
                     } else {
                         // Para gravadas: mostrar IVA normalmente
                         ivarete13total += parseFloat(value.detained13);
