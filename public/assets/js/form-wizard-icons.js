@@ -1964,8 +1964,8 @@ function agregarfacdetails(corr) {
                         // Para exentas/no sujetas con fee: no mostrar IVA del fee
                         ivarete13total += parseFloat(0.00);
                         preciounitario = parseFloat(value.priceunit);
-                        // Para Facturas: pricesale ya contiene el fee sin IVA (correcto)
-                        preciogravadas = parseFloat(value.pricesale);
+                        // Para Facturas: mostrar fee con IVA (pricesale + detained13)
+                        preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13);
                     } else {
                         // Para gravadas: mostrar IVA normalmente
                         ivarete13total += parseFloat(value.detained13);
