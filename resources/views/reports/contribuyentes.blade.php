@@ -130,7 +130,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
     </div>
     <div id="areaImprimir" class="table-responsive">
         <div style="overflow-x: auto; max-width: 100%;">
-        <table class="table" style="min-width: 1400px;">
+        <table class="table" style="min-width: 1800px;">
             <thead style="font-size: 13px;">
                 <tr>
                     <th class="text-center" colspan="17">
@@ -171,9 +171,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Debito<br>Fiscal</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA<br>Percibido</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>TOTAL</b></td>
-                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>NÚMERO CONTROL DTE</b></td>
-                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>CÓDIGO GENERACIÓN</b></td>
-                    <td style="font-size: 10px; text-align: center; width: 120px;"><b>SELLO<br>RECEPCIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>NÚMERO CONTROL DTE</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓDIGO GENERACIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO<br>RECEPCIÓN</b></td>
                 </tr>
             </thead>
             <tbody>
@@ -318,7 +318,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
 
                     </td>
                     <td
-                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['numeroControl'] ?? '-' }}">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -326,7 +326,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['codigoGeneracion'] ?? '-' }}">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -334,7 +334,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 7px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; width: 120px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $sale['selloRecibido'] ?? '-' }}">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
