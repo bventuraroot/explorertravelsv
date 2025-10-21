@@ -249,8 +249,8 @@ class ReportsController extends Controller
 
         // Obtener totales de ventas del mes
         $salesData = Sale::join('salesdetails','salesdetails.sale_id', '=','sales.id')
-            ->selectRaw("SUM(CASE WHEN salesdetails.exempt<>'0' THEN 0 WHEN salesdetails.exempt='0' THEN ROUND(salesdetails.pricesale-salesdetails.pricesale/1.13,2) END) as debito_fiscal")
-            ->selectRaw("SUM(CASE WHEN salesdetails.exempt<>'0' THEN ROUND((salesdetails.exempt),2) WHEN salesdetails.exempt='0' THEN ROUND(((salesdetails.pricesale)/1.13),2) END) as ventas_gravadas")
+            ->selectRaw("SUM(salesdetails.detained13) as debito_fiscal")
+            ->selectRaw("SUM(salesdetails.pricesale) as ventas_gravadas")
             ->selectRaw("SUM(salesdetails.exempt) as ventas_exentas")
             ->selectRaw("SUM(salesdetails.nosujeta) as ventas_nosujetas")
             ->whereRaw('YEAR(sales.date)=?', $request['year'])
