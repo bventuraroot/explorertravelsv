@@ -673,6 +673,7 @@ class SaleController extends Controller
         0 porcentaje_descuento,
         b.detained13 iva_calculado,
         b.renta renta_retenida,
+        b.fee fee,
         1 tipo_item,
         59 uniMedida
         FROM sales a
