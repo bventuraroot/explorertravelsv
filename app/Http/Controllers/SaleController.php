@@ -369,22 +369,24 @@ class SaleController extends Controller
             } elseif ($tipoVenta === 'exenta') {
                 $saledetails->nosujeta = 0.00;
                 $saledetails->exempt = $priceexenta;
-                $saledetails->pricesale = 0.00; // Asegurar que exentas no tengan pricesale
-                // Si hay fee, su IVA va a detained13
+                // Si hay fee, va en pricesale (gravadas)
                 if ($fee > 0) {
-                    $saledetails->detained13 = round($ivafee * $cantidad, 8);
+                    $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
                 } else {
+                    $saledetails->pricesale = 0.00;
                     $saledetails->detained13 = 0.00;
                 }
 
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
                 $saledetails->nosujeta = $pricenosujeta;
                 $saledetails->exempt = 0.00;
-                $saledetails->pricesale = 0.00; // Asegurar que no sujetas no tengan pricesale
-                // Si hay fee, su IVA va a detained13
+                // Si hay fee, va en pricesale (gravadas)
                 if ($fee > 0) {
-                    $saledetails->detained13 = round($ivafee * $cantidad, 8);
+                    $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
                 } else {
+                    $saledetails->pricesale = 0.00;
                     $saledetails->detained13 = 0.00;
                 }
 
@@ -582,7 +584,7 @@ class SaleController extends Controller
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN fee ELSE pricesale END) gravadas,
+            SUM(pricesale) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -595,7 +597,7 @@ class SaleController extends Controller
             0 ivarete,
             SUM(renta) rentarete,
             NULL pagos,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN feeiva ELSE detained13 END) iva')
+            SUM(detained13) iva')
                 )
                 ->get();
             //detalle de montos de la factura
@@ -1733,7 +1735,7 @@ class SaleController extends Controller
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN fee ELSE pricesale END) gravadas,
+            SUM(pricesale) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -1746,7 +1748,7 @@ class SaleController extends Controller
             0 ivarete,
             0 rentarete,
             NULL pagos,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN feeiva ELSE detained13 END) iva')
+            SUM(detained13) iva')
                 )
                 ->get();
 
