@@ -511,7 +511,7 @@ if (!function_exists('crf')) {
                 "ventaNoSuj"        => (float)($item->no_sujetas),
                 "ventaExenta"       => (float)($item->exentas),
                 "ventaGravada"      => round((float)($item->gravadas),2),
-                "tributos"          => ($item->gravadas != 0) ? ["20"] : null,
+                "tributos"          => ($item->gravadas != 0 || $item->iva != 0) ? ["20"] : null,
                 "psv"               => (float)"0.00",
                 "noGravado"         => (float)$item->no_imponible
             ];
@@ -775,16 +775,16 @@ if (!function_exists('fac')) {
 
             $properties_items_cuerpoDocumento = array();
 
-            $iva_calculadofac = round(($item->iva/$item->cantidad),2);
-            if($item->no_sujetas > 0){
-            $ventagravada = 0;
-            $ivaItem = 0;
-            }else if($item->exentas > 0){
-            $ventagravada = 0;
-            $ivaItem = 0;
-            }else{
-            $ventagravada = round((float)($item->gravadas + $item->iva), 2);
-            $ivaItem = round((float)$item->iva, 2);
+            $iva_calculadofac = ($item->cantidad > 0) ? round(($item->iva/$item->cantidad),2) : 0;
+
+            // Puede haber gravadas (fee) incluso con exentas/no sujetas
+            if($item->gravadas > 0 || $item->iva > 0){
+                // Hay venta gravada (puede ser del fee aunque el producto sea exento)
+                $ventagravada = round((float)($item->gravadas + $item->iva), 2);
+                $ivaItem = round((float)$item->iva, 2);
+            } else {
+                $ventagravada = 0;
+                $ivaItem = 0;
             }
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i, //intval($item["corr"]),

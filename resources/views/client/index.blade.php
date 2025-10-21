@@ -15,6 +15,7 @@ $configData = Helper::appClasses();
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css') }}" />
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/jquery-timepicker/jquery-timepicker.css') }}" />
 <link rel="stylesheet" href="{{ asset('assets/vendor/libs/pickr/pickr-themes.css') }}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 @endsection
 
 @section('vendor-script')
@@ -41,6 +42,7 @@ $configData = Helper::appClasses();
 <script src="{{ asset('assets/js/app-client-list.js') }}"></script>
 <script src="{{ asset('assets/js/forms-client.js') }}"></script>
 <script src="{{ asset('assets/js/client-validation.js') }}"></script>
+<script src="{{ asset('assets/js/client-details-modal.js') }}"></script>
 @endsection
 
 @section('title', 'Clientes')
@@ -178,6 +180,11 @@ $configData = Helper::appClasses();
                     <td>{{ $client->birthday }}</td>
                     <td>
                         <div class="d-flex align-items-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2"
+                                    onclick="showClientDetails({{ $client->id }})"
+                                    title="Ver Detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <a href="javascript: editClient({{ $client->id }});" class="dropdown-item"><i
                                     class="ti ti-edit ti-sm me-2"></i>Editar</a>
                             <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
@@ -593,8 +600,10 @@ $configData = Helper::appClasses();
             <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
         </form>
     </div>
-</div>
+    </div>
 </div>
 
+<!-- Modal de Detalles del Cliente -->
+@include('client.client-details-modal')
 
 @endsection

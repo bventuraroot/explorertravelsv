@@ -132,12 +132,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table" style="">
             <thead style="font-size: 13px;">
                 <tr>
-                    <th class="text-center" colspan="14">
+                    <th class="text-center" colspan="15">
                         LIBRO DE VENTAS CONTRIBUYENTES (Valores expresados en USD)
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="14" style="font-size: 13px;">
+                    <td class="text-center" colspan="15" style="font-size: 13px;">
                         <b>Nombre del Contribuyente:</b>
                         <?php echo $heading['name']; ?> &nbsp;&nbsp;<b>N.R.C.:</b>
                         <?php echo $heading['nrc']; ?> &nbsp;&nbsp;<b>NIT:</b>&nbsp;
@@ -170,6 +170,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="font-size: 10px; text-align: right;"><b>Debito<br>Fiscal</b></td>
                     <td style="font-size: 10px; text-align: right;"><b>IVA<br>Percibido</b></td>
                     <td style="font-size: 10px; text-align: right;"><b>TOTAL</b></td>
+                    <td style="font-size: 10px; text-align: center;"><b>SELLO<br>RECEPCIÓN</b></td>
                 </tr>
             </thead>
             <tbody>
@@ -314,6 +315,14 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             ?>
 
                     </td>
+                    <td
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                            {{ $sale['selloRecibido'] ?? '-' }}
+                        @endif
+                    </td>
                 </tr>
                 <?php
                     ++$i;
@@ -380,6 +389,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                                 echo number_format($vto,2);
                             ?>
                         </b>
+                    </td>
+                    <td style="font-size: 10px; text-align: center;">
+                        <b>-</b>
                     </td>
                 </tr>
             </tbody>

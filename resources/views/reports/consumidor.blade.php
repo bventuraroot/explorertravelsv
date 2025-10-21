@@ -129,12 +129,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table">
             <thead>
                 <tr>
-                    <th class="text-center" colspan="10">
+                    <th class="text-center" colspan="11">
                         <b>LIBRO DE VENTAS CONSUMIDOR</b>
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="10">
+                    <td class="text-center" colspan="11">
                         <b>Nombre del Contribuyente: </b> <?php echo $heading['name']; ?>
                         <b>N.R.C.: </b> <?php echo $heading['ncr']; ?> <b>MES: </b><?php echo $mesesDelAnoMayuscula[(int)$period-1] ?>
                         <b>Año: </b> <?php echo $yearB; ?><p>(Valores expresados en Dolares Estadounidenses)</p>
@@ -153,6 +153,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right;">INTERNAS GRAVADAS</td>
                     <td style="text-align: right;">DEBITO FISCAL</td>
                     <td style="text-align: right;">VENTA TOTAL</td>
+                    <td style="text-align: center;">SELLO RECEPCIÓN</td>
                 </tr>
                         <?php
                         $i = 1;
@@ -248,6 +249,13 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             $tot_final = $tot_final + $tot;
                             ?>
                         </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px;">
+                            @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                            {{ $sale['selloRecibido'] ?? '-' }}
+                        @endif
+                        </td>
                     </tr><?php
                     ++$i;
                 ?>
@@ -281,9 +289,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     echo number_format($tot_final,2);
                     ?>
                     </td>
+                    <td class="text-center">
+                        -
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan="10" style="text-align: center;">
+                    <td colspan="11" style="text-align: center;">
                         <br><br><b>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</b>
                     </td>
                 </tr>
@@ -294,7 +305,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td colspan="2" style="text-align: right;">
                         <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
                     </td>
-                    <td colspan="2"></td>
+                    <td colspan="3"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -309,7 +320,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right;">
                         <?php echo number_format($tot_debfiscal, 2); ?>
                     </td>
-                    <td colspan="4"></td>
+                    <td colspan="5"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -324,7 +335,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right;">
                         0.00
                     </td>
-                    <td colspan="4"></td>
+                    <td colspan="5"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -342,7 +353,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         echo number_format($totales, 2);
                         ?>
                     </td>
-                    <td colspan="4"></td>
+                    <td colspan="5"></td>
                 </tr>
             </tbody>
         </table>

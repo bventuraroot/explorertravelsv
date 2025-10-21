@@ -761,11 +761,37 @@ function totalamount() {
     totalamount = parseFloat(valor * cantidad);
     totaamountsinivi = parseFloat(totalamount/1.13);
 
-    // Lógica basada en el tipo de venta (como en Roma Copies)
+    // Lógica basada en el tipo de venta
     if (type === 'exenta' || type === 'nosujeta') {
-        // VENTAS EXENTAS O NO SUJETAS: NO generan IVA
-        $("#ivarete13").val(0);
-        ivarete13 = 0.00;
+        // VENTAS EXENTAS O NO SUJETAS: El producto NO genera IVA, pero el FEE SÍ
+
+        if (fee > 0) {
+            if (typedoc === '3') {
+                // CRÉDITO FISCAL: El fee viene con IVA, separarlo
+                var feeConIva = parseFloat(fee);
+                var feeSinIva = feeConIva / 1.13;
+                var subtotalFee = parseFloat(feeSinIva * cantidad);
+
+                if ($("#feeSinIva").length) {
+                    $("#feeSinIva").val(feeSinIva.toFixed(8));
+                }
+
+                ivarete13 = parseFloat(subtotalFee * 0.13);
+                $("#ivarete13").val(ivarete13.toFixed(8));
+            } else {
+                // FACTURAS: El fee ya incluye IVA, extraerlo
+                var feeConIva = parseFloat(fee);
+                var feeSinIva = feeConIva / 1.13;
+                var ivaDelFee = feeConIva - feeSinIva;
+
+                ivarete13 = parseFloat(ivaDelFee * cantidad);
+                $("#ivarete13").val(ivarete13.toFixed(8));
+            }
+        } else {
+            $("#ivarete13").val(0);
+            ivarete13 = 0.00;
+        }
+
         $("#ivarete").val(0.00);
         $("#rentarete").val(0.00);
     } else {

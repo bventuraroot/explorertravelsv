@@ -333,24 +333,23 @@ class SaleController extends Controller
                     $ivafac = round($pricegravadafac * 0.13, 8); // IVA = 13% del subtotal sin IVA
                 }
             }
-            //iva al fee - solo para ventas gravadas
-            if ($tipoVenta === 'gravada') {
+            // IVA al fee - EL FEE SIEMPRE LLEVA IVA
+            if ($fee > 0) {
                 $feesiniva = round($fee / 1.13, 8);
                 $ivafee = round($fee - $feesiniva, 8);
-
-                // Para crédito fiscal, recalcular el IVA incluyendo el fee
-                if ($sale->typedocument_id == '3') {
-                    // En CCF, el priceunit debe incluir el fee SIN IVA
-                    $priceunitariofac = round(($price + $feesiniva), 8);
-                    // Subtotal (gravadas) es unitario (sin IVA) incluyendo fee × cantidad
-                    $pricegravadafac = round($priceunitariofac * $cantidad, 8);
-                    // IVA del total sin IVA
-                    $ivafac = round($pricegravadafac * 0.13, 8); // IVA = 13% del subtotal (producto + fee) sin IVA
-                }
             } else {
-                // Para ventas exentas/no sujetas, el fee no tiene IVA
-                $feesiniva = round($fee, 8);
+                $feesiniva = 0.00;
                 $ivafee = 0.00;
+            }
+
+            // Para crédito fiscal gravado, recalcular el IVA incluyendo el fee
+            if ($tipoVenta === 'gravada' && $sale->typedocument_id == '3') {
+                // En CCF, el priceunit debe incluir el fee SIN IVA
+                $priceunitariofac = round(($price + $feesiniva), 8);
+                // Subtotal (gravadas) es unitario (sin IVA) incluyendo fee × cantidad
+                $pricegravadafac = round($priceunitariofac * $cantidad, 8);
+                // IVA del total sin IVA
+                $ivafac = round($pricegravadafac * 0.13, 8);
             }
 
             $saledetails = new Salesdetail();
@@ -361,19 +360,34 @@ class SaleController extends Controller
             $saledetails->priceunit = round($priceunitariofac, 8);
             $saledetails->pricesale = round($pricegravadafac, 8);
 
-            // Asignar valores según el tipo de venta (como en Roma Copies)
+            // Asignar valores según el tipo de venta
             if ($tipoVenta === 'gravada') {
                 $saledetails->nosujeta = 0.00;
                 $saledetails->exempt = 0.00;
                 $saledetails->detained13 = round($ivafac, 8);
+
             } elseif ($tipoVenta === 'exenta') {
                 $saledetails->nosujeta = 0.00;
-                $saledetails->exempt = $priceexenta; // El precio total ya incluye IVA
-                $saledetails->detained13 = 0.00;
+                $saledetails->exempt = $priceexenta;
+                $saledetails->pricesale = 0.00; // Asegurar que exentas no tengan pricesale
+                // Si hay fee, su IVA va a detained13
+                if ($fee > 0) {
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8);
+                } else {
+                    $saledetails->detained13 = 0.00;
+                }
+
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                $saledetails->nosujeta = $pricenosujeta; // El precio total ya incluye IVA
+                $saledetails->nosujeta = $pricenosujeta;
                 $saledetails->exempt = 0.00;
-                $saledetails->detained13 = 0.00;
+                $saledetails->pricesale = 0.00; // Asegurar que no sujetas no tengan pricesale
+                // Si hay fee, su IVA va a detained13
+                if ($fee > 0) {
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8);
+                } else {
+                    $saledetails->detained13 = 0.00;
+                }
+
             } else {
                 // Por defecto, usar valores originales
                 $saledetails->nosujeta = $pricenosujeta;
@@ -383,8 +397,8 @@ class SaleController extends Controller
 
             $saledetails->detained = $ivarete;
             $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 2) : round($renta * $cantidad, 2);
-            $saledetails->fee = $feesiniva;
-            $saledetails->feeiva = $ivafee;
+            $saledetails->fee = round($feesiniva * $cantidad, 8);
+            $saledetails->feeiva = round($ivafee * $cantidad, 8);
             $saledetails->reserva = $reserva;
             $saledetails->ruta = $ruta;
             $saledetails->destino = $destino;
@@ -568,7 +582,7 @@ class SaleController extends Controller
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE pricesale END) gravadas,
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN fee ELSE pricesale END) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -581,7 +595,7 @@ class SaleController extends Controller
             0 ivarete,
             SUM(renta) rentarete,
             NULL pagos,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN feeiva ELSE detained13 END) iva')
                 )
                 ->get();
             //detalle de montos de la factura
@@ -1719,7 +1733,7 @@ class SaleController extends Controller
                 ->select(
                     DB::raw('SUM(nosujeta) nosujeta,
             SUM(exempt) exentas,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE pricesale END) gravadas,
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN fee ELSE pricesale END) gravadas,
             SUM(nosujeta+exempt+pricesale) subtotalventas,
             0 descnosujeta,
             0 descexenta,
@@ -1732,7 +1746,7 @@ class SaleController extends Controller
             0 ivarete,
             0 rentarete,
             NULL pagos,
-            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN 0 ELSE detained13 END) iva')
+            SUM(CASE WHEN nosujeta > 0 OR exempt > 0 THEN feeiva ELSE detained13 END) iva')
                 )
                 ->get();
 
