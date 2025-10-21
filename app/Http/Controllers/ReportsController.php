@@ -85,6 +85,8 @@ class ReportsController extends Controller
         'dte.codigoGeneracion AS codigoGeneracion',
         'dte.selloRecibido AS selloRecibido')
         ->selectRaw("CASE
+            WHEN dte.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
             WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
             THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
@@ -175,6 +177,8 @@ class ReportsController extends Controller
         'dte.codigoGeneracion AS codigoGeneracion',
         'dte.selloRecibido AS selloRecibido')
         ->selectRaw("CASE
+            WHEN dte.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
             WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
             THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
