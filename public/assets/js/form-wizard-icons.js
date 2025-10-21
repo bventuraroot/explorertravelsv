@@ -391,9 +391,33 @@ function agregarp() {
         //iva13temp = parseFloat(ivarete13 * cantidad).toFixed(2);
     } else if (type == "exenta") {
         priceexenta = parseFloat(price * cantidad);
+        // Si hay fee, agregarlo como gravado
+        if (fee > 0) {
+            if (typedoc === '3') {
+                // CRÉDITO FISCAL: fee sin IVA
+                var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            } else {
+                // FACTURAS: fee sin IVA (extraer del fee con IVA)
+                var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            }
+        }
         iva13temp = 0;
     } else if (type == "nosujeta") {
         pricenosujeta = parseFloat(price * cantidad);
+        // Si hay fee, agregarlo como gravado
+        if (fee > 0) {
+            if (typedoc === '3') {
+                // CRÉDITO FISCAL: fee sin IVA
+                var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            } else {
+                // FACTURAS: fee sin IVA (extraer del fee con IVA)
+                var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            }
+        }
         iva13temp = 0;
     }
     if(typedoc=='8'){
