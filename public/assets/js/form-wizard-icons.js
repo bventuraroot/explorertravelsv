@@ -1966,7 +1966,7 @@ function agregarfacdetails(corr) {
                     if (isExento || isNoSujeto) {
                         var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                     } else {
-                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + parseFloat(value.detained13));
+                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                     }
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     // FACTURAS: No mostrar IVA del fee en el campo "Iva 13%" para exentas/no sujetas
