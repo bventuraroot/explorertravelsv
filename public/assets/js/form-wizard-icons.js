@@ -564,10 +564,7 @@ function agregarp() {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    (type!='gravada' && fee>0) ? (pricegravada+fee).toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    }) : pricegravada.toLocaleString("en-US", {
+                    pricegravada.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
