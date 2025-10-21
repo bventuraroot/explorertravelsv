@@ -577,10 +577,15 @@ function agregarp() {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    pricegravada.toLocaleString("en-US", {
-                        style: "currency",
-                        currency: "USD",
-                    }) +
+                    ((type === 'exenta' || type === 'nosujeta') && typedoc !== '3' && fee > 0)
+                        ? (pricegravada + (fee * cantidad * 0.13)).toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                        })
+                        : pricegravada.toLocaleString("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                        }) +
                     '</td><td class="text-center">' +
                     totaltemp.toLocaleString("en-US", {
                         style: "currency",
