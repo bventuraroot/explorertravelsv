@@ -84,7 +84,11 @@ class ReportsController extends Controller
         'dte.id_doc AS numeroControl',
         'dte.codigoGeneracion AS codigoGeneracion',
         'dte.selloRecibido AS selloRecibido')
-        ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS dateF ")
+        ->selectRaw("CASE
+            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
+        END AS dateF ")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
@@ -170,7 +174,11 @@ class ReportsController extends Controller
         'dte.id_doc AS numeroControl',
         'dte.codigoGeneracion AS codigoGeneracion',
         'dte.selloRecibido AS selloRecibido')
-        ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS dateF ")
+        ->selectRaw("CASE
+            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
+        END AS dateF ")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
