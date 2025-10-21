@@ -767,7 +767,7 @@ function totalamount() {
 
         if (fee > 0) {
             if (typedoc === '3') {
-                // CRÉDITO FISCAL: El fee viene con IVA, separarlo
+                // CRÉDITO FISCAL: El fee viene con IVA, separarlo y mostrar IVA
                 var feeConIva = parseFloat(fee);
                 var feeSinIva = feeConIva / 1.13;
                 var subtotalFee = parseFloat(feeSinIva * cantidad);
@@ -779,13 +779,9 @@ function totalamount() {
                 ivarete13 = parseFloat(subtotalFee * 0.13);
                 $("#ivarete13").val(ivarete13.toFixed(8));
             } else {
-                // FACTURAS: El fee ya incluye IVA, extraerlo
-                var feeConIva = parseFloat(fee);
-                var feeSinIva = feeConIva / 1.13;
-                var ivaDelFee = feeConIva - feeSinIva;
-
-                ivarete13 = parseFloat(ivaDelFee * cantidad);
-                $("#ivarete13").val(ivarete13.toFixed(8));
+                // FACTURAS: El fee ya incluye IVA, NO mostrar IVA en el campo
+                $("#ivarete13").val(0);
+                ivarete13 = 0.00;
             }
         } else {
             $("#ivarete13").val(0);
@@ -1881,7 +1877,7 @@ function agregarfacdetails(corr) {
             $.each(response, function (index, value) {
 
                 // Para Crédito Fiscal, llenar campos de entrada con datos del draft
-                if(typedoc=='3' && index === 0) {
+                if(index === 0) {
                     // Solo llenar una vez con el primer producto
                     console.log("DEBUG DRAFT - Datos del primer producto:", {
                         priceunit: value.priceunit,
@@ -1891,8 +1887,18 @@ function agregarfacdetails(corr) {
                         detained13: value.detained13
                     });
                     $("#precio").val(value.priceunit);
-                    $("#fee").val(value.fee);
                     $("#cantidad").val(value.amountp);
+
+                    // Mostrar fee según tipo de documento
+                    if(typedoc=='3') {
+                        // CRÉDITO FISCAL: mostrar fee sin IVA (como está en BD)
+                        $("#fee").val(value.fee);
+                    } else {
+                        // FACTURAS: mostrar fee con IVA (BD tiene sin IVA, sumar IVA)
+                        var feeSinIva = parseFloat(value.fee || 0);
+                        var feeConIva = feeSinIva * 1.13;
+                        $("#fee").val(feeConIva.toFixed(2));
+                    }
                 }
 
                 // Determinar si el item es gravado, exento o no sujeto (como Roma Copies)
@@ -1923,9 +1929,18 @@ function agregarfacdetails(corr) {
                     // En draft: price_sale ya incluye fee, no sumarlo nuevamente
                     var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
-                    ivarete13total += parseFloat(0.00);
-                    preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
-                    preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
+                    // FACTURAS: No mostrar IVA del fee en el campo "Iva 13%" para exentas/no sujetas
+                    if(isExento || isNoSujeto) {
+                        // Para exentas/no sujetas con fee: no mostrar IVA del fee
+                        ivarete13total += parseFloat(0.00);
+                        preciounitario = parseFloat(value.priceunit);
+                        preciogravadas = parseFloat(value.pricesale); // Ya incluye el fee sin IVA
+                    } else {
+                        // Para gravadas: mostrar IVA normalmente
+                        ivarete13total += parseFloat(value.detained13);
+                        preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
+                        preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
+                    }
                     var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else{
                     ivarete13total += parseFloat(value.detained13);
