@@ -250,21 +250,21 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             $tot_final = $tot_final + $tot;
                             ?>
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
                             {{ $sale['numeroControl'] ?? '-' }}
                         @endif
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
                         @endif
                         </td>
-                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px;">
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap;">
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else

@@ -317,7 +317,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
 
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -325,7 +325,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
@@ -333,7 +333,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                     </td>
                     <td
-                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap;">
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
