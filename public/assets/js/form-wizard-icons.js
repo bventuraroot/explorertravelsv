@@ -371,16 +371,6 @@ function agregarp() {
             var precioUnitarioTotal = parseFloat(price) + feeSinIva;
             pricegravada = precioUnitarioTotal * cantidad; // (precio + fee sin IVA) × cantidad
             iva13temp = 0; // El IVA se calcula en la sección de abajo
-
-            console.log("DEBUG CÁLCULO PRECIO GRAVADA:", {
-                price: price,
-                fee: fee,
-                feeConIva: feeConIva,
-                feeSinIva: feeSinIva,
-                precioUnitarioTotal: precioUnitarioTotal,
-                cantidad: cantidad,
-                pricegravada: pricegravada
-            });
         } else {
             // Para otros documentos: lógica normal
             pricegravada = parseFloat((price * cantidad) + (fee * cantidad));
@@ -577,15 +567,10 @@ function agregarp() {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    ((type === 'exenta' || type === 'nosujeta') && typedoc !== '3' && fee > 0)
-                        ? (pricegravada + (fee * cantidad * 0.13)).toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                        })
-                        : pricegravada.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                        }) +
+                    (pricegravada+fee).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                    }) +
                     '</td><td class="text-center">' +
                     totaltemp.toLocaleString("en-US", {
                         style: "currency",
