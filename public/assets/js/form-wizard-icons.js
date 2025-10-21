@@ -878,7 +878,7 @@ function totalamount() {
     // Para Crédito Fiscal con exentos/no sujetos: el fee ya incluye IVA, no sumar ivarete13
     if ((type === 'exenta' || type === 'nosujeta') && typedoc === '3') {
         //var totalFinal = totalamount + totalfee - retencionamount - renta;
-        var totalFinal = (totalamount+ivarete13) - (retencionamount - renta);
+        var totalFinal = (totalamount+subtotalFee+ivarete13) - (retencionamount - renta);
     } else {
         var totalFinal = (totalamount + ivarete13) - (retencionamount - renta);
     }
