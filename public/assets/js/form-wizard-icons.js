@@ -389,7 +389,7 @@ function agregarp() {
             } else {
                 // FACTURAS: fee sin IVA (extraer del fee con IVA)
                 var feeSinIva = fee / 1.13;
-                pricegravada = parseFloat(feeSinIva * cantidad);
+                pricegravada = parseFloat((pricegravada+feeSinIva) * cantidad);
             }
         }
         iva13temp = 0;
@@ -403,7 +403,7 @@ function agregarp() {
             } else {
                 // FACTURAS: fee sin IVA (extraer del fee con IVA)
                 var feeSinIva = fee / 1.13;
-                pricegravada = parseFloat(feeSinIva * cantidad);
+                pricegravada = parseFloat((pricegravada+feeSinIva) * cantidad);
             }
         }
         iva13temp = 0;

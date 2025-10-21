@@ -259,14 +259,6 @@ class SaleController extends Controller
         $canal = ($canal === 'SIN_VALOR') ? '' : $canal;
         $description = ($description === 'SIN_VALOR') ? '' : $description;
 
-        // Log para debug
-        Log::info('savefactemp llamado', [
-            'tipoVenta' => $tipoVenta,
-            'price' => $price,
-            'pricenosujeta' => $pricenosujeta,
-            'priceexenta' => $priceexenta,
-            'pricegravada' => $pricegravada
-        ]);
 
         DB::beginTransaction();
 
