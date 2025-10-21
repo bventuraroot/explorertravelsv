@@ -140,7 +140,7 @@ class PermissionController extends Controller
                 "name" => "Reportes",
                 "icon" => "menu-icon fa-solid fa-line-chart",
                 "slug" => "report.index",
-                "badge" => ["primary", "6"],
+                "badge" => ["primary", "7"],
                 "submenu" => [
                     [
                         "url" => "/report/sales",
@@ -176,6 +176,11 @@ class PermissionController extends Controller
                         "url" => "/report/reportyear",
                         "name" => "Ventas y compras por año",
                         "slug" => "report.reportyear"
+                    ],
+                    [
+                        "url" => "/report/ivacontrol",
+                        "name" => "Control de IVA y Pago a Cuenta",
+                        "slug" => "report.ivacontrol"
                     ]
                 ]
             ],

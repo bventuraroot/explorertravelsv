@@ -229,6 +229,70 @@ class ReportsController extends Controller
 
     }
 
+    /**
+     * Mostrar vista de reporte de control de IVA y pago a cuenta
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function ivacontrol(){
+        return view('reports.ivacontrol');
+    }
+
+    /**
+     * Procesar búsqueda de control de IVA y pago a cuenta
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function ivacontrolsearch(Request $request){
+        $Company = Company::find($request['company']);
+
+        // Obtener totales de ventas del mes
+        $salesData = Sale::join('salesdetails','salesdetails.sale_id', '=','sales.id')
+            ->selectRaw("SUM(CASE WHEN salesdetails.exempt<>'0' THEN 0 WHEN salesdetails.exempt='0' THEN ROUND(salesdetails.pricesale-salesdetails.pricesale/1.13,2) END) as debito_fiscal")
+            ->selectRaw("SUM(CASE WHEN salesdetails.exempt<>'0' THEN ROUND((salesdetails.exempt),2) WHEN salesdetails.exempt='0' THEN ROUND(((salesdetails.pricesale)/1.13),2) END) as ventas_gravadas")
+            ->selectRaw("SUM(salesdetails.exempt) as ventas_exentas")
+            ->selectRaw("SUM(salesdetails.nosujeta) as ventas_nosujetas")
+            ->whereRaw('YEAR(sales.date)=?', $request['year'])
+            ->whereRaw('MONTH(sales.date)=?', $request['period'])
+            ->where('sales.company_id', '=', $request['company'])
+            ->where('sales.state', '<>', 0)
+            ->first();
+
+        // Obtener totales de compras del mes
+        $purchasesData = Purchase::selectRaw("SUM(purchases.iva) as credito_fiscal")
+            ->selectRaw("SUM(purchases.gravada) as compras_gravadas")
+            ->selectRaw("SUM(purchases.exenta) as compras_exentas")
+            ->whereRaw('YEAR(purchases.date)=?', $request['year'])
+            ->whereRaw('MONTH(purchases.date)=?', $request['period'])
+            ->where('purchases.company_id', '=', $request['company'])
+            ->first();
+
+        // Calcular IVA a pagar
+        $debito_fiscal = $salesData->debito_fiscal ?? 0;
+        $credito_fiscal = $purchasesData->credito_fiscal ?? 0;
+        $iva_a_pagar = $debito_fiscal - $credito_fiscal;
+
+        // Calcular pago a cuenta (1% de ventas gravadas)
+        $ventas_gravadas = $salesData->ventas_gravadas ?? 0;
+        $pago_a_cuenta = $ventas_gravadas * 0.01;
+
+        return view('reports.ivacontrol', array(
+            "heading" => $Company,
+            "yearB" => $request['year'],
+            "period" => $request['period'],
+            "debito_fiscal" => $debito_fiscal,
+            "credito_fiscal" => $credito_fiscal,
+            "iva_a_pagar" => $iva_a_pagar,
+            "ventas_gravadas" => $ventas_gravadas,
+            "ventas_exentas" => $salesData->ventas_exentas ?? 0,
+            "ventas_nosujetas" => $salesData->ventas_nosujetas ?? 0,
+            "compras_gravadas" => $purchasesData->compras_gravadas ?? 0,
+            "compras_exentas" => $purchasesData->compras_exentas ?? 0,
+            "pago_a_cuenta" => $pago_a_cuenta,
+            "total_a_pagar" => $iva_a_pagar + $pago_a_cuenta
+        ));
+    }
 
     /**
      * Show the form for creating a new resource.

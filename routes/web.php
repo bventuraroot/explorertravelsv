@@ -236,6 +236,8 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::post('consumidorsearch', [ReportsController::class, 'consumidorsearch'])->name('consumidorsearch');
         Route::get('bookpurchases', [ReportsController::class, 'bookpurchases'])->name('bookpurchases');
         Route::post('comprassearch', [ReportsController::class, 'comprassearch'])->name('comprassearch');
+        Route::get('ivacontrol', [ReportsController::class, 'ivacontrol'])->name('ivacontrol');
+        Route::post('ivacontrolsearch', [ReportsController::class, 'ivacontrolsearch'])->name('ivacontrolsearch');
     });
 
 Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
