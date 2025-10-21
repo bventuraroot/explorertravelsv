@@ -874,9 +874,14 @@ function totalamount() {
 
     // Total general: precio + fee*cantidad + IVA - retenciones (como en Roma Copies)
     totalfee = parseFloat(fee * cantidad);
-
     // Total general: precio + fee + IVA - retenciones
-    var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
+    // Para Crédito Fiscal con exentos/no sujetos: el fee ya incluye IVA, no sumar ivarete13
+    if ((type === 'exenta' || type === 'nosujeta') && typedoc === '3') {
+        //var totalFinal = totalamount + totalfee - retencionamount - renta;
+        var totalFinal = (totalamount+ivarete13) - (retencionamount - renta);
+    } else {
+        var totalFinal = (totalamount + ivarete13) - (retencionamount - renta);
+    }
 
     $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
 }
