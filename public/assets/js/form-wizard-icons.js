@@ -979,6 +979,8 @@ function calculateFromPriceWithIva() {
 if (typeof $ !== 'undefined') {
     $(document).on('input change', '#precioConIva, #cantidad, #fee, #typesale', function () {
         calculateFromPriceWithIva();
+        // También llamar a totalamount() para productos exentos/no sujetos
+        totalamount();
     });
 }
 
