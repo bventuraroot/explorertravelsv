@@ -384,11 +384,11 @@ function agregarp() {
         // Si hay fee, agregarlo como gravado
         if (fee > 0) {
             if (typedoc === '3') {
-                // CRÉDITO FISCAL: fee sin IVA (como está ingresado)
-                pricegravada = parseFloat(fee * cantidad);
-            } else {
-                // FACTURAS: fee sin IVA (extraer del fee con IVA)
+                // CRÉDITO FISCAL: fee sin IVA (extraer del fee con IVA)
                 var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            } else {
+                // FACTURAS: fee con IVA (como está ingresado)
                 pricegravada = parseFloat(fee * cantidad);
             }
         }
@@ -398,11 +398,11 @@ function agregarp() {
         // Si hay fee, agregarlo como gravado
         if (fee > 0) {
             if (typedoc === '3') {
-                // CRÉDITO FISCAL: fee sin IVA (como está ingresado)
-                pricegravada = parseFloat(fee * cantidad);
-            } else {
-                // FACTURAS: fee sin IVA (extraer del fee con IVA)
+                // CRÉDITO FISCAL: fee sin IVA (extraer del fee con IVA)
                 var feeSinIva = fee / 1.13;
+                pricegravada = parseFloat(feeSinIva * cantidad);
+            } else {
+                // FACTURAS: fee con IVA (como está ingresado)
                 pricegravada = parseFloat(fee * cantidad);
             }
         }
@@ -1957,8 +1957,12 @@ function agregarfacdetails(corr) {
                         // Para exenta/no sujeta también mostrar sin IVA
                         preciounitario = parseFloat(value.priceunit);
                     }
-                    // Total de la fila (CCF) debe incluir IVA del fee
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + parseFloat(value.detained13));
+                    // Total de la fila (CCF): para exentos/no sujetos no sumar IVA del fee
+                    if (isExento || isNoSujeto) {
+                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
+                    } else {
+                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + parseFloat(value.detained13));
+                    }
                 }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     // FACTURAS: No mostrar IVA del fee en el campo "Iva 13%" para exentas/no sujetas
                     if(isExento || isNoSujeto) {
