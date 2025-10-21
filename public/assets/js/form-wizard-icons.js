@@ -1972,7 +1972,8 @@ function agregarfacdetails(corr) {
                         preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
                         preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
                     }
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas) + parseFloat(value.detained13));
+                    // Para Facturas: no sumar detained13 porque preciogravadas ya incluye el IVA
+                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else{
                     ivarete13total += parseFloat(value.detained13);
                     preciounitario = parseFloat(value.priceunit);
