@@ -876,8 +876,8 @@ function totalamount() {
     totalfee = parseFloat(fee * cantidad);
 
     // Total general: precio + fee + IVA - retenciones
-    // Para Crédito Fiscal con exentos/no sujetos: el fee ya incluye IVA, no sumar ivarete13
-    if ((type === 'exenta' || type === 'nosujeta') && typedoc === '3') {
+    // Para Crédito Fiscal: no sumar ivarete13 porque los precios ya incluyen IVA
+    if (typedoc === '3') {
         var totalFinal = totalamount + totalfee - retencionamount - renta;
     } else {
         var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
