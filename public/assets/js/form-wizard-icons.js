@@ -822,9 +822,14 @@ function totalamount() {
                 ivarete13 = parseFloat(subtotalTotal * 0.13);
                 $("#ivarete13").val(ivarete13.toFixed(8));
             } else {
-                // Para exenta/no sujeta, no calcular IVA
-                ivarete13 = 0.00;
-                $("#ivarete13").val(0);
+                // Para exenta/no sujeta con fee: calcular IVA solo del fee
+                if (fee > 0) {
+                    ivarete13 = parseFloat(subtotalFee * 0.13);
+                    $("#ivarete13").val(ivarete13.toFixed(8));
+                } else {
+                    ivarete13 = 0.00;
+                    $("#ivarete13").val(0);
+                }
             }
 
             // Actualizar totalamount para que refleje el subtotal total
