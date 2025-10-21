@@ -33,12 +33,28 @@ function showClientDetails(clientId) {
 
 // Función para poblar el modal con los datos del cliente
 function populateClientModal(client) {
+    // Determinar tipo de persona
+    const isNatural = client.tpersona === 'N';
+    const isJuridica = client.tpersona === 'J';
+    const isExtranjero = client.extranjero === '1';
+
+    // Mostrar/ocultar campos según tipo de persona
+    showHideFields(isNatural, isJuridica, isExtranjero);
+
     // Información Personal
-    $('#clientTypePerson').text(client.tpersona === 'N' ? 'NATURAL' : 'JURÍDICA');
-    $('#clientFirstName').text(client.firstname || '-');
-    $('#clientSecondName').text(client.secondname || '-');
-    $('#clientFirstLastName').text(client.firstlastname || '-');
-    $('#clientSecondLastName').text(client.secondlastname || '-');
+    $('#clientTypePerson').text(isNatural ? 'NATURAL' : 'JURÍDICA');
+
+    if (isNatural) {
+        // Campos para Persona Natural
+        $('#clientFirstName').text(client.firstname || '-');
+        $('#clientSecondName').text(client.secondname || '-');
+        $('#clientFirstLastName').text(client.firstlastname || '-');
+        $('#clientSecondLastName').text(client.secondlastname || '-');
+    } else if (isJuridica) {
+        // Campos para Persona Jurídica
+        $('#clientNameContribuyente').text(client.name_contribuyente || '-');
+        $('#clientComercialName').text(client.comercial_name || '-');
+    }
 
     // Información de Contacto
     $('#clientEmail').text(client.email || '-');
@@ -48,12 +64,18 @@ function populateClientModal(client) {
 
     // Información Fiscal
     $('#clientNit').text(client.nit || '-');
-    $('#clientNcr').text(client.ncr || '-');
-    $('#clientPassport').text(client.pasaporte || 'N/A');
+
+    if (isJuridica) {
+        $('#clientNcr').text(client.ncr || '-');
+    } else if (isNatural && isExtranjero) {
+        $('#clientPassport').text(client.pasaporte || '-');
+    } else if (isNatural) {
+        $('#clientDui').text(client.nit || '-'); // Para naturales, el NIT es el DUI
+    }
 
     // Campos booleanos con colores
-    setBooleanField('clientContribuyente', client.contribuyente === '1' || client.tpersona === 'J');
-    setBooleanField('clientExtranjero', client.extranjero === '1');
+    setBooleanField('clientContribuyente', client.contribuyente === '1' || isJuridica);
+    setBooleanField('clientExtranjero', isExtranjero);
     setBooleanField('clientAgenteRetencion', client.agente_retencion === '1');
 
     // Información Adicional
@@ -61,6 +83,33 @@ function populateClientModal(client) {
     $('#clientActividadEconomica').text(client.econo || '-');
     $('#clientRepresentanteLegal').text(client.legal || 'N/A');
     $('#clientBirthday').text(client.birthday || '-');
+}
+
+// Función para mostrar/ocultar campos según el tipo de persona
+function showHideFields(isNatural, isJuridica, isExtranjero) {
+    // Campos de información personal
+    if (isNatural) {
+        $('#naturalFields').show();
+        $('#juridicaFields').hide();
+    } else if (isJuridica) {
+        $('#naturalFields').hide();
+        $('#juridicaFields').show();
+    }
+
+    // Campos fiscales
+    if (isJuridica) {
+        $('#ncrField').show();
+        $('#duiField').hide();
+        $('#passportField').hide();
+    } else if (isNatural && isExtranjero) {
+        $('#ncrField').hide();
+        $('#duiField').hide();
+        $('#passportField').show();
+    } else if (isNatural) {
+        $('#ncrField').hide();
+        $('#duiField').show();
+        $('#passportField').hide();
+    }
 }
 
 // Función para formatear la dirección

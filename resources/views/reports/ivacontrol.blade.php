@@ -67,11 +67,10 @@ $configData = Helper::appClasses();
                         $year = date("Y");
                         for ($i=0; $i < 5 ; $i++) {
                             $yearnew = $year-$i;
+                            $selected = "";
                             if(isset($yearB)){
                                 if($yearnew==@$yearB){
                                     $selected="selected";
-                                }else {
-                                    $selected="";
                                 }
                             }
                             echo "<option value ='".$yearnew."' ".$selected.">".$yearnew."</option>";

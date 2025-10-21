@@ -25,28 +25,44 @@
                                     <span id="clientTypePerson">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+
+                            <!-- Campos para Persona Natural -->
+                            <div class="col-md-6 mb-3" id="naturalFields">
                                 <label class="form-label fw-semibold text-muted">PRIMER NOMBRE</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientFirstName">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="naturalFields">
                                 <label class="form-label fw-semibold text-muted">SEGUNDO NOMBRE</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientSecondName">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="naturalFields">
                                 <label class="form-label fw-semibold text-muted">PRIMER APELLIDO</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientFirstLastName">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="naturalFields">
                                 <label class="form-label fw-semibold text-muted">SEGUNDO APELLIDO</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientSecondLastName">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Campos para Persona Jurídica -->
+                            <div class="col-md-6 mb-3" id="juridicaFields" style="display: none;">
+                                <label class="form-label fw-semibold text-muted">NOMBRE CONTRIBUYENTE</label>
+                                <div class="form-control-plaintext bg-light p-2 rounded border">
+                                    <span id="clientNameContribuyente">-</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3" id="juridicaFields" style="display: none;">
+                                <label class="form-label fw-semibold text-muted">NOMBRE COMERCIAL</label>
+                                <div class="form-control-plaintext bg-light p-2 rounded border">
+                                    <span id="clientComercialName">-</span>
                                 </div>
                             </div>
                         </div>
@@ -101,24 +117,38 @@
                             <h6 class="mb-0 fw-bold text-warning">Información Fiscal</h6>
                         </div>
                         <div class="row">
+                            <!-- NIT - Siempre visible -->
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold text-muted">NIT</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientNit">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+
+                            <!-- NCR - Solo para Jurídicas -->
+                            <div class="col-md-6 mb-3" id="ncrField" style="display: none;">
                                 <label class="form-label fw-semibold text-muted">NCR</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientNcr">-</span>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+
+                            <!-- DUI - Solo para Naturales -->
+                            <div class="col-md-6 mb-3" id="duiField" style="display: none;">
+                                <label class="form-label fw-semibold text-muted">DUI</label>
+                                <div class="form-control-plaintext bg-light p-2 rounded border">
+                                    <span id="clientDui">-</span>
+                                </div>
+                            </div>
+
+                            <!-- PASAPORTE - Solo para Extranjeros -->
+                            <div class="col-md-6 mb-3" id="passportField" style="display: none;">
                                 <label class="form-label fw-semibold text-muted">PASAPORTE</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded border">
                                     <span id="clientPassport">-</span>
                                 </div>
                             </div>
+
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold text-muted">ES CONTRIBUYENTE</label>
                                 <div class="form-control-plaintext p-2 rounded border" id="clientContribuyente">
