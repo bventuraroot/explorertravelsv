@@ -876,12 +876,7 @@ function totalamount() {
     totalfee = parseFloat(fee * cantidad);
 
     // Total general: precio + fee + IVA - retenciones
-    // Para Crédito Fiscal: no sumar ivarete13 porque los precios ya incluyen IVA
-    if (typedoc === '3') {
-        var totalFinal = totalamount + totalfee - retencionamount - renta;
-    } else {
-        var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
-    }
+    var totalFinal = totalamount + totalfee + ivarete13 - retencionamount - renta;
 
     $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
 }
