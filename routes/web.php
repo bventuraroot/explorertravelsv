@@ -66,7 +66,7 @@ Route::group(['prefix' => 'client', 'as' => 'client.'], function(){
     Route::post('keyclient', [ClientController::class, 'keyclient'])->name('keyclient');
     Route::post('validate-ncr', [ClientController::class, 'validateNcr'])->name('validate.ncr');
     Route::get('gettypecontri/{client}', [ClientController::class, 'gettypecontri'])->name('gettypecontri');
-    Route::patch('update', [ClientController::class, 'update'])->name('update');
+    Route::patch('update/{client}', [ClientController::class, 'update'])->name('update');
     Route::get('create', [ClientController::class, 'create'])->name('create');
     Route::post('store', [ClientController::class, 'store'])->name('store');
     Route::get('destroy/{client}', [ClientController::class, 'destroy'])->name('destroy');

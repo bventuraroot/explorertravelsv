@@ -425,7 +425,7 @@ $configData = Helper::appClasses();
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="flex-grow-0 pt-0 mx-0 offcanvas-body h-100">
-        <form class="pt-0 add-new-user" id="addNewClientForm" action="{{ route('client.update') }}" method="POST">
+        <form class="pt-0 add-new-user" id="addNewClientForm" action="" method="POST">
             @csrf @method('PATCH')
             <input type="hidden" id="companyselectededit" name="companyselectededit"
                 value="{{ isset($companyselected) ? $companyselected : 0 }}">

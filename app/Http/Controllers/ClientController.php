@@ -347,7 +347,7 @@ class ClientController extends Controller
             $address->reference = $request->addressedit;
             $address->save();
 
-            $client = Client::find($request->idedit);
+            // Usar el modelo $client que se pasa como parámetro en lugar de buscarlo nuevamente
             $client->firstname = $request->firstnameedit;
             $client->secondname = $request->secondnameedit;
             $client->firstlastname = $request->firstlastnameedit;
