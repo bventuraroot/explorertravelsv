@@ -690,9 +690,6 @@ function editClient(id) {
     // Establecer el ID del cliente en el campo oculto para la validación
     $("#idedit").val(id);
 
-    // Establecer la URL del formulario con el ID del cliente
-    $("#addNewClientForm").attr('action', '/client/update/' + id);
-
     $.ajax({
         url: "/client/getClientid/" + btoa(id),
         method: "GET",

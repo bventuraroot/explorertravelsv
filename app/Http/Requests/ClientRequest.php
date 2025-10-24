@@ -25,7 +25,8 @@ class ClientRequest extends FormRequest
      */
     public function rules()
     {
-        $clientId = $this->route('client') ? $this->route('client')->id : null;
+        // Obtener el ID del cliente desde el campo oculto del formulario
+        $clientId = $this->input('idedit');
 
         return [
             'firstname' => 'required_if:tpersona,N|nullable|string|max:255',
