@@ -331,7 +331,7 @@ class ClientController extends Controller
      * @param  \App\Models\Client  $client
      * @return \Illuminate\Http\Response
      */
-    public function update(ClientRequest $request, Client $client)
+    public function update(ClientRequest $request)
     {
         try {
             $id_user = auth()->user()->id;
@@ -347,7 +347,15 @@ class ClientController extends Controller
             $address->reference = $request->addressedit;
             $address->save();
 
-            // Usar el modelo $client que se pasa como parámetro en lugar de buscarlo nuevamente
+            // Buscar el cliente usando el ID del campo idedit
+            $client = Client::find($request->idedit);
+            if (!$client) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cliente no encontrado'
+                ], 404);
+            }
+
             $client->firstname = $request->firstnameedit;
             $client->secondname = $request->secondnameedit;
             $client->firstlastname = $request->firstlastnameedit;
