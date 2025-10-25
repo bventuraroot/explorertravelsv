@@ -2086,6 +2086,7 @@ function agregarfacdetails(corr) {
                         // Para Facturas: mostrar fee con IVA (pricesale + detained13)
                         preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13);
                     } else {
+                        alert('GRAVADAS');
                         // Para gravadas: mostrar IVA normalmente
                         ivarete13total += parseFloat(value.detained13);
                         preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
