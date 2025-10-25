@@ -673,19 +673,23 @@ function agregarp() {
                     var ventas_gravadas = 0;
 
                 if (typedoc == '3') {
-                    // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
+                    // Para Crédito Fiscal: usar los datos de la respuesta del servidor
+                    // que ya incluyen precio + fee sin IVA
                     $("#tblproduct tbody tr").each(function() {
                         var gravadasText = $(this).find("td:eq(5)").text();
                         var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
                         ventas_gravadas += gravadas;
                     });
                 } else if (typedoc == '6') {
-                    // Para Factura: calcular sobre sumasl - exentas - no sujetas
+                    // Para Factura: calcular sobre las ventas gravadas de la tabla
                     // Pero quitar el IVA porque en facturas los montos ya incluyen IVA
-                    var sumasSinIva = sumasl / 1.13;
-                    var exentasSinIva = ventasexentasl; // Las exentas no tienen IVA
-                    var nosujetasSinIva = ventasnosujetasl; // Las no sujetas no tienen IVA
-                    ventas_gravadas = sumasSinIva - nosujetasSinIva - exentasSinIva;
+                    $("#tblproduct tbody tr").each(function() {
+                        var gravadasText = $(this).find("td:eq(5)").text();
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+                        // Quitar IVA de las ventas gravadas
+                        var gravadasSinIva = gravadas / 1.13;
+                        ventas_gravadas += gravadasSinIva;
+                    });
                 }
 
                     var retencion_agente = parseFloat(ventas_gravadas * 0.01);
@@ -918,14 +922,17 @@ function totalamount() {
         var retencion_agente_producto;
 
         if (typedoc == '6') {
-            // FACTURA: Precio y fee ya incluyen IVA, quitar IVA para calcular 1%
+            // FACTURA: (precio + fee) sin IVA
             var precioSinIva = parseFloat(valor / 1.13);
             var feeSinIva = parseFloat(fee / 1.13);
             var totalSinIva = (precioSinIva + feeSinIva) * cantidad;
             retencion_agente_producto = parseFloat(totalSinIva * 0.01);
         } else {
-            // CRÉDITO FISCAL: Precio ya está sin IVA
-            retencion_agente_producto = parseFloat(totalamount * 0.01);
+            // CRÉDITO FISCAL: (precio + fee) sin IVA
+            var precioSinIva = parseFloat(valor); // Ya está sin IVA
+            var feeSinIva = parseFloat(fee / 1.13); // Quitar IVA del fee
+            var totalSinIva = (precioSinIva + feeSinIva) * cantidad;
+            retencion_agente_producto = parseFloat(totalSinIva * 0.01);
         }
 
         retencionamount += retencion_agente_producto;
@@ -2205,19 +2212,23 @@ function agregarfacdetails(corr) {
                 var ventas_gravadas = 0;
 
                 if (typedoc == '3') {
-                    // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
+                    // Para Crédito Fiscal: usar los datos de la respuesta del servidor
+                    // que ya incluyen precio + fee sin IVA
                     $("#tblproduct tbody tr").each(function() {
                         var gravadasText = $(this).find("td:eq(5)").text();
                         var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
                         ventas_gravadas += gravadas;
                     });
                 } else if (typedoc == '6') {
-                    // Para Factura: calcular sobre totalsumas - exentas - no sujetas
+                    // Para Factura: calcular sobre las ventas gravadas de la tabla
                     // Pero quitar el IVA porque en facturas los montos ya incluyen IVA
-                    var sumasSinIva = totalsumas / 1.13;
-                    var exentasSinIva = exempttotal; // Las exentas no tienen IVA
-                    var nosujetasSinIva = nosujetatotal; // Las no sujetas no tienen IVA
-                    ventas_gravadas = sumasSinIva - nosujetasSinIva - exentasSinIva;
+                    $("#tblproduct tbody tr").each(function() {
+                        var gravadasText = $(this).find("td:eq(5)").text();
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+                        // Quitar IVA de las ventas gravadas
+                        var gravadasSinIva = gravadas / 1.13;
+                        ventas_gravadas += gravadasSinIva;
+                    });
                 }
 
                 var retencion_agente = parseFloat(ventas_gravadas * 0.01);
