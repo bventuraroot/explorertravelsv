@@ -1980,7 +1980,6 @@ function creardocuments() {
 
 
 function agregarfacdetails(corr) {
-    var typedoc = $('#typedocument').val()
     $.ajax({
         url: "getdetailsdoc/" + btoa(corr),
         method: "GET",
@@ -2006,7 +2005,7 @@ function agregarfacdetails(corr) {
             let ventasexentasl = 0;
             let ventatotall = 0;
             $.each(response, function (index, value) {
-
+                var typedoc = $('#typedocument').val()
                 // Para Crédito Fiscal, llenar campos de entrada con datos del draft
                 if(index === 0) {
                     // Solo llenar una vez con el primer producto
