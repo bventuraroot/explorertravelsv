@@ -660,7 +660,7 @@ function agregarp() {
                 $("#rentaretenido").val(renta10l);
                 }
                 //calculo del retenido 1%
-                ivaretenidol = ivaretenido + ivarete;
+                ivaretenidol = ivarete;
                 $("#ivaretenidol").html(
                     ivaretenidol.toLocaleString("en-US", {
                         style: "currency",
