@@ -743,10 +743,12 @@ function editClient(id) {
                     if (value == "1") {
                         checkbox.prop("checked", true);
                         switchContainer.addClass('switch-checked');
+                        $("#agente_retencionedit_hidden").val("1");
                         console.log("Setting agente_retencionedit to checked");
                     } else {
                         checkbox.prop("checked", false);
                         switchContainer.removeClass('switch-checked');
+                        $("#agente_retencionedit_hidden").val("0");
                         console.log("Setting agente_retencionedit to unchecked");
                     }
                 }
@@ -1168,6 +1170,13 @@ function mask(inputField, separator, pattern, nums) {
     }
 }
 
+// Función para actualizar el campo oculto cuando cambia el switch
+function updateAgenteRetencionHidden() {
+    var isChecked = $("#agente_retencionedit").is(':checked');
+    $("#agente_retencionedit_hidden").val(isChecked ? "1" : "0");
+    console.log("updateAgenteRetencionHidden - isChecked:", isChecked, "hidden value:", $("#agente_retencionedit_hidden").val());
+}
+
 // Manejo específico del formulario de edición de clientes
 $(document).ready(function() {
     // Usar delegación de eventos para asegurar que funcione
@@ -1188,6 +1197,10 @@ $(document).ready(function() {
 
         // Obtener datos del formulario
         var formData = new FormData(this);
+
+        // Debug: verificar el valor de agente_retencionedit
+        console.log("agente_retencionedit value:", $("#agente_retencionedit").is(':checked'));
+        console.log("agente_retencionedit prop checked:", $("#agente_retencionedit").prop('checked'));
 
         // Enviar datos
         $.ajax({

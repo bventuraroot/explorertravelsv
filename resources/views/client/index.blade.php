@@ -547,7 +547,7 @@ $configData = Helper::appClasses();
             </div>
             <div class="mb-3">
                 <label class="switch switch-warning" id="agenteretencionlabeledit" name="agenteretencionlabeledit">
-                    <input type="checkbox" class="switch-input" id="agente_retencionedit" name="agente_retencionedit" />
+                    <input type="checkbox" class="switch-input" id="agente_retencionedit" name="agente_retencionedit" onchange="updateAgenteRetencionHidden()" />
                     <span class="switch-toggle-slider">
                         <span class="switch-on">
                             <i class="ti ti-check"></i>
@@ -558,6 +558,7 @@ $configData = Helper::appClasses();
                     </span>
                     <span class="switch-label">¿Es Agente de Retención?</span>
                 </label>
+                <input type="hidden" id="agente_retencionedit_hidden" name="agente_retencionedit_hidden" value="0">
             </div>
             <div class="mb-3">
                 <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit"

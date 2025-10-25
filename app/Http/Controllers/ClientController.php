@@ -376,7 +376,15 @@ class ClientController extends Controller
             $client->tpersona = $request->tpersonaedit;
             $client->contribuyente = $request->contribuyenteeditvalor;
             $client->extranjero = $request->extranjeroedit == 'on' ? '1' : '0';
-            $client->agente_retencion = $request->agente_retencionedit == 'on' ? '1' : '0';
+
+            // Debug: verificar qué está recibiendo
+            \Log::info('agente_retencionedit value: ' . $request->agente_retencionedit);
+            \Log::info('agente_retencionedit_hidden value: ' . $request->agente_retencionedit_hidden);
+            \Log::info('agente_retencionedit == on: ' . ($request->agente_retencionedit == 'on' ? 'true' : 'false'));
+
+            // Usar el campo oculto como respaldo
+            $agente_retencion_value = $request->agente_retencionedit == 'on' ? '1' : ($request->agente_retencionedit_hidden == '1' ? '1' : '0');
+            $client->agente_retencion = $agente_retencion_value;
             $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporteedit);
             $client->tipoContribuyente = $request->tipocontribuyenteedit;
             $client->economicactivity_id = $request->acteconomicaedit;
