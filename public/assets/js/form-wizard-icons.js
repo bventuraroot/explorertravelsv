@@ -178,6 +178,10 @@ $(function () {
         var corrid = $('#corr').val() || $('#valcorr').val();
         var clientid = $('#client').val();
         if(!corrid || !clientid || clientid==='0') return;
+
+        // Validar tipo de contribuyente del cliente
+        valtrypecontri(clientid);
+
         $.ajax({
             url: '/sale/update-meta',
             method: 'POST',
@@ -912,6 +916,7 @@ function totalamount() {
     }
 
     $("#ivarete").val(retencionamount.toFixed(8));
+    $("#ivaretenido_visible").val(retencionamount.toFixed(8));
 
     // Renta 10% (sujeto excluido)
     if (typedoc === '8') {
@@ -928,8 +933,12 @@ function totalamount() {
     if ((type === 'exenta' || type === 'nosujeta') && typedoc === '3') {
         //var totalFinal = totalamount + totalfee - retencionamount - renta;
         var totalFinal = (totalamount+subtotalFee+ivarete13) - (retencionamount - renta);
-    } else {
+    } else if (typedoc === '3') {
+        // Crédito Fiscal: lógica original
         var totalFinal = (totalamount + ivarete13) - (retencionamount - renta);
+    } else {
+        // Otros documentos: incluir fee
+        var totalFinal = (totalamount + totalfee + ivarete13) - (retencionamount + renta);
     }
 
     $("#total").val((typedoc==='3'? totalFinal.toFixed(8) : totalFinal.toFixed(2))); // Precisión alta para CCF
