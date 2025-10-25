@@ -94,7 +94,7 @@ $(function () {
                 }
                 // Para nueva venta, ir paso por paso (no saltar al paso de productos)
                 // Solo avanzar automáticamente si es un draft
-                if (hasValCorr && valdraft) {
+                if (hasValCorr && valdraft && stepParam != '3') {
                     // Para drafts, ir directamente al paso de productos
                     setTimeout(function(){
                         $("#step1").trigger('click');
@@ -2083,7 +2083,6 @@ function agregarfacdetails(corr) {
                             var ivaunitario = parseFloat(value.detained13)/parseFloat(value.amountp);
                             preciounitario = parseFloat(value.priceunit)+ivaunitario; // Fee sin IVA + IVA del fee
                             ivarete13total += 0; // No sumar porque ya está en preciogravadas
-                            alert(preciounitario);
                         } else {
                             preciogravadas = 0;
                             preciounitario = parseFloat(value.priceunit);
