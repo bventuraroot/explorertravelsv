@@ -7,6 +7,9 @@ $( document ).ready(function() {
     var operation = $('#operation').val();
     var valdraft = $('#valdraft').val();
     var valcorr = $('#valcorr').val();
+
+    // Ocultar campo IVA Percibido por defecto
+    $("#iva_percibido_field").hide();
     // Mostrar inmediatamente el correlativo (ID de venta) si viene en la URL
     if (valcorr && $('#corr').length) {
         $('#corr').val(valcorr);
@@ -683,6 +686,7 @@ function agregarp() {
                 }
 
                 $("#ivaretenido").val(ivaretenidol);
+                $("#ivaretenido_visible").val(ivaretenidol.toFixed(8));
 
                 ventasnosujetasl = ventasnosujetas + pricenosujeta;
                 $("#ventasnosujetasl").html(
@@ -1198,6 +1202,23 @@ function eliminarpro(id) {
 
 function aviablenext(idcompany) {
     $("#step1").prop("disabled", false);
+
+    // Verificar si la empresa es gran contribuyente para mostrar/ocultar IVA Percibido
+    $.ajax({
+        url: "/company/getCompanyid/" + btoa(idcompany),
+        method: "GET",
+        success: function (response) {
+            if (response && response.tipoContribuyente === 'GRA') {
+                $("#iva_percibido_field").show();
+            } else {
+                $("#iva_percibido_field").hide();
+            }
+        },
+        error: function() {
+            // En caso de error, ocultar el campo por defecto
+            $("#iva_percibido_field").hide();
+        }
+    });
 }
 
 function loadClientsAndSelectDraft(idcompany, draftClientId) {
@@ -2129,6 +2150,7 @@ function agregarfacdetails(corr) {
                 ivaretenidol.toLocaleString("en-US", { style: "currency", currency: "USD" })
             );
             $("#ivaretenido").val(ivaretenidol);
+            $("#ivaretenido_visible").val(ivaretenidol.toFixed(8));
 
             ventasnosujetasl = nosujetatotal;
             $("#ventasnosujetasl").html(
@@ -2173,6 +2195,7 @@ function agregarfacdetails(corr) {
                 ivaretenidol.toLocaleString("en-US", { style: "currency", currency: "USD" })
             );
             $("#ivaretenido").val(ivaretenidol);
+            $("#ivaretenido_visible").val(ivaretenidol.toFixed(8));
 
             // Calcular total general: SUMAS (subtotal ventas) + IVA - retenciones
             // "SUMAS" ya incluye gravadas + no sujetas + exentas. No volver a sumar no sujetas/exentas.

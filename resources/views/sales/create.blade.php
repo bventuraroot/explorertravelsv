@@ -301,9 +301,13 @@
                                 <label class="form-label" for="ivarete13">Iva 13%</label>
                                 <input type="number" readonly id="ivarete13" @if(request('typedocument')==3) readonly @endif name="ivarete13" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
                             </div>
-                            <div class="col-sm-2">
+                            <div class="col-sm-2" id="iva_percibido_field" style="display: none;">
                                 <label class="form-label" for="ivarete">Iva Percibido</label>
                                 <input type="number" readonly id="ivarete" @if(request('typedocument')==3) readonly @endif name="ivarete" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control" onchange="totalamount();">
+                            </div>
+                            <div class="col-sm-2">
+                                <label class="form-label" for="ivaretenido_visible">IVA Retenido</label>
+                                <input type="number" readonly id="ivaretenido_visible" name="ivaretenido_visible" step="0.00000001" max="1000000" placeholder="0.00000000" class="form-control">
                             </div>
 
                             @if(request('typedocument')==8)
