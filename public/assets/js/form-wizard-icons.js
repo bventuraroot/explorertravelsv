@@ -2029,32 +2029,22 @@ function agregarfacdetails(corr) {
                 var isExento = parseFloat(value.exempt) > 0;
                 var isNoSujeto = parseFloat(value.nosujeta) > 0;
                 var isGravado = parseFloat(value.pricesale) > 0 && !isExento && !isNoSujeto;
-                alert(typedoc);
                 if(typedoc=='3'){
-                    alert('CCF');
                     // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
                     var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
                     if(isGravado) {
                         // Para productos gravados: pricesale incluye precio + fee
-                        // Separar: precio del producto + fee
-                        var precioBase = parseFloat(value.pricesale) - feeSinIvaLinea; // Precio del producto sin fee
                         preciogravadas = parseFloat(value.pricesale); // Total (precio + fee) para mostrar
-                        // IVA de la línea = 13% de (precio base sin IVA + fee sin IVA)
-                        var baseIvaLinea = precioBase + feeSinIvaLinea; // Precio base + fee
-                        var iva13Line = parseFloat(baseIvaLinea * 0.13);
+                        // IVA de la línea = 13% de (precio + fee sin IVA)
+                        var iva13Line = parseFloat(value.detained13);
                         ivarete13total += iva13Line;
                         // Mostrar en tabla precio unitario SIN IVA (sin fee)
                         preciounitario = parseFloat(value.priceunit);
                     } else {
-                        // Para exenta/no sujeta con fee: mostrar fee como gravado
-                        if (feeSinIvaLinea > 0) {
-                            preciogravadas = parseFloat(feeSinIvaLinea);
-                            var iva13Line = parseFloat(feeSinIvaLinea * 0.13);
-                            ivarete13total += iva13Line;
-                        } else {
-                            preciogravadas = 0;
-                            var iva13Line = 0;
-                        }
+                        // Para exenta/no sujeta: no mostrar como gravadas
+                        preciogravadas = parseFloat(value.pricesale);
+                        var iva13Line = parseFloat(value.detained13);
+                        ivarete13total += iva13Line;
                         // Para exenta/no sujeta también mostrar sin IVA
                         preciounitario = parseFloat(value.priceunit);
                     }
@@ -2065,22 +2055,26 @@ function agregarfacdetails(corr) {
                         var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                     }
                 } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
-                    alert('FACTURAS');
-                    // FACTURAS: No mostrar IVA del fee en el campo "Iva 13%" para exentas/no sujetas
-                    if(isExento || isNoSujeto) {
-                        // Para exentas/no sujetas con fee: no mostrar IVA del fee
-                        ivarete13total += parseFloat(0.00);
+                    // FACTURAS: precios ya incluyen IVA
+                    if(isGravado) {
+                        // Para gravadas: pricesale ya incluye precio + fee con IVA
+                        preciogravadas = parseFloat(value.pricesale);
                         preciounitario = parseFloat(value.priceunit);
-                        // Para Facturas: mostrar fee con IVA (pricesale + detained13)
-                        preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13);
+                        // IVA = 0 (ya está incluido en el precio)
+                        ivarete13total += 0;
                     } else {
-                        alert('GRAVADAS');
-                        // Para gravadas: mostrar IVA normalmente
-                        ivarete13total += parseFloat(value.detained13);
-                        preciounitario = parseFloat(parseFloat(value.priceunit)+(value.detained13/value.amountp));
-                        preciogravadas = parseFloat(parseFloat(value.pricesale)+parseFloat(value.detained13));
+                        // Para exentas/no sujetas: no mostrar como gravadas
+                        if(isExento || isNoSujeto && value.fee > 0) {
+                            preciogravadas = parseFloat(value.fee);
+                            preciounitario = parseFloat(value.priceunit);
+                            ivarete13total += parseFloat(value.detained13);
+                        } else {
+                            preciogravadas = 0;
+                            preciounitario = parseFloat(value.priceunit);
+                            ivarete13total += 0;
+                        }
                     }
-                    // Para Facturas: no sumar detained13 porque preciogravadas ya incluye el IVA
+                    // Para Facturas: preciogravadas ya incluye IVA
                     var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                 }else{
                     ivarete13total += parseFloat(value.detained13);
@@ -2238,10 +2232,14 @@ function agregarfacdetails(corr) {
             // El campo IVA Percibido (ivarete) ya tiene el valor calculado
             // No necesitamos hacer nada más aquí
 
-            // Calcular total general: SUMAS (subtotal ventas) + IVA - retenciones
-            // "SUMAS" ya incluye gravadas + no sujetas + exentas. No volver a sumar no sujetas/exentas.
-            // ivaretetotal ya incluye la retención del agente si aplica
-            ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
+            // Calcular total general según tipo de documento
+            if(typedoc=='3'){
+                // CRÉDITO FISCAL: SUMAS + IVA - retenciones
+                ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
+            } else {
+                // FACTURAS: SUMAS - retenciones (las SUMAS ya incluyen IVA)
+                ventatotall = totalsumas - (rentatotal + ivaretetotal);
+            }
             $("#ventatotall").html(
                 ventatotall.toLocaleString("en-US", { style: "currency", currency: "USD" })
             );
