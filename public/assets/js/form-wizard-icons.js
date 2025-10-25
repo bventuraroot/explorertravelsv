@@ -2076,7 +2076,8 @@ function agregarfacdetails(corr) {
                     } else {
                         var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
                     }
-                }else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                    alert('FACTURAS');
                     // FACTURAS: No mostrar IVA del fee en el campo "Iva 13%" para exentas/no sujetas
                     if(isExento || isNoSujeto) {
                         // Para exentas/no sujetas con fee: no mostrar IVA del fee
