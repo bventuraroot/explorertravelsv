@@ -735,6 +735,13 @@ function editClient(id) {
                         $("#siescontriedit").css("display", "");
                     }
                 }
+                if (index == "agente_retencion") {
+                    if (value == "1") {
+                        $("#agente_retencionedit").prop("checked", true);
+                    } else {
+                        $("#agente_retencionedit").prop("checked", false);
+                    }
+                }
                 if (index == "extranjero") {
 
                     if (value == "1") {

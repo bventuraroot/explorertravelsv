@@ -510,6 +510,10 @@ function agregarp() {
     // Asegurar que todos los valores estén correctamente codificados
     // Enviar por POST (como en Roma Copies), con CSRF
     var postUrl = "/sale/savefactemp";
+
+    // Obtener la retención del agente actual
+    var retencion_agente_actual = parseFloat($("#retencion_agente").val()) || 0;
+
     var dataPost = {
         idsale: corrid,
         clientid: clientid,
@@ -531,7 +535,8 @@ function agregarp() {
         linea: linea,
         canal: canal,
         description: descriptionbyproduct,
-        tipoVenta: type
+        tipoVenta: type,
+        retencion_agente: retencion_agente_actual
     };
 
     $.ajax({
@@ -653,7 +658,32 @@ function agregarp() {
                         currency: "USD",
                     })
                 );
+                // Agregar retención 1% del agente al IVA retenido si aplica
+                var es_agente_retencion = $("#cliente_agente_retencion").val() == "1";
+                if (es_agente_retencion && (typedoc == '3' || typedoc == '6')) {
+                    var ventas_gravadas = 0;
+
+                    if (typedoc == '3') {
+                        // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
+                        $("#tblproduct tbody tr").each(function() {
+                            var gravadasText = $(this).find("td:eq(5)").text();
+                            var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+                            ventas_gravadas += gravadas;
+                        });
+                    } else if (typedoc == '6') {
+                        // Para Factura: calcular sobre sumasl - exentas - no sujetas
+                        ventas_gravadas = sumasl - ventasnosujetasl - ventasexentasl;
+                    }
+
+                    var retencion_agente = parseFloat(ventas_gravadas * 0.01);
+                    ivaretenidol += retencion_agente; // Sumar al IVA retenido total
+                    $("#retencion_agente").val(retencion_agente); // Guardar solo para referencia
+                } else {
+                    $("#retencion_agente").val(0);
+                }
+
                 $("#ivaretenido").val(ivaretenidol);
+
                 ventasnosujetasl = ventasnosujetas + pricenosujeta;
                 $("#ventasnosujetasl").html(
                     ventasnosujetasl.toLocaleString("en-US", {
@@ -673,10 +703,12 @@ function agregarp() {
 
                 if(typedoc==3){
                     // Para Crédito Fiscal, calcular total como suma de gravadas + IVA
-                    ventatotall = sumasl + iva13l;
+                    // ivaretenidol ya incluye la retención del agente si aplica
+                    ventatotall = sumasl + iva13l - ivaretenidol;
                 } else {
                     // Para otros documentos, calcular correctamente:
                     // SUMAS (subtotal) + IVA - retenciones
+                    // ivaretenidol ya incluye la retención del agente si aplica
                     ventatotall = sumasl + iva13l - ivaretenidol - renta10l;
                 }
                 $("#ventatotall").html(
@@ -862,6 +894,14 @@ function totalamount() {
 
     // IVA Percibido 1% sobre total por cantidad
     retencionamount = parseFloat(totalamount * retencion);
+
+    // Agregar retención 1% del agente si aplica (solo para gravadas en CCF y Factura)
+    var es_agente_retencion = $("#cliente_agente_retencion").val() == "1";
+    if (es_agente_retencion && (typedoc == '3' || typedoc == '6') && type === 'gravada') {
+        var retencion_agente_producto = parseFloat(totalamount * 0.01);
+        retencionamount += retencion_agente_producto;
+    }
+
     $("#ivarete").val(retencionamount.toFixed(8));
 
     // Renta 10% (sujeto excluido)
@@ -1316,6 +1356,13 @@ function valtrypecontri(idcliente) {
         method: "GET",
         success: function (response) {
             $("#typecontribuyenteclient").val(response.tipoContribuyente);
+
+            // Guardar si el cliente es agente de retención para usar en cálculos
+            if (response.agente_retencion == "1") {
+                $("#cliente_agente_retencion").val("1");
+            } else {
+                $("#cliente_agente_retencion").val("0");
+            }
 
             // Validar si se puede crear crédito fiscal
             var typedocument = $("#typedocument").val();
@@ -2095,8 +2142,41 @@ function agregarfacdetails(corr) {
             );
             $("#ventasexentas").val(ventasexentasl);
 
+            // Agregar retención 1% del agente al IVA retenido si aplica
+            var es_agente_retencion = $("#cliente_agente_retencion").val() == "1";
+            var typedoc = $("#typedocument").val();
+
+            if (es_agente_retencion && (typedoc == '3' || typedoc == '6')) {
+                var ventas_gravadas = 0;
+
+                if (typedoc == '3') {
+                    // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
+                    $("#tblproduct tbody tr").each(function() {
+                        var gravadasText = $(this).find("td:eq(5)").text();
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+                        ventas_gravadas += gravadas;
+                    });
+                } else if (typedoc == '6') {
+                    // Para Factura: calcular sobre totalsumas - exentas - no sujetas
+                    ventas_gravadas = totalsumas - nosujetatotal - exempttotal;
+                }
+
+                var retencion_agente = parseFloat(ventas_gravadas * 0.01);
+                ivaretetotal += retencion_agente; // Sumar al IVA retenido total
+                $("#retencion_agente").val(retencion_agente); // Guardar solo para referencia
+            } else {
+                $("#retencion_agente").val(0);
+            }
+
+            ivaretenidol = ivaretetotal;
+            $("#ivaretenidol").html(
+                ivaretenidol.toLocaleString("en-US", { style: "currency", currency: "USD" })
+            );
+            $("#ivaretenido").val(ivaretenidol);
+
             // Calcular total general: SUMAS (subtotal ventas) + IVA - retenciones
             // "SUMAS" ya incluye gravadas + no sujetas + exentas. No volver a sumar no sujetas/exentas.
+            // ivaretetotal ya incluye la retención del agente si aplica
             ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
             $("#ventatotall").html(
                 ventatotall.toLocaleString("en-US", { style: "currency", currency: "USD" })

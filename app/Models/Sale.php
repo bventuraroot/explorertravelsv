@@ -16,6 +16,7 @@ class Sale extends Model
         'state',
         'state_credit',
         'totalamount',
+        'retencion_agente',
         'waytopay',
         'typesale',
         'date',

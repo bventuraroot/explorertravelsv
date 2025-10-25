@@ -363,6 +363,20 @@ $configData = Helper::appClasses();
                 <span class="switch-label">¿Es Contribuyente?</span>
             </label>
         </div>
+                <div class="mb-3">
+                    <label class="switch switch-warning" id="agenteretencionlabel" name="agenteretencionlabel">
+                        <input type="checkbox" class="switch-input" id="agente_retencion" name="agente_retencion" />
+                        <span class="switch-toggle-slider">
+                            <span class="switch-on">
+                                <i class="ti ti-check"></i>
+                            </span>
+                            <span class="switch-off">
+                                <i class="ti ti-x"></i>
+                            </span>
+                        </span>
+                        <span class="switch-label">¿Es Agente de Retención?</span>
+                    </label>
+                </div>
                 <div id="siescontri" style="display: none;">
                     <div class="mb-3">
                         <label class="form-label" for="legal">Representante Legal</label>
@@ -530,6 +544,20 @@ $configData = Helper::appClasses();
                     <span class="switch-label">¿Es Contribuyente?</span>
                 </label>
                 <input type="hidden" value="0" name="contribuyenteeditvalor" id="contribuyenteeditvalor">
+            </div>
+            <div class="mb-3">
+                <label class="switch switch-warning" id="agenteretencionlabeledit" name="agenteretencionlabeledit">
+                    <input type="checkbox" class="switch-input" id="agente_retencionedit" name="agente_retencionedit" />
+                    <span class="switch-toggle-slider">
+                        <span class="switch-on">
+                            <i class="ti ti-check"></i>
+                        </span>
+                        <span class="switch-off">
+                            <i class="ti ti-x"></i>
+                        </span>
+                    </span>
+                    <span class="switch-label">¿Es Agente de Retención?</span>
+                </label>
             </div>
             <div class="mb-3">
                 <label class="switch switch-success" id="extranjerolabeledit" name="extranjerolabeledit"

@@ -18,7 +18,7 @@
 @endsection
 
 @section('page-script')
-    <script src="{{ asset('assets/js/form-wizard-icons.js') }}"></script> 
+    <script src="{{ asset('assets/js/form-wizard-icons.js') }}"></script>
 @endsection
 
 @section('content')
@@ -165,6 +165,7 @@
                                     aria-label="Seleccionar opcion">
                                 </select>
                                 <input type="hidden" name="typecontribuyenteclient" id="typecontribuyenteclient">
+                                <input type="hidden" name="cliente_agente_retencion" id="cliente_agente_retencion" value="0">
                                 <!-- Información del cliente (replicado de RomaCopies) -->
                                 <div id="client-info" class="mt-2" style="display: none;">
                                     <div class="alert alert-info">
@@ -241,6 +242,7 @@
                                 <input type="hidden" id="sumas" value="0" name="sumas">
                                 <input type="hidden" id="13iva" value="0" name="13iva">
                                 <input type="hidden" id="ivaretenido" value="0" name="ivaretenido">
+                                <input type="hidden" id="retencion_agente" value="0" name="retencion_agente">
                                 <input type="hidden" id="rentaretenido" value="0" name="rentaretenido">
                                 <input type="hidden" id="ventasnosujetas" value="0" name="ventasnosujetas">
                                 <input type="hidden" id="ventasexentas" value="0" name="ventasexentas">

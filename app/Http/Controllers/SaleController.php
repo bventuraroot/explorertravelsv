@@ -194,6 +194,7 @@ class SaleController extends Controller
         $canal = $request->input('canal', '');
         $description = $request->input('description', '');
         $tipoVenta = $request->input('tipoVenta', 'gravada');
+        $retencion_agente = $request->input('retencion_agente', 0);
 
         return $this->savefactemp(
             $request->idsale,
@@ -216,7 +217,8 @@ class SaleController extends Controller
             $linea,
             $canal,
             $description,
-            $tipoVenta
+            $tipoVenta,
+            $retencion_agente
         );
     }
 
@@ -248,7 +250,7 @@ class SaleController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada')
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada', $retencion_agente = 0)
     {
         // Limpiar parámetros que vienen como 'SIN_VALOR'
         $acuenta = ($acuenta === 'SIN_VALOR') ? '' : $acuenta;
@@ -268,6 +270,7 @@ class SaleController extends Controller
             $sale->client_id = $clientid;
             $sale->acuenta = $acuenta;
             $sale->waytopay = $fpago;
+            $sale->retencion_agente = $retencion_agente;
             $sale->save();
             // Lógica basada en el tipo de venta (como en Roma Copies)
             if ($tipoVenta === 'gravada') {
@@ -586,13 +589,13 @@ class SaleController extends Controller
             NULL tributos,
             SUM(nosujeta+exempt+pricesale) subtotal,
             SUM(detained) ivarete,
-            0 ivarete,
             SUM(renta) rentarete,
             NULL pagos,
             SUM(detained13) iva')
                 )
                 ->get();
             //detalle de montos de la factura
+            // El ivarete ya incluye el 1% de retención del agente si aplica
             $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - ($detailsbd[0]->rentarete + $detailsbd[0]->ivarete));
             $totales = [
                 "totalNoSuj" => (float)$detailsbd[0]->nosujeta,
@@ -607,7 +610,7 @@ class SaleController extends Controller
                 "tributos" =>  null,
                 "subTotal" => round((float)($detailsbd[0]->subtotal), 8),
                 "ivaPerci1" => 0.00,
-                "ivaRete1" => 0.00,
+                "ivaRete1" => round((float)$detailsbd[0]->ivarete, 8),
                 "reteRenta" => round((float)$detailsbd[0]->rentarete, 8),
                 "montoTotalOperacion" => round((float)($detailsbd[0]->subtotal), 8),
                 //(float)$encabezado["montoTotalOperacion"],

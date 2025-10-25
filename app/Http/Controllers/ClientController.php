@@ -268,6 +268,11 @@ class ClientController extends Controller
             } else {
                 $extranjero = '0';
             }
+            if ($request->agente_retencion == 'on') {
+                $agente_retencion = '1';
+            } else {
+                $agente_retencion = '0';
+            }
             $client->ncr = (is_null($request->ncr) ? 'N/A' : str_replace(['-', ' '], '', $request->ncr));
             $client->giro = (is_null($request->giro) ? 'N/A' : $request->giro);
             $client->nit = str_replace(['-', ' '], '', $request->nit);
@@ -275,6 +280,7 @@ class ClientController extends Controller
             $client->tpersona = $request->tpersona;
             $client->contribuyente = $contri;
             $client->extranjero = $extranjero;
+            $client->agente_retencion = $agente_retencion;
             $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporte);
             $client->tipoContribuyente = $request->tipocontribuyente;
             $client->economicactivity_id = $request->acteconomica;
@@ -370,6 +376,7 @@ class ClientController extends Controller
             $client->tpersona = $request->tpersonaedit;
             $client->contribuyente = $request->contribuyenteeditvalor;
             $client->extranjero = $request->extranjeroedit == 'on' ? '1' : '0';
+            $client->agente_retencion = $request->agente_retencionedit == 'on' ? '1' : '0';
             $client->pasaporte = str_replace(['-', ' '], '', $request->pasaporteedit);
             $client->tipoContribuyente = $request->tipocontribuyenteedit;
             $client->economicactivity_id = $request->acteconomicaedit;

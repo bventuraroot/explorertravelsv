@@ -28,6 +28,7 @@ class Client extends Model
         'companyselected',
         'contribuyente',
         'tipoContribuyente',
+        'agente_retencion',
         'country',
         'departament',
         'municipio',
