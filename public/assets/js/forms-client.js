@@ -736,10 +736,18 @@ function editClient(id) {
                     }
                 }
                 if (index == "agente_retencion") {
+                    console.log("Agente retención value:", value);
+                    var checkbox = $("#agente_retencionedit");
+                    var switchContainer = checkbox.closest('.switch');
+
                     if (value == "1") {
-                        $("#agente_retencionedit").prop("checked", true);
+                        checkbox.prop("checked", true);
+                        switchContainer.addClass('switch-checked');
+                        console.log("Setting agente_retencionedit to checked");
                     } else {
-                        $("#agente_retencionedit").prop("checked", false);
+                        checkbox.prop("checked", false);
+                        switchContainer.removeClass('switch-checked');
+                        console.log("Setting agente_retencionedit to unchecked");
                     }
                 }
                 if (index == "extranjero") {
