@@ -18,6 +18,7 @@ class Salesdetail extends Model
         'nosujeta',
         'exempt',
         'detained',
+        'detainedP',
         'detained13',
         'renta',
         'fee',
@@ -40,6 +41,7 @@ class Salesdetail extends Model
         'nosujeta' => 'decimal:8',
         'exempt' => 'decimal:8',
         'detained' => 'decimal:8',
+        'detainedP' => 'decimal:8',
         'detained13' => 'decimal:8',
     ];
 

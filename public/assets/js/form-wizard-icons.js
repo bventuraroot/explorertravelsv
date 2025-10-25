@@ -8,8 +8,9 @@ $( document ).ready(function() {
     var valdraft = $('#valdraft').val();
     var valcorr = $('#valcorr').val();
 
-    // Ocultar campo IVA Percibido por defecto
+    // Ocultar campos por defecto
     $("#iva_percibido_field").hide();
+    $("#iva_retenido_field").hide();
     // Mostrar inmediatamente el correlativo (ID de venta) si viene en la URL
     if (valcorr && $('#corr').length) {
         $('#corr').val(valcorr);
@@ -539,7 +540,8 @@ function agregarp() {
         canal: canal,
         description: descriptionbyproduct,
         tipoVenta: type,
-        retencion_agente: retencion_agente_actual
+        retencion_agente: retencion_agente_actual,
+        detainedP: parseFloat($("#ivarete").val()) || 0
     };
 
     $.ajax({
@@ -704,6 +706,9 @@ function agregarp() {
                     })
                 );
                 $("#ventasexentas").val(ventasexentasl);
+
+                // El campo IVA Percibido (ivarete) ya tiene el valor calculado
+                // No necesitamos hacer nada más aquí
 
                 if(typedoc==3){
                     // Para Crédito Fiscal, calcular total como suma de gravadas + IVA
@@ -1381,9 +1386,12 @@ function valtrypecontri(idcliente) {
             // Guardar si el cliente es agente de retención para usar en cálculos
             if (response.agente_retencion == "1") {
                 $("#cliente_agente_retencion").val("1");
+                $("#iva_retenido_field").show(); // Mostrar campo IVA Retenido
             } else {
                 $("#cliente_agente_retencion").val("0");
+                $("#iva_retenido_field").hide(); // Ocultar campo IVA Retenido
             }
+
 
             // Validar si se puede crear crédito fiscal
             var typedocument = $("#typedocument").val();
@@ -2196,6 +2204,9 @@ function agregarfacdetails(corr) {
             );
             $("#ivaretenido").val(ivaretenidol);
             $("#ivaretenido_visible").val(ivaretenidol.toFixed(8));
+
+            // El campo IVA Percibido (ivarete) ya tiene el valor calculado
+            // No necesitamos hacer nada más aquí
 
             // Calcular total general: SUMAS (subtotal ventas) + IVA - retenciones
             // "SUMAS" ya incluye gravadas + no sujetas + exentas. No volver a sumar no sujetas/exentas.

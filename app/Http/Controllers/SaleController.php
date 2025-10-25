@@ -195,6 +195,7 @@ class SaleController extends Controller
         $description = $request->input('description', '');
         $tipoVenta = $request->input('tipoVenta', 'gravada');
         $retencion_agente = $request->input('retencion_agente', 0);
+        $detainedP = $request->input('detainedP', 0);
 
         return $this->savefactemp(
             $request->idsale,
@@ -218,7 +219,8 @@ class SaleController extends Controller
             $canal,
             $description,
             $tipoVenta,
-            $retencion_agente
+            $retencion_agente,
+            $detainedP
         );
     }
 
@@ -250,7 +252,7 @@ class SaleController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada', $retencion_agente = 0)
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada', $retencion_agente = 0, $detainedP = 0)
     {
         // Limpiar parámetros que vienen como 'SIN_VALOR'
         $acuenta = ($acuenta === 'SIN_VALOR') ? '' : $acuenta;
@@ -393,6 +395,7 @@ class SaleController extends Controller
             }
 
             $saledetails->detained = $ivarete;
+            $saledetails->detainedP = round($detainedP, 8);
             $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 2) : round($renta * $cantidad, 2);
             $saledetails->fee = round($feesiniva * $cantidad, 8);
             $saledetails->feeiva = round($ivafee * $cantidad, 8);
