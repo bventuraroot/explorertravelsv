@@ -566,6 +566,7 @@ function agregarp() {
                         // Fee genera IVA
                         var ivaFee = pricegravada * 0.13;
                         pricegravadasMostrar = pricegravada + ivaFee;
+                        priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
                     }
                     totaltempMostrar = totaltemp + (pricegravadasMostrar - pricegravada);
                 }
