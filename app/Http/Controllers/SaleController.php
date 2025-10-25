@@ -277,13 +277,13 @@ class SaleController extends Controller
             // Lógica basada en el tipo de venta (como en Roma Copies)
             if ($tipoVenta === 'gravada') {
                 // Venta gravada: calcular IVA normalmente
-                $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
-                $pricegravadafac = round($pricegravada / 1.13, 3);
+                $ivafac = round($pricegravada - ($pricegravada / 1.13), 8);
+                $pricegravadafac = round($pricegravada / 1.13, 8);
 
                 if ($pricegravada != "0.00") {
-                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 8);
                 } else {
-                    $priceunitariofac = round($price, 3);
+                    $priceunitariofac = round($price, 8);
                 }
 
                 if ($sale->typedocument_id == '8') {
@@ -299,23 +299,23 @@ class SaleController extends Controller
                 }
             } elseif ($tipoVenta === 'exenta') {
                 // Venta exenta: mantener precio unitario original, no va en gravadas
-                $priceunitariofac = round($price, 3); // Precio unitario sin modificar
+                $priceunitariofac = round($price, 8); // Precio unitario sin modificar
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
                 // Venta no sujeta: mantener precio unitario original, no va en gravadas
-                $priceunitariofac = round($price, 3); // Precio unitario sin modificar
+                $priceunitariofac = round($price, 8); // Precio unitario sin modificar
                 $pricegravadafac = 0.00; // No va en gravadas
                 $ivafac = 0.00; // No genera IVA
             } else {
                 // Por defecto, tratar como gravada
-                $ivafac = round($pricegravada - ($pricegravada / 1.13), 2);
-                $pricegravadafac = round($pricegravada / 1.13, 3);
+                $ivafac = round($pricegravada - ($pricegravada / 1.13), 8);
+                $pricegravadafac = round($pricegravada / 1.13, 8);
 
                 if ($pricegravada != "0.00") {
-                    $priceunitariofac = round($pricegravadafac / $cantidad, 3);
+                    $priceunitariofac = round($pricegravadafac / $cantidad, 8);
                 } else {
-                    $priceunitariofac = round($price + $fee, 3);
+                    $priceunitariofac = round($price + $fee, 8);
                 }
 
                 if ($sale->typedocument_id == '8') {
@@ -339,14 +339,22 @@ class SaleController extends Controller
                 $ivafee = 0.00;
             }
 
-            // Para crédito fiscal gravado, recalcular el IVA incluyendo el fee
-            if ($tipoVenta === 'gravada' && $sale->typedocument_id == '3') {
-                // En CCF, el priceunit debe incluir el fee SIN IVA
-                $priceunitariofac = round(($price + $feesiniva), 8);
-                // Subtotal (gravadas) es unitario (sin IVA) incluyendo fee × cantidad
-                $pricegravadafac = round($priceunitariofac * $cantidad, 8);
-                // IVA del total sin IVA
-                $ivafac = round($pricegravadafac * 0.13, 8);
+            // Para ventas gravadas (Crédito Fiscal y Factura), incluir fee en priceunit y pricesale
+            if ($tipoVenta === 'gravada') {
+                if ($sale->typedocument_id == '3') {
+                    // Crédito Fiscal: precio ya sin IVA + fee sin IVA
+                    $priceunitariofac = round(($price + $feesiniva), 8);
+                    $pricegravadafac = round($priceunitariofac * $cantidad, 8);
+                    // IVA del total sin IVA (precio + fee)
+                    $ivafac = round($pricegravadafac * 0.13, 8);
+                } else {
+                    // Factura: precio con IVA + fee con IVA
+                    $preciounitariosiniva = round($price / 1.13, 8);
+                    $priceunitariofac = round(($preciounitariosiniva + $feesiniva), 8);
+                    $pricegravadafac = round(($preciounitariosiniva + $feesiniva) * $cantidad, 8);
+                    // IVA del total sin IVA (precio + fee)
+                    $ivafac = round($pricegravadafac * 0.13, 8);
+                }
             }
 
             $saledetails = new Salesdetail();
@@ -391,12 +399,12 @@ class SaleController extends Controller
                 // Por defecto, usar valores originales
                 $saledetails->nosujeta = $pricenosujeta;
                 $saledetails->exempt = $priceexenta;
-                $saledetails->detained13 = round($ivafac, 2);
+                $saledetails->detained13 = round($ivafac, 8);
             }
 
-            $saledetails->detained = $ivarete;
-            $saledetails->detainedP = round($detainedP, 8);
-            $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 2) : round($renta * $cantidad, 2);
+            $saledetails->detained = round($ivarete, 8);
+            $saledetails->detainedP = 0;
+            $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 8) : round($renta * $cantidad, 8);
             $saledetails->fee = round($feesiniva * $cantidad, 8);
             $saledetails->feeiva = round($ivafee * $cantidad, 8);
             $saledetails->reserva = $reserva;
