@@ -2060,8 +2060,8 @@ function agregarfacdetails(corr) {
                         var ivaunitariogravada = 0;
                         // Para gravadas: pricesale ya incluye precio + fee con IVA
                         ivaunitariogravada = parseFloat(value.detained13)/parseFloat(value.amountp);
-                        preciogravadas = parseFloat(value.pricesale+ivaunitariogravada);
-                        preciounitario = parseFloat(value.priceunit);
+                        preciogravadas = parseFloat(value.pricesale);
+                        preciounitario = parseFloat(value.priceunit+ivaunitariogravada);
                         // IVA = 0 (ya está incluido en el precio)
                         ivarete13total += 0;
                     } else {
