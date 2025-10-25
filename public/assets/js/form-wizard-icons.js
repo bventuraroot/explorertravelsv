@@ -427,6 +427,7 @@ function agregarp() {
         var feeConIva = parseFloat(fee);
         var feeSinIva = feeConIva / 1.13;
         priceunitariofee = parseFloat(price) + feeSinIva;
+        priceunitariofeeconiva = parseFloat(price) + feeConIva;
     } else {
         // Otros documentos: precio + fee
         priceunitariofee = price + fee;
@@ -561,7 +562,7 @@ function agregarp() {
                     // Facturas: BD guarda sin IVA, tabla muestra con IVA
                     if(type == 'gravada') {
                         //var ivaGravadas = pricegravada * 0.13;
-                        priceunitarioMostrar = priceunitariofee;
+                        priceunitarioMostrar = priceunitariofeeconiva / cantidad;
                         pricegravadasMostrar = pricegravada;
                     } else if((type == 'exenta' || type == 'nosujeta') && fee > 0) {
                         // Fee genera IVA
@@ -570,6 +571,10 @@ function agregarp() {
                         priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
                     }
                     totaltempMostrar = totaltemp + (pricegravadasMostrar - pricegravada);
+                }else if(typedoc=='3'){
+                    // Crédito Fiscal: BD guarda sin IVA, tabla muestra con IVA
+                    priceunitarioMostrar = priceunitariofee;
+                    pricegravadasMostrar = pricegravada;
                 }
 
                 var row =
