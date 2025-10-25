@@ -18,7 +18,7 @@ $( document ).ready(function() {
     // Obtener parámetro step de la URL
     var urlParams = new URLSearchParams(window.location.search);
     var stepParam = urlParams.get('step');
-
+    alert(stepParam);
     if (operation == 'delete' || stepParam == '3') {
         var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
         stepper.to(3);
