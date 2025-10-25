@@ -25,7 +25,7 @@ $( document ).ready(function() {
     }else{
         if(valdraft && $.isNumeric(valcorr)){
             var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
-            stepper.to(3); // Cambiar a paso 3 (productos) en lugar de paso 2 (cliente)
+            stepper.to(2); // Cambiar a paso 3 (productos) en lugar de paso 2 (cliente)
         }
     }
 
@@ -94,8 +94,7 @@ $(function () {
                 }
                 // Para nueva venta, ir paso por paso (no saltar al paso de productos)
                 // Solo avanzar automáticamente si es un draft
-                alert(stepParam);
-                if (hasValCorr && valdraft && !$.isEmptyObject(stepParam)) {
+                if (hasValCorr && valdraft) {
                     // Para drafts, ir directamente al paso de productos
                     setTimeout(function(){
                         $("#step1").trigger('click');
@@ -567,6 +566,7 @@ function agregarp() {
                         // Fee genera IVA
                         var ivaFee = pricegravada * 0.13;
                         pricegravadasMostrar = pricegravada + ivaFee;
+                        priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
                     }
                     totaltempMostrar = totaltemp + (pricegravadasMostrar - pricegravada);
                 }
