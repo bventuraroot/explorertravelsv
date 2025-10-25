@@ -1601,7 +1601,6 @@ function draftdocument(corr, draft) {
                     setTimeout(function() {
                         // Convertir fecha de ISO o DD/MM/YYYY a YYYY-MM-DD para el input date
                         var fechaBD = value.date;
-                        console.log("DEBUG - Reforzando fecha:", fechaBD);
 
                         if (fechaBD) {
                             var fechaFormateada = '';
@@ -1609,18 +1608,15 @@ function draftdocument(corr, draft) {
                             if (fechaBD.includes('T')) {
                                 // Formato ISO: 2025-10-01T00:00:00.000000Z -> 2025-10-01
                                 fechaFormateada = fechaBD.split('T')[0];
-                                console.log("DEBUG - Fecha ISO reforzada:", fechaFormateada);
                             } else if (fechaBD.includes('/')) {
                                 // Formato DD/MM/YYYY -> YYYY-MM-DD
                                 var partes = fechaBD.split('/');
                                 if (partes.length === 3) {
                                     fechaFormateada = partes[2] + '-' + partes[1].padStart(2, '0') + '-' + partes[0].padStart(2, '0');
-                                    console.log("DEBUG - Fecha DD/MM/YYYY reforzada:", fechaFormateada);
                                 }
                             } else {
                                 // Asumir que ya está en formato YYYY-MM-DD
                                 fechaFormateada = fechaBD;
-                                console.log("DEBUG - Fecha sin conversión reforzada:", fechaFormateada);
                             }
 
                             $("#date").val(fechaFormateada);
@@ -1631,7 +1627,6 @@ function draftdocument(corr, draft) {
                             // Forzar la selección del cliente
                             $("#client").val(draftClientId);
                             $("#client").trigger('change.select2');
-                            console.log("DEBUG - Forzando selección de cliente:", draftClientId);
                         }
                     }, 1000);
                     if(value.waytopay != null){
@@ -2015,25 +2010,18 @@ function agregarfacdetails(corr) {
                 // Para Crédito Fiscal, llenar campos de entrada con datos del draft
                 if(index === 0) {
                     // Solo llenar una vez con el primer producto
-                    console.log("DEBUG DRAFT - Datos del primer producto:", {
-                        priceunit: value.priceunit,
-                        fee: value.fee,
-                        amountp: value.amountp,
-                        pricesale: value.pricesale,
-                        detained13: value.detained13
-                    });
-                    $("#precio").val(value.priceunit);
-                    $("#cantidad").val(value.amountp);
+                    //$("#precio").val(value.priceunit);
+                    //$("#cantidad").val(value.amountp);
 
                     // Mostrar fee según tipo de documento
                     if(typedoc=='3') {
                         // CRÉDITO FISCAL: mostrar fee sin IVA (como está en BD)
-                        $("#fee").val(value.fee);
+                        //$("#fee").val(value.fee);
                     } else {
                         // FACTURAS: mostrar fee con IVA (BD tiene sin IVA, sumar IVA)
                         var feeSinIva = parseFloat(value.fee || 0);
                         var feeConIva = feeSinIva * 1.13;
-                        $("#fee").val(feeConIva.toFixed(2));
+                        //$("#fee").val(feeConIva.toFixed(2));
                     }
                 }
 
@@ -2042,8 +2030,9 @@ function agregarfacdetails(corr) {
                 var isExento = parseFloat(value.exempt) > 0;
                 var isNoSujeto = parseFloat(value.nosujeta) > 0;
                 var isGravado = parseFloat(value.pricesale) > 0 && !isExento && !isNoSujeto;
-
+                alert(typedoc);
                 if(typedoc=='3'){
+                    alert('CCF');
                     // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
                     var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
                     if(isGravado) {
