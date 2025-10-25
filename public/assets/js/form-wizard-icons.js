@@ -425,13 +425,19 @@ function agregarp() {
     renta10temp = parseFloat(rentarete*cantidad).toFixed(2);
     var totaltemp = parseFloat(parseFloat(pricegravada) + parseFloat(priceexenta) + parseFloat(pricenosujeta));
     var ventatotaltotal =  parseFloat(ventatotal); //+ parseFloat(iva13) + parseFloat(ivaretenido);
+    // Para TODOS los tipos de venta: priceunitariofee incluye precio + fee
     if(typedoc==3){
-        // Para Crédito Fiscal: precio unitario = precio + fee sin IVA
+        // Crédito Fiscal: precio + fee sin IVA
+        var feeConIva = parseFloat(fee);
+        var feeSinIva = feeConIva / 1.13;
+        priceunitariofee = parseFloat(price) + feeSinIva;
+    } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+        // Facturas: precio + fee sin IVA (BD guarda sin IVA)
         var feeConIva = parseFloat(fee);
         var feeSinIva = feeConIva / 1.13;
         priceunitariofee = parseFloat(price) + feeSinIva;
     } else {
-        // Para otros documentos: precio unitario incluye fee por unidad
+        // Otros documentos: precio + fee
         priceunitariofee = price + fee;
     }
     var totaltemptotal = parseFloat(
@@ -555,6 +561,25 @@ function agregarp() {
         data: dataPost,
         success: function (response) {
             if (response.res == 1) {
+                // Para Facturas: mostrar con IVA en la tabla
+                var priceunitarioMostrar = priceunitariofee;
+                var pricegravadasMostrar = pricegravada;
+                var totaltempMostrar = totaltemp;
+
+                if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                    // Facturas: BD guarda sin IVA, tabla muestra con IVA
+                    if(type == 'gravada') {
+                        var ivaGravadas = pricegravada * 0.13;
+                        priceunitarioMostrar = priceunitariofee + (ivaGravadas / cantidad);
+                        pricegravadasMostrar = pricegravada + ivaGravadas;
+                    } else if((type == 'exenta' || type == 'nosujeta') && fee > 0) {
+                        // Fee genera IVA
+                        var ivaFee = pricegravada * 0.13;
+                        pricegravadasMostrar = pricegravada + ivaFee;
+                    }
+                    totaltempMostrar = totaltemp + (pricegravadasMostrar - pricegravada);
+                }
+
                 var row =
                     '<tr id="pro' +
                     response.idsaledetail +
@@ -563,7 +588,7 @@ function agregarp() {
                     "</td><td>" +
                     descriptionbyproduct +
                     "</td><td>" +
-                    priceunitariofee.toLocaleString("en-US", {
+                    priceunitarioMostrar.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
@@ -578,12 +603,12 @@ function agregarp() {
                         currency: "USD",
                     }) +
                     "</td><td>" +
-                    pricegravada.toLocaleString("en-US", {
+                    pricegravadasMostrar.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
                     '</td><td class="text-center">' +
-                    totaltemp.toLocaleString("en-US", {
+                    totaltempMostrar.toLocaleString("en-US", {
                         style: "currency",
                         currency: "USD",
                     }) +
@@ -621,14 +646,20 @@ function agregarp() {
 
                     console.log("DEBUG NUEVO PRODUCTO FINAL - totalSumas:", totalSumas, "totalIva:", totalIva);
                 } else {
-                    // Para otros documentos, calcular correctamente:
-                    // SUMAS = subtotal de productos (sin IVA ni retenciones)
-                    sumasl = sumas + totaltemp;
-
-                    // IVA solo para documentos que lo requieren
-                    if(typedoc==6 || typedoc==7 || typedoc==8){
-                        iva13l=0.00;
+                    // Para Facturas: BD guarda sin IVA, pero tabla muestra con IVA
+                    if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                        // Calcular sumando con IVA para mostrar
+                        var totalSumas = 0;
+                        $("#tblproduct tbody tr").each(function() {
+                            var totalText = $(this).find("td:eq(6)").text();
+                            var total = parseFloat(totalText.replace(/[$,]/g, '')) || 0;
+                            totalSumas += total;
+                        });
+                        sumasl = totalSumas;
+                        iva13l = 0.00; // IVA ya está incluido en las sumas
                     } else {
+                        // Otros documentos
+                        sumasl = sumas + totaltemp;
                         iva13l = iva13 + iva13temp;
                     }
                 }
@@ -672,23 +703,20 @@ function agregarp() {
                 if (es_agente_retencion && (typedoc == '3' || typedoc == '6')) {
                     var ventas_gravadas = 0;
 
-                if (typedoc == '3') {
-                    // Para Crédito Fiscal: usar los datos de la respuesta del servidor
-                    // que ya incluyen precio + fee sin IVA
+                if (typedoc == '3' || typedoc == '6') {
+                    // Para CCF y Facturas: BD guarda sin IVA
+                    // La tabla para Facturas muestra con IVA, así que quitar IVA
                     $("#tblproduct tbody tr").each(function() {
                         var gravadasText = $(this).find("td:eq(5)").text();
                         var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
-                        ventas_gravadas += gravadas;
-                    });
-                } else if (typedoc == '6') {
-                    // Para Factura: calcular sobre las ventas gravadas de la tabla
-                    // Pero quitar el IVA porque en facturas los montos ya incluyen IVA
-                    $("#tblproduct tbody tr").each(function() {
-                        var gravadasText = $(this).find("td:eq(5)").text();
-                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
-                        // Quitar IVA de las ventas gravadas
-                        var gravadasSinIva = gravadas / 1.13;
-                        ventas_gravadas += gravadasSinIva;
+                        if (typedoc == '6') {
+                            // Para Facturas: quitar IVA porque la tabla muestra con IVA
+                            var gravadasSinIva = gravadas / 1.13;
+                            ventas_gravadas += gravadasSinIva;
+                        } else {
+                            // Para CCF: la tabla ya muestra sin IVA
+                            ventas_gravadas += gravadas;
+                        }
                     });
                 }
 
@@ -2030,54 +2058,46 @@ function agregarfacdetails(corr) {
                 var isNoSujeto = parseFloat(value.nosujeta) > 0;
                 var isGravado = parseFloat(value.pricesale) > 0 && !isExento && !isNoSujeto;
                 if(typedoc=='3'){
-                    // CRÉDITO FISCAL: trabajar SIEMPRE sin IVA y separar fee
-                    var feeSinIvaLinea = parseFloat(value.fee || 0); // BD guarda fee sin IVA
+                    // CRÉDITO FISCAL: BD guarda todo sin IVA
                     if(isGravado) {
-                        // Para productos gravados: pricesale incluye precio + fee
-                        preciogravadas = parseFloat(value.pricesale); // Total (precio + fee) para mostrar
-                        // IVA de la línea = 13% de (precio + fee sin IVA)
-                        var iva13Line = parseFloat(value.detained13);
-                        ivarete13total += iva13Line;
-                        // Mostrar en tabla precio unitario SIN IVA (sin fee)
-                        preciounitario = parseFloat(value.priceunit);
-                    } else {
-                        // Para exenta/no sujeta: no mostrar como gravadas
+                        // GRAVADA: pricesale incluye precio + fee (sin IVA)
                         preciogravadas = parseFloat(value.pricesale);
-                        var iva13Line = parseFloat(value.detained13);
-                        ivarete13total += iva13Line;
-                        // Para exenta/no sujeta también mostrar sin IVA
                         preciounitario = parseFloat(value.priceunit);
-                    }
-                    // Total de la fila (CCF): para exentos/no sujetos no sumar IVA del fee
-                    if (isExento || isNoSujeto) {
-                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
-                    } else {
-                        var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
-                    }
-                } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
-                    // FACTURAS: precios ya incluyen IVA
-                    if(isGravado) {
-                        var ivaunitariogravada = 0;
-                        // Para gravadas: pricesale ya incluye precio + fee con IVA
-                        ivaunitariogravada = parseFloat(value.detained13)/parseFloat(value.amountp);
-                        preciogravadas = parseFloat(value.pricesale);
-                        preciounitario = parseFloat(value.priceunit+ivaunitariogravada);
-                        // IVA = 0 (ya está incluido en el precio)
-                        ivarete13total += 0;
-                    } else {
-                        // Para exentas/no sujetas: no mostrar como gravadas
-                        if(isExento || isNoSujeto && value.fee > 0) {
-                            preciogravadas = parseFloat(value.fee);
-                            preciounitario = parseFloat(value.priceunit);
-                            ivarete13total += parseFloat(value.detained13);
+                        ivarete13total += parseFloat(value.detained13);
+                    } else if(isExento || isNoSujeto) {
+                        // EXENTA/NO SUJETA: fee va como gravado
+                        if (value.fee > 0) {
+                            preciogravadas = parseFloat(value.pricesale); // Fee sin IVA
+                            ivarete13total += parseFloat(value.detained13); // IVA del fee
                         } else {
                             preciogravadas = 0;
-                            preciounitario = parseFloat(value.priceunit);
-                            ivarete13total += 0;
                         }
+                        preciounitario = parseFloat(value.priceunit);
                     }
-                    // Para Facturas: preciogravadas ya incluye IVA
-                    var totaltemp = (parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas));
+                    // Total de la fila
+                    var totaltemp = parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas);
+                } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
+                    // FACTURAS: BD guarda todo sin IVA (igual que CCF)
+                    if(isGravado) {
+                        // GRAVADA: pricesale sin IVA + detained13
+                        preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13);
+                        // Precio unitario sin IVA + IVA unitario
+                        var ivaunitario = parseFloat(value.detained13) / parseFloat(value.amountp);
+                        preciounitario = parseFloat(value.priceunit) + ivaunitario;
+                        // No sumar IVA al total porque ya está en preciogravadas
+                        ivarete13total += 0;
+                    } else if(isExento || isNoSujeto) {
+                        // EXENTA/NO SUJETA: fee va como gravado
+                        if (value.fee > 0) {
+                            preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13); // Fee sin IVA + IVA del fee
+                            ivarete13total += 0; // No sumar porque ya está en preciogravadas
+                        } else {
+                            preciogravadas = 0;
+                        }
+                        preciounitario = parseFloat(value.priceunit);
+                    }
+                    // Total de la fila
+                    var totaltemp = parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas);
                 }else{
                     ivarete13total += parseFloat(value.detained13);
                     preciounitario = parseFloat(value.priceunit);
@@ -2234,12 +2254,15 @@ function agregarfacdetails(corr) {
             // El campo IVA Percibido (ivarete) ya tiene el valor calculado
             // No necesitamos hacer nada más aquí
 
-            // Calcular total general según tipo de documento
+            // Calcular total general
+            // totalsumas ya incluye las ventas con IVA sumado
+            // Para CCF: totalsumas tiene gravadas sin IVA, pero ivarete13total tiene el IVA
+            // Para Facturas: totalsumas ya tiene todo con IVA incluido
             if(typedoc=='3'){
                 // CRÉDITO FISCAL: SUMAS + IVA - retenciones
                 ventatotall = totalsumas + ivarete13total - (rentatotal + ivaretetotal);
             } else {
-                // FACTURAS: SUMAS - retenciones (las SUMAS ya incluyen IVA)
+                // FACTURAS: SUMAS - retenciones (totalsumas ya incluye IVA)
                 ventatotall = totalsumas - (rentatotal + ivaretetotal);
             }
             $("#ventatotall").html(

@@ -298,15 +298,17 @@ class SaleController extends Controller
                     $ivafac = round($pricegravadafac * 0.13, 8); // IVA = 13% del subtotal sin IVA
                 }
             } elseif ($tipoVenta === 'exenta') {
-                // Venta exenta: mantener precio unitario original, no va en gravadas
-                $priceunitariofac = round($price, 8); // Precio unitario sin modificar
-                $pricegravadafac = 0.00; // No va en gravadas
-                $ivafac = 0.00; // No genera IVA
+                // Venta exenta: priceunit incluye precio + fee (sin IVA)
+                $feesiniva = round($fee / 1.13, 8);
+                $priceunitariofac = round($price + $feesiniva, 8);
+                $pricegravadafac = 0.00; // No va en gravadas (el fee va en pricesale abajo)
+                $ivafac = 0.00; // No genera IVA del producto
             } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                // Venta no sujeta: mantener precio unitario original, no va en gravadas
-                $priceunitariofac = round($price, 8); // Precio unitario sin modificar
-                $pricegravadafac = 0.00; // No va en gravadas
-                $ivafac = 0.00; // No genera IVA
+                // Venta no sujeta: priceunit incluye precio + fee (sin IVA)
+                $feesiniva = round($fee / 1.13, 8);
+                $priceunitariofac = round($price + $feesiniva, 8);
+                $pricegravadafac = 0.00; // No va en gravadas (el fee va en pricesale abajo)
+                $ivafac = 0.00; // No genera IVA del producto
             } else {
                 // Por defecto, tratar como gravada
                 $ivafac = round($pricegravada - ($pricegravada / 1.13), 8);
@@ -405,6 +407,7 @@ class SaleController extends Controller
             $saledetails->detained = round($ivarete, 8);
             $saledetails->detainedP = 0;
             $saledetails->renta = ($sale->typedocument_id != '8') ? round(0.00, 8) : round($renta * $cantidad, 8);
+            // fee y feeiva se guardan para reportes internos, NO se usan para generar DTE
             $saledetails->fee = round($feesiniva * $cantidad, 8);
             $saledetails->feeiva = round($ivafee * $cantidad, 8);
             $saledetails->reserva = $reserva;
