@@ -551,8 +551,6 @@ function agregarp() {
         data: dataPost,
         success: function (response) {
             if (response.res == 1) {
-                alert(type);
-                alert(fee);
                 // Para Facturas: mostrar con IVA en la tabla
                 var priceunitarioMostrar = priceunitariofee;
                 var pricegravadasMostrar = pricegravada;
@@ -568,7 +566,6 @@ function agregarp() {
                         // Fee genera IVA
                         var ivaFee = pricegravada * 0.13;
                         pricegravadasMostrar = pricegravada + ivaFee;
-                        priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
                     }
                     totaltempMostrar = totaltemp + (pricegravadasMostrar - pricegravada);
                 }
@@ -2087,7 +2084,8 @@ function agregarfacdetails(corr) {
                         } else {
                             preciogravadas = 0;
                         }
-                        preciounitario = parseFloat(value.priceunit);
+                        var ivaunitario = parseFloat(value.detained13)/parseFloat(value.amountp);
+                        preciounitario = parseFloat(value.priceunit+ivaunitario);
                     }
                     // Total de la fila
                     var totaltemp = parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas);
