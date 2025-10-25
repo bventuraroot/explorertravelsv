@@ -2079,13 +2079,16 @@ function agregarfacdetails(corr) {
                     } else if(isExento || isNoSujeto) {
                         // EXENTA/NO SUJETA: fee va como gravado
                         if (value.fee > 0) {
-                            preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13); // Fee sin IVA + IVA del fee
+                            preciogravadas = parseFloat(value.pricesale) + parseFloat(value.detained13);
+                            var ivaunitario = parseFloat(value.detained13)/parseFloat(value.amountp);
+                            preciounitario = parseFloat(value.priceunit)+ivaunitario; // Fee sin IVA + IVA del fee
                             ivarete13total += 0; // No sumar porque ya está en preciogravadas
+                            alert(preciounitario);
                         } else {
                             preciogravadas = 0;
+                            preciounitario = parseFloat(value.priceunit);
                         }
-                        var ivaunitario = parseFloat(value.detained13)/parseFloat(value.amountp);
-                        preciounitario = parseFloat(value.priceunit+ivaunitario);
+
                     }
                     // Total de la fila
                     var totaltemp = parseFloat(value.nosujeta) + parseFloat(value.exempt) + parseFloat(preciogravadas);
