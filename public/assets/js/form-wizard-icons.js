@@ -672,17 +672,21 @@ function agregarp() {
                 if (es_agente_retencion && (typedoc == '3' || typedoc == '6')) {
                     var ventas_gravadas = 0;
 
-                    if (typedoc == '3') {
-                        // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
-                        $("#tblproduct tbody tr").each(function() {
-                            var gravadasText = $(this).find("td:eq(5)").text();
-                            var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
-                            ventas_gravadas += gravadas;
-                        });
-                    } else if (typedoc == '6') {
-                        // Para Factura: calcular sobre sumasl - exentas - no sujetas
-                        ventas_gravadas = sumasl - ventasnosujetasl - ventasexentasl;
-                    }
+                if (typedoc == '3') {
+                    // Para Crédito Fiscal: calcular sobre las ventas gravadas de la tabla
+                    $("#tblproduct tbody tr").each(function() {
+                        var gravadasText = $(this).find("td:eq(5)").text();
+                        var gravadas = parseFloat(gravadasText.replace(/[$,]/g, '')) || 0;
+                        ventas_gravadas += gravadas;
+                    });
+                } else if (typedoc == '6') {
+                    // Para Factura: calcular sobre sumasl - exentas - no sujetas
+                    // Pero quitar el IVA porque en facturas los montos ya incluyen IVA
+                    var sumasSinIva = sumasl / 1.13;
+                    var exentasSinIva = ventasexentasl; // Las exentas no tienen IVA
+                    var nosujetasSinIva = ventasnosujetasl; // Las no sujetas no tienen IVA
+                    ventas_gravadas = sumasSinIva - nosujetasSinIva - exentasSinIva;
+                }
 
                     var retencion_agente = parseFloat(ventas_gravadas * 0.01);
                     ivaretenidol += retencion_agente; // Sumar al IVA retenido total
@@ -911,7 +915,19 @@ function totalamount() {
     // Agregar retención 1% del agente si aplica (solo para gravadas en CCF y Factura)
     var es_agente_retencion = $("#cliente_agente_retencion").val() == "1";
     if (es_agente_retencion && (typedoc == '3' || typedoc == '6') && type === 'gravada') {
-        var retencion_agente_producto = parseFloat(totalamount * 0.01);
+        var retencion_agente_producto;
+
+        if (typedoc == '6') {
+            // FACTURA: Precio y fee ya incluyen IVA, quitar IVA para calcular 1%
+            var precioSinIva = parseFloat(valor / 1.13);
+            var feeSinIva = parseFloat(fee / 1.13);
+            var totalSinIva = (precioSinIva + feeSinIva) * cantidad;
+            retencion_agente_producto = parseFloat(totalSinIva * 0.01);
+        } else {
+            // CRÉDITO FISCAL: Precio ya está sin IVA
+            retencion_agente_producto = parseFloat(totalamount * 0.01);
+        }
+
         retencionamount += retencion_agente_producto;
     }
 
@@ -2197,7 +2213,11 @@ function agregarfacdetails(corr) {
                     });
                 } else if (typedoc == '6') {
                     // Para Factura: calcular sobre totalsumas - exentas - no sujetas
-                    ventas_gravadas = totalsumas - nosujetatotal - exempttotal;
+                    // Pero quitar el IVA porque en facturas los montos ya incluyen IVA
+                    var sumasSinIva = totalsumas / 1.13;
+                    var exentasSinIva = exempttotal; // Las exentas no tienen IVA
+                    var nosujetasSinIva = nosujetatotal; // Las no sujetas no tienen IVA
+                    ventas_gravadas = sumasSinIva - nosujetasSinIva - exentasSinIva;
                 }
 
                 var retencion_agente = parseFloat(ventas_gravadas * 0.01);
