@@ -2058,7 +2058,8 @@ function agregarfacdetails(corr) {
                     // FACTURAS: precios ya incluyen IVA
                     if(isGravado) {
                         // Para gravadas: pricesale ya incluye precio + fee con IVA
-                        preciogravadas = parseFloat(value.pricesale);
+                        $ivaunitario = parseFloat(value.detained13)/parseFloat(value.amountp);
+                        preciogravadas = parseFloat(value.pricesale+$ivaunitario);
                         preciounitario = parseFloat(value.priceunit);
                         // IVA = 0 (ya está incluido en el precio)
                         ivarete13total += 0;
