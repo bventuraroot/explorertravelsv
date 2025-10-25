@@ -564,6 +564,7 @@ function agregarp() {
                         pricegravadasMostrar = pricegravada + ivaGravadas;
                     } else if((type == 'exenta' || type == 'nosujeta') && fee > 0) {
                         // Fee genera IVA
+                        alert(pricegravada);
                         var ivaFee = pricegravada * 0.13;
                         pricegravadasMostrar = pricegravada + ivaFee;
                         priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
