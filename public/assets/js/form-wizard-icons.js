@@ -391,28 +391,18 @@ function agregarp() {
         priceexenta = parseFloat(price * cantidad);
         // Si hay fee, agregarlo como gravado
         if (fee > 0) {
-            if (typedoc === '3') {
-                // CRÉDITO FISCAL: fee sin IVA (extraer del fee con IVA)
-                var feeSinIva = fee / 1.13;
-                pricegravada = parseFloat(feeSinIva * cantidad);
-            } else {
-                // FACTURAS: fee con IVA (como está ingresado)
-                pricegravada = parseFloat(fee * cantidad);
-            }
+            var feeSinIva = fee / 1.13; // Quitar IVA del fee
+            pricegravada = parseFloat(feeSinIva * cantidad); // Guardar fee sin IVA en BD
+            // Para CCF y Facturas: BD guarda fee sin IVA
         }
         iva13temp = 0;
     } else if (type == "nosujeta") {
         pricenosujeta = parseFloat(price * cantidad);
         // Si hay fee, agregarlo como gravado
         if (fee > 0) {
-            if (typedoc === '3') {
-                // CRÉDITO FISCAL: fee sin IVA (extraer del fee con IVA)
-                var feeSinIva = fee / 1.13;
-                pricegravada = parseFloat(feeSinIva * cantidad);
-            } else {
-                // FACTURAS: fee con IVA (como está ingresado)
-                pricegravada = parseFloat(fee * cantidad);
-            }
+            var feeSinIva = fee / 1.13; // Quitar IVA del fee
+            pricegravada = parseFloat(feeSinIva * cantidad); // Guardar fee sin IVA en BD
+            // Para CCF y Facturas: BD guarda fee sin IVA
         }
         iva13temp = 0;
     }
