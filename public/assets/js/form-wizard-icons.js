@@ -2057,6 +2057,7 @@ function agregarfacdetails(corr) {
                 } else if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     // FACTURAS: precios ya incluyen IVA
                     if(isGravado) {
+                        var ivaunitariogravada = 0;
                         // Para gravadas: pricesale ya incluye precio + fee con IVA
                         ivaunitariogravada = parseFloat(value.detained13)/parseFloat(value.amountp);
                         preciogravadas = parseFloat(value.pricesale+$ivaunitariogravada);
