@@ -17,15 +17,14 @@ $( document ).ready(function() {
     }
     // Obtener parámetro step de la URL
     var urlParams = new URLSearchParams(window.location.search);
-    var stepParam = urlParams.get('step');
-    if (operation == 'delete' || stepParam == '3') {
-        alert(stepParam);
+    var stepParam = parseInt(urlParams.get('step'));
+    if (operation == 'delete' || stepParam == 3) {
         var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
         stepper.to(3);
     }else{
         if(valdraft && $.isNumeric(valcorr)){
             var stepper = new Stepper(document.querySelector('.wizard-icons-example'))
-            stepper.to(2); // Cambiar a paso 3 (productos) en lugar de paso 2 (cliente)
+            stepper.to(3); // Cambiar a paso 3 (productos) en lugar de paso 2 (cliente)
         }
     }
 
@@ -94,7 +93,7 @@ $(function () {
                 }
                 // Para nueva venta, ir paso por paso (no saltar al paso de productos)
                 // Solo avanzar automáticamente si es un draft
-                if (hasValCorr && valdraft) {
+                if (hasValCorr && valdraft && !$.isNumeric(stepParam)) {
                     // Para drafts, ir directamente al paso de productos
                     setTimeout(function(){
                         $("#step1").trigger('click');
