@@ -551,6 +551,8 @@ function agregarp() {
         data: dataPost,
         success: function (response) {
             if (response.res == 1) {
+                alert(type);
+                alert(fee);
                 // Para Facturas: mostrar con IVA en la tabla
                 var priceunitarioMostrar = priceunitariofee;
                 var pricegravadasMostrar = pricegravada;
@@ -564,7 +566,6 @@ function agregarp() {
                         pricegravadasMostrar = pricegravada + ivaGravadas;
                     } else if((type == 'exenta' || type == 'nosujeta') && fee > 0) {
                         // Fee genera IVA
-                        alert(pricegravada);
                         var ivaFee = pricegravada * 0.13;
                         pricegravadasMostrar = pricegravada + ivaFee;
                         priceunitarioMostrar = priceunitariofee + (ivaFee / cantidad);
