@@ -427,7 +427,7 @@ function agregarp() {
         var feeConIva = parseFloat(fee);
         var feeSinIva = feeConIva / 1.13;
         priceunitariofee = parseFloat(price) + feeSinIva;
-        priceunitariofeeconiva = parseFloat(price) + feeConIva;
+        var priceunitariofeeconiva = parseFloat(price) + feeConIva;
     } else {
         // Otros documentos: precio + fee
         priceunitariofee = price + fee;
