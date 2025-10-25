@@ -94,7 +94,7 @@ $(function () {
                 }
                 // Para nueva venta, ir paso por paso (no saltar al paso de productos)
                 // Solo avanzar automáticamente si es un draft
-                if (hasValCorr && valdraft && stepParam != '3') {
+                if (hasValCorr && valdraft && !$.isEmptyObject(stepParam)) {
                     // Para drafts, ir directamente al paso de productos
                     setTimeout(function(){
                         $("#step1").trigger('click');
