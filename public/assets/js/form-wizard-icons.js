@@ -560,10 +560,9 @@ function agregarp() {
                 if(typedoc=='6' || typedoc=='7' || typedoc=='8'){
                     // Facturas: BD guarda sin IVA, tabla muestra con IVA
                     if(type == 'gravada') {
-                        var ivaGravadas = pricegravada * 0.13;
-                        alert(priceunitariofee);
-                        priceunitarioMostrar = priceunitariofee + (ivaGravadas / cantidad);
-                        pricegravadasMostrar = pricegravada + ivaGravadas;
+                        //var ivaGravadas = pricegravada * 0.13;
+                        priceunitarioMostrar = priceunitariofee;
+                        pricegravadasMostrar = pricegravada;
                     } else if((type == 'exenta' || type == 'nosujeta') && fee > 0) {
                         // Fee genera IVA
                         var ivaFee = pricegravada * 0.13;
