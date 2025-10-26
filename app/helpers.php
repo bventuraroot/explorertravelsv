@@ -501,7 +501,7 @@ if (!function_exists('crf')) {
             } else {
                 $precioUnitario = $item->precio_unitario;
             }
-
+            $precioUnitario = $item->precio_unitario;
             $properties_items_cuerpoDocumento = [
                 "numItem"           => $i,
                 "tipoItem"          => intval($item->tipo_item),  //Bienes y Servicios
