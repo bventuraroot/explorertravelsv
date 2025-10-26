@@ -497,9 +497,9 @@ if (!function_exists('crf')) {
 
             $properties_items_cuerpoDocumento = array();
             if(($item->no_sujetas > 0 || $item->exentas > 0) && $item->fee > 0){
-                $precioUnitario = $item->precio_unitario + $item->fee;
+                //$precioUnitario = $item->precio_unitario + $item->fee;
             } else {
-                $precioUnitario = $item->precio_unitario;
+                //$precioUnitario = $item->precio_unitario;
             }
             $precioUnitario = $item->precio_unitario;
             $properties_items_cuerpoDocumento = [
