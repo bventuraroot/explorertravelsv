@@ -27,6 +27,7 @@ use App\Http\Controllers\DteAdminController;
 use App\Http\Controllers\FirmadorTestController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\DteDashboardController;
+use App\Http\Controllers\BackupController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -366,6 +367,16 @@ Route::middleware('auth')->group(function () {
         Route::get('test-network', [FirmadorTestController::class, 'testNetwork'])->name('test-network');
         Route::get('server-info', [FirmadorTestController::class, 'serverInfo'])->name('server-info');
         Route::get('ambientes', [FirmadorTestController::class, 'getAmbientes'])->name('ambientes');
+    });
+
+    // Gestión de Backups
+    Route::group(['prefix' => 'backups', 'as' => 'backups.'], function(){
+        Route::get('/', [BackupController::class, 'index'])->name('index');
+        Route::post('create', [BackupController::class, 'create'])->name('create');
+        Route::get('download/{filename}', [BackupController::class, 'download'])->name('download');
+        Route::delete('delete/{filename}', [BackupController::class, 'delete'])->name('delete');
+        Route::post('clean', [BackupController::class, 'cleanOld'])->name('clean');
+        Route::get('refresh', [BackupController::class, 'refresh'])->name('refresh');
     });
 });
 });
