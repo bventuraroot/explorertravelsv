@@ -37,6 +37,60 @@ $configData = Helper::appClasses();
 
 @section('page-script')
 <script src="{{ asset('assets/js/tables-contribuyentes.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // Exportar a Excel
+    $('#btn-export-excel').on('click', function() {
+        var company = $('#company').val();
+        var year = $('#year').val();
+        var period = $('#period').val();
+
+        if (!company) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor, primero realiza una búsqueda para generar el reporte.'
+            });
+            return;
+        }
+
+        // Crear formulario temporal para enviar datos por POST
+        var form = $('<form>', {
+            'method': 'POST',
+            'action': '{{ route("report.contribuyentes.excel") }}'
+        });
+
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': '_token',
+            'value': '{{ csrf_token() }}'
+        }));
+
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': 'company',
+            'value': company
+        }));
+
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': 'year',
+            'value': year
+        }));
+
+        form.append($('<input>', {
+            'type': 'hidden',
+            'name': 'period',
+            'value': period
+        }));
+
+        // Agregar al body y enviar
+        $('body').append(form);
+        form.submit();
+        form.remove();
+    });
+});
+</script>
 @endsection
 
 @section('title', 'Reporte de Ventas')
@@ -122,6 +176,10 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
     <div class="row">
         <div class="col-12">
             <div class="box-header" style="text-align: right; margin-right: 6%;">
+                <button type="button" class='btn btn-primary' title='Exportar a Excel' id="btn-export-excel">
+                    <i class="fa-solid fa-file-excel"></i> &nbsp;&nbsp;Exportar a Excel
+                </button>
+                &nbsp;
                 <a href="#!" class='btn btn-success' title='Imprimir credito' onclick="impFAC('areaImprimir');">
                     <i class="fa-solid fa-print"> </i> &nbsp;&nbsp;Imprimir
                 </a>
