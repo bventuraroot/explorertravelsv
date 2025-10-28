@@ -68,7 +68,7 @@ class PermissionController extends Controller
                 "name" => "Administracion",
                 "icon" => "menu-icon fa-solid fa-shield",
                 "slug" => "user.index",
-                "badge" => ["primary", "2"],
+                "badge" => ["primary", "3"],
                 "submenu" => [
                     [
                         "url" => "/user/index",
@@ -84,6 +84,11 @@ class PermissionController extends Controller
                         "url" => "/permission/index",
                         "name" => "Permisos",
                         "slug" => "user.permission.index"
+                    ],
+                    [
+                        "url" => "/backups",
+                        "name" => "Respaldos de BD",
+                        "slug" => "backups.index"
                     ]
                 ]
             ],

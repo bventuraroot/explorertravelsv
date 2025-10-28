@@ -371,12 +371,12 @@ Route::middleware('auth')->group(function () {
 
     // Gestión de Backups
     Route::group(['prefix' => 'backups', 'as' => 'backups.'], function(){
-        Route::get('/', [BackupController::class, 'index'])->name('index');
-        Route::post('create', [BackupController::class, 'create'])->name('create');
-        Route::get('download/{filename}', [BackupController::class, 'download'])->name('download');
-        Route::delete('delete/{filename}', [BackupController::class, 'delete'])->name('delete');
-        Route::post('clean', [BackupController::class, 'cleanOld'])->name('clean');
-        Route::get('refresh', [BackupController::class, 'refresh'])->name('refresh');
+        Route::get('/', [BackupController::class, 'index'])->name('index')->middleware('permission:backups.index');
+        Route::post('create', [BackupController::class, 'create'])->name('create')->middleware('permission:backups.create');
+        Route::get('download/{filename}', [BackupController::class, 'download'])->name('download')->middleware('permission:backups.download');
+        Route::delete('delete/{filename}', [BackupController::class, 'delete'])->name('delete')->middleware('permission:backups.delete');
+        Route::post('clean', [BackupController::class, 'cleanOld'])->name('clean')->middleware('permission:backups.clean');
+        Route::get('refresh', [BackupController::class, 'refresh'])->name('refresh')->middleware('permission:backups.refresh');
     });
 });
 });
