@@ -2893,9 +2893,15 @@ class SaleController extends Controller
             return response()->json([
                 'success' => $response->successful(),
                 'status' => $response->status(),
-                'data' => $response->json()
+                'data' => $this->safeJson($response->body())
             ], $response->status());
         } catch (\Throwable $e) {
+            Log::error('Error enviando a n8n', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error enviando a n8n',
@@ -2920,6 +2926,16 @@ class SaleController extends Controller
     private function base64UrlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+
+    private function safeJson(?string $raw)
+    {
+        if ($raw === null) return null;
+        try {
+            return json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable $e) {
+            return ['raw' => $raw];
+        }
     }
 
     /**
