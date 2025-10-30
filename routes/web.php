@@ -172,6 +172,7 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::post('enviar_correo_offline', [SaleController::class, 'enviar_correo_offline'])->name('enviar_correo_offline');
         Route::get('sale/print/{id}', [SaleController::class, 'print'])->name('print');
         Route::get('download/{id}', [SaleController::class, 'download'])->name('download');
+        Route::post('send-n8n', [SaleController::class, 'sendToN8n'])->name('send-n8n');
         Route::get('destinos', [SaleController::class, 'destinos'])->name('destinos');
         Route::get('linea', [SaleController::class, 'linea'])->name('linea');
 

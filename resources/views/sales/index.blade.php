@@ -609,10 +609,11 @@ function enviarFacturaElectronica({ saleId, numeroControl, codigoGeneracion, sel
 
         const phone = result.value;
 
-        fetch('https://n8nvsystem.demosconsoftsv.website:5678/webhook-test/invoice/send', {
+        fetch('{{ route('sale.send-n8n') }}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
                 sale_id: saleId,

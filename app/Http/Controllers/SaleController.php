@@ -24,6 +24,8 @@ use Illuminate\Http\JsonResponse;
 
 class SaleController extends Controller
 {
+    private const N8N_WEBHOOK_URL = 'https://n8nvsystem.demosconsoftsv.website:5678/webhook-test/invoice/send';
+    private const N8N_JWT_SECRET = '!Pizza2025/*';
     /**
      * Display a listing of the resource.
      *
@@ -2864,6 +2866,57 @@ class SaleController extends Controller
         }, $filename, [
             'Content-Type' => 'application/pdf'
         ]);
+    }
+
+    /**
+     * Firma un JWT HS256 y reenvía el payload al webhook de n8n.
+     */
+    public function sendToN8n(Request $request): JsonResponse
+    {
+        $payload = [
+            'iss' => 'explorertravelsv',
+            'iat' => time(),
+            'exp' => time() + 300
+        ];
+
+        $jwt = $this->createHs256Jwt($payload, self::N8N_JWT_SECRET);
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $jwt,
+                'Content-Type' => 'application/json'
+            ])->post(self::N8N_WEBHOOK_URL, $request->all());
+
+            return response()->json([
+                'success' => $response->successful(),
+                'status' => $response->status(),
+                'data' => $response->json()
+            ], $response->status());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error enviando a n8n',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function createHs256Jwt(array $payload, string $secret): string
+    {
+        $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+        $segments = [
+            $this->base64UrlEncode(json_encode($header, JSON_UNESCAPED_SLASHES)),
+            $this->base64UrlEncode(json_encode($payload, JSON_UNESCAPED_SLASHES))
+        ];
+        $signingInput = implode('.', $segments);
+        $signature = hash_hmac('sha256', $signingInput, $secret, true);
+        $segments[] = $this->base64UrlEncode($signature);
+        return implode('.', $segments);
+    }
+
+    private function base64UrlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
     /**
