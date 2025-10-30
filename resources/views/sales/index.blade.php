@@ -627,15 +627,18 @@ function enviarFacturaElectronica({ saleId, numeroControl, codigoGeneracion, sel
             })
         })
         .then(async (resp) => {
-            const data = await resp.json().catch(() => ({}));
-            if (resp.ok) {
+            const text = await resp.text();
+            let data;
+            try { data = JSON.parse(text); } catch { data = { raw: text }; }
+            if (resp.ok && data && data.success !== false) {
                 Swal.fire('¡Enviado!', 'Se inició el envío de la factura.', 'success');
             } else {
-                Swal.fire('Error', data.message || 'No se pudo enviar la factura.', 'error');
+                const msg = (data && (data.message || (data.data && data.data.message))) || resp.statusText || 'No se pudo enviar la factura.';
+                Swal.fire('Error', msg, 'error');
             }
         })
-        .catch(() => {
-            Swal.fire('Error', 'No se pudo contactar con el servidor de n8n.', 'error');
+        .catch((err) => {
+            Swal.fire('Error', (err && err.message) ? err.message : 'No se pudo contactar con el servidor.', 'error');
         });
     });
 }

@@ -2885,7 +2885,10 @@ class SaleController extends Controller
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $jwt,
                 'Content-Type' => 'application/json'
-            ])->post(self::N8N_WEBHOOK_URL, $request->all());
+            ])
+            ->timeout(20)
+            ->withOptions(['verify' => false])
+            ->post(self::N8N_WEBHOOK_URL, $request->all());
 
             return response()->json([
                 'success' => $response->successful(),
