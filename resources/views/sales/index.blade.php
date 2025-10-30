@@ -323,6 +323,20 @@
                                                     class="btn btn-icon btn-outline-success btn-sm me-1" title="Enviar por correo">
                                                 <i class="ti ti-mail"></i>
                                             </a>
+                                            <a href="#"
+                                                    onclick="enviarFacturaElectronica({
+                                                        saleId: {{ $sale->id }},
+                                                        numeroControl: '{{ $sale->id_doc }}',
+                                                        codigoGeneracion: '{{ $sale->codigoGeneracion }}',
+                                                        selloRecepcion: '{{ $sale->selloRecibido }}',
+                                                        fechaHoraRecepcion: '{{ $sale->fhRecibido }}',
+                                                        total: {{ $sale->totalamount ?? 0 }},
+                                                        pdfUrl: '{{ route('sale.download', $sale->id) }}',
+                                                        telefonoCliente: '{{ $sale->client_phone ?? '' }}'
+                                                    })"
+                                                    class="btn btn-icon btn-outline-primary btn-sm me-1" title="Enviar factura electrónica">
+                                                <i class="ti ti-brand-whatsapp"></i>
+                                            </a>
                                             <div class="btn-group">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical"></i>
@@ -403,7 +417,7 @@
                                 <td style="{{ (!$esAnulado && $sale->estadoHacienda=='PROCESADO') ? 'color: green; font-weight: bold; font-size: 0.8rem;' : '' }}">
                                     {{ $mostrarId }}
                                     @if($esAnulado && !empty($sale->codigoGeneracion))
-                                        <div class="small text-danger mt-1">CG: {{ $sale->codigoGeneracion }}</div>
+                                        <div class="mt-1 small text-danger">CG: {{ $sale->codigoGeneracion }}</div>
                                     @endif
                                 </td>
 
@@ -569,4 +583,60 @@
           </div>
         </div>
       </div>
+<script>
+function enviarFacturaElectronica({ saleId, numeroControl, codigoGeneracion, selloRecepcion, fechaHoraRecepcion, total, pdfUrl, telefonoCliente }) {
+    Swal.fire({
+        title: 'Número de WhatsApp',
+        input: 'tel',
+        inputLabel: 'Confirma o edita el número del cliente',
+        inputValue: telefonoCliente || '',
+        inputAttributes: {
+            autocapitalize: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: (phone) => {
+            const cleaned = (phone || '').replace(/[^\d+]/g, '');
+            if (!cleaned) {
+                Swal.showValidationMessage('Ingresa un número válido');
+                return false;
+            }
+            return cleaned;
+        }
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        const phone = result.value;
+
+        fetch('https://n8nvsystem.demosconsoftsv.website:5678/webhook-test/invoice/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sale_id: saleId,
+                numero_control: numeroControl || null,
+                codigo_generacion: codigoGeneracion || null,
+                sello_recepcion: selloRecepcion || null,
+                fecha_hora_recepcion: fechaHoraRecepcion || null,
+                total: total,
+                pdf_url: pdfUrl,
+                phone: phone
+            })
+        })
+        .then(async (resp) => {
+            const data = await resp.json().catch(() => ({}));
+            if (resp.ok) {
+                Swal.fire('¡Enviado!', 'Se inició el envío de la factura.', 'success');
+            } else {
+                Swal.fire('Error', data.message || 'No se pudo enviar la factura.', 'error');
+            }
+        })
+        .catch(() => {
+            Swal.fire('Error', 'No se pudo contactar con el servidor de n8n.', 'error');
+        });
+    });
+}
+</script>
 @endsection

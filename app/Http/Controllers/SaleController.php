@@ -45,13 +45,16 @@ class SaleController extends Controller
                 'dte.estadoHacienda',
                 'dte.id_doc',
                 'dte.company_name',
-                'dte.codigoGeneracion'
+                'dte.codigoGeneracion',
+                'dte.selloRecibido',
+                'dte.fhRecibido'
             )
             ->whereIn('dte.codTransaction', ['01','05','06'])
             ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
 
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
+            ->leftJoin('phones', 'clients.phone_id', '=', 'phones.id')
             ->join('companies', 'companies.id', '=', 'sales.company_id')
             ->leftJoinSub($dteEmisionSub, 'dte_emis', function ($join) {
                 $join->on('dte_emis.sale_id', '=', 'sales.id');
@@ -65,12 +68,15 @@ class SaleController extends Controller
                 'clients.name_contribuyente as nameClient',
                 'clients.tpersona',
                 'clients.email as mailClient',
+                DB::raw('phones.phone as client_phone'),
                 'companies.name AS company_name',
                 'dte_emis.tipoDte',
                 'dte_emis.estadoHacienda',
                 'dte_emis.id_doc',
                 'dte_emis.company_name',
                 DB::raw('dte_emis.codigoGeneracion as codigoGeneracion'),
+                DB::raw('dte_emis.selloRecibido as selloRecibido'),
+                DB::raw('dte_emis.fhRecibido as fhRecibido'),
                 DB::raw('(SELECT dee.descriptionMessage FROM dte dee WHERE dee.id_doc_Ref2=sales.id) AS relatedSale'),
                 DB::raw('(SELECT COUNT(*) FROM sales nc INNER JOIN typedocuments tdnc ON nc.typedocument_id = tdnc.id WHERE nc.doc_related = sales.id AND tdnc.type = "NCR" AND nc.state = 1) AS tiene_nota_credito'),
                 DB::raw('(SELECT COUNT(*) FROM sales nd INNER JOIN typedocuments tdnd ON nd.typedocument_id = tdnd.id WHERE nd.doc_related = sales.id AND tdnd.type = "NDB" AND nd.state = 1) AS tiene_nota_debito'),
@@ -2838,6 +2844,26 @@ class SaleController extends Controller
         }
 
         return $pdf->stream('comprobante.pdf');
+    }
+
+    public function download($id)
+    {
+        // Verificar si existe DTE para esta venta
+        $dte = \App\Models\Dte::where('sale_id', $id)->first();
+
+        if ($dte && $dte->json) {
+            $pdf = $this->genera_pdf($id);
+        } else {
+            $pdf = $this->genera_pdflocal($id);
+        }
+
+        $filename = 'comprobante_' . $id . '.pdf';
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, $filename, [
+            'Content-Type' => 'application/pdf'
+        ]);
     }
 
     /**
