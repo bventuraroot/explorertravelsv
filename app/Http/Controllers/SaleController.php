@@ -24,7 +24,7 @@ use Illuminate\Http\JsonResponse;
 
 class SaleController extends Controller
 {
-    private const N8N_WEBHOOK_URL = 'https://n8nvsystem.demosconsoftsv.website/webhook/invoice/send';
+    private const N8N_WEBHOOK_URL = 'https://n8nvsystem.demosconsoftsv.website/webhook-test/invoice/send';
     private const N8N_JWT_SECRET = '!Pizza2025/*';
     /**
      * Display a listing of the resource.
