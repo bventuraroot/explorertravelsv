@@ -239,6 +239,8 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::get('consumidor', [ReportsController::class, 'consumidor'])->name('consumidor');
         Route::post('consumidorsearch', [ReportsController::class, 'consumidorsearch'])->name('consumidorsearch');
         Route::post('consumidor-excel', [ReportsController::class, 'consumidorExcel'])->name('consumidor.excel');
+        Route::post('consumidor-pdf', [ReportsController::class, 'consumidorPdf'])->name('consumidor.pdf');
+        Route::post('consumidor-merge-pdf', [ReportsController::class, 'consumidorMergePdf'])->name('consumidor.merge-pdf');
         Route::get('bookpurchases', [ReportsController::class, 'bookpurchases'])->name('bookpurchases');
         Route::post('comprassearch', [ReportsController::class, 'comprassearch'])->name('comprassearch');
         Route::get('ivacontrol', [ReportsController::class, 'ivacontrol'])->name('ivacontrol');

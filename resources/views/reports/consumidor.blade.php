@@ -89,6 +89,66 @@ $(document).ready(function() {
         form.submit();
         form.remove();
     });
+
+    // Exportar a PDF (Libro Consumidor)
+    $('#btn-export-pdf').on('click', function() {
+        var company = $('#company').val();
+        var year = $('#year').val();
+        var period = $('#period').val();
+
+        if (!company) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor, primero realiza una búsqueda para generar el reporte.'
+            });
+            return;
+        }
+
+        var form = $('<form>', {
+            'method': 'POST',
+            'action': '{{ route("report.consumidor.pdf") }}'
+        });
+
+        form.append($('<input>', { 'type': 'hidden', 'name': '_token', 'value': '{{ csrf_token() }}' }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'company', 'value': company }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'year', 'value': year }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'period', 'value': period }));
+
+        $('body').append(form);
+        form.submit();
+        form.remove();
+    });
+
+    // Concatenar PDFs individuales de cada documento
+    $('#btn-merge-pdf').on('click', function() {
+        var company = $('#company').val();
+        var year = $('#year').val();
+        var period = $('#period').val();
+
+        if (!company) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor, primero realiza una búsqueda para generar el reporte.'
+            });
+            return;
+        }
+
+        var form = $('<form>', {
+            'method': 'POST',
+            'action': '{{ route("report.consumidor.merge-pdf") }}'
+        });
+
+        form.append($('<input>', { 'type': 'hidden', 'name': '_token', 'value': '{{ csrf_token() }}' }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'company', 'value': company }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'year', 'value': year }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'period', 'value': period }));
+
+        $('body').append(form);
+        form.submit();
+        form.remove();
+    });
 });
 </script>
 @endsection
@@ -175,6 +235,14 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
             <div class="box-header" style="text-align: right; margin-right: 6%;">
                 <button type="button" class='btn btn-primary' title='Exportar a Excel' id="btn-export-excel">
                     <i class="fa-solid fa-file-excel"></i> &nbsp;&nbsp;Exportar a Excel
+                </button>
+                &nbsp;
+                <button type="button" class='btn btn-danger' title='Exportar a PDF' id="btn-export-pdf">
+                    <i class="fa-solid fa-file-pdf"></i> &nbsp;&nbsp;Exportar a PDF
+                </button>
+                &nbsp;
+                <button type="button" class='btn btn-warning' title='Concatenar PDFs de documentos' id="btn-merge-pdf">
+                    <i class="fa-solid fa-file-pdf"></i> &nbsp;&nbsp;Unir PDFs de documentos
                 </button>
                 &nbsp;
                 <a href="#!" class='btn btn-success' title='Imprimir credito' onclick="impFAC('areaImprimir');">

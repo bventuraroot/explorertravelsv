@@ -679,6 +679,140 @@ class ReportsController extends Controller
     }
 
     /**
+     * Exportar reporte de consumidor a PDF (libro tipo tabla)
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function consumidorPdf(Request $request){
+        $Company = Company::find($request['company']);
+        $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
+        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->select('*','sales.id AS correlativo',
+        'clients.ncr AS ncrC',
+        'dte.id_doc AS numeroControl',
+        'dte.codigoGeneracion AS codigoGeneracion',
+        'dte.selloRecibido AS selloRecibido')
+        ->selectRaw("CASE
+            WHEN dte.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
+            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
+        END AS dateF ")
+        ->selectRaw('(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta')
+        ->selectRaw('(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada')
+        ->selectRaw('(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta')
+        ->selectRaw('(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva')
+        ->where('sales.typedocument_id', '=', '6')
+        ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
+        ->whereRaw('YEAR(sales.date)=?', $request['year'])
+        ->whereRaw('MONTH(sales.date)=?', $request['period'])
+        ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
+        ->where('sales.company_id', '=', $request['company'])
+        ->where(function($query) {
+            $query->whereNull('dte.codEstado')
+                  ->orWhere('dte.codEstado', '=', '02');
+        })
+        ->orderBy('sales.id')
+        ->get();
+
+        $mesesDelAno = array(
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        );
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->set_option('isHtml5ParserEnabled', true);
+        $pdf->set_option('isRemoteEnabled', true);
+        $pdf->setPaper('letter', 'portrait');
+        $pdf->getDomPDF()->set_option('enable_php', true);
+        $pdf->loadView('pdf.documentos.ventas_consumidor_tabla_pdf', [
+            'heading' => $Company,
+            'yearB' => $request['year'],
+            'period' => $request['period'],
+            'sales' => $sales,
+            'mesNombre' => $mesesDelAno[(int)$request['period']-1]
+        ]);
+
+        $filename = 'Ventas_Consumidor_' . $mesesDelAno[(int)$request['period']-1] . '_' . $request['year'] . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Concatenar PDFs de cada documento de venta del reporte de consumidor
+     * y devolver un único PDF combinado
+     */
+    public function consumidorMergePdf(Request $request){
+        $Company = Company::find($request['company']);
+        $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
+        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->select('*','sales.id AS correlativo')
+        ->where('sales.typedocument_id', '=', '6')
+        ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
+        ->whereRaw('YEAR(sales.date)=?', $request['year'])
+        ->whereRaw('MONTH(sales.date)=?', $request['period'])
+        ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
+        ->where('sales.company_id', '=', $request['company'])
+        ->where(function($query) {
+            $query->whereNull('dte.codEstado')
+                  ->orWhere('dte.codEstado', '=', '02');
+        })
+        ->orderBy('sales.id')
+        ->get();
+
+        // Verificar librería de merge
+        $mergerClass = '\\iio\\libmergepdf\\Merger';
+        if (!class_exists($mergerClass)) {
+            return response('Falta la dependencia iio/libmergepdf. Instala con: composer require iio/libmergepdf', 500)
+                ->header('Content-Type', 'text/plain');
+        }
+
+        $merger = new $mergerClass();
+
+        // Generar cada PDF y añadirlo al merger
+        $saleController = app(SaleController::class);
+        foreach ($sales as $sale) {
+            // Omitir documentos anulados
+            if (isset($sale['typesale']) && $sale['typesale'] === '0') {
+                continue;
+            }
+            $saleId = $sale['correlativo'];
+            // Se usa versión local del PDF para evitar dependencias remotas
+            try {
+                if (method_exists($saleController, 'genera_pdflocal')) {
+                    $pdf = $saleController->genera_pdflocal($saleId);
+                } else {
+                    $pdf = $saleController->genera_pdf($saleId);
+                }
+                $merger->addRaw($pdf->output());
+            } catch (\Throwable $e) {
+                // Si un documento falla, se omite y continúa con los demás
+                continue;
+            }
+        }
+
+        $mesesDelAno = array(
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        );
+        $filename = 'Ventas_Consumidor_Documentos_' . $mesesDelAno[(int)$request['period']-1] . '_' . $request['year'] . '.pdf';
+
+        try {
+            $combined = $merger->merge();
+        } catch (\Throwable $e) {
+            return response('Error al unir PDFs: ' . $e->getMessage(), 500)
+                ->header('Content-Type', 'text/plain');
+        }
+
+        return response()->streamDownload(function () use ($combined) {
+            echo $combined;
+        }, $filename, [
+            'Content-Type' => 'application/pdf'
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response

@@ -9,6 +9,7 @@
         "barryvdh/laravel-dompdf": "^2.0",
         "doctrine/dbal": "^3.0",
         "guzzlehttp/guzzle": "^7.2",
+        "iio/libmergepdf": "^4.0",
         "intervention/image": "^3.11",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
