@@ -235,6 +235,7 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::post('yearsearch', [ReportsController::class, 'yearsearch'])->name('yearsearch');
         Route::post('contribusearch', [ReportsController::class, 'contribusearch'])->name('contribusearch');
         Route::post('contribuyentes-excel', [ReportsController::class, 'contribuyentesExcel'])->name('contribuyentes.excel');
+        Route::post('contribuyentes-merge-pdf', [ReportsController::class, 'contribuyentesMergePdf'])->name('contribuyentes.merge-pdf');
         Route::get('directas', [ReportsController::class, 'directas'])->name('directas');
         Route::get('consumidor', [ReportsController::class, 'consumidor'])->name('consumidor');
         Route::post('consumidorsearch', [ReportsController::class, 'consumidorsearch'])->name('consumidorsearch');

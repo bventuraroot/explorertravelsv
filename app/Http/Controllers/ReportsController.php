@@ -813,6 +813,70 @@ class ReportsController extends Controller
     }
 
     /**
+     * Concatenar PDFs de cada documento de venta del reporte de contribuyentes (typedocument 3)
+     * y devolver un único PDF combinado
+     */
+    public function contribuyentesMergePdf(Request $request){
+        $Company = Company::find($request['company']);
+        $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
+        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->select('*','sales.id AS correlativo')
+        ->where('sales.typedocument_id', '=', '3')
+        ->whereRaw('YEAR(sales.date)=?', $request['year'])
+        ->whereRaw('MONTH(sales.date)=?', $request['period'])
+        ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
+        ->where('sales.company_id', '=', $request['company'])
+        // Solo incluir DTE enviados exitosamente
+        ->where('dte.codEstado', '=', '02')
+        ->orderBy('sales.id')
+        ->get();
+
+        $mergerClass = '\\iio\\libmergepdf\\Merger';
+        if (!class_exists($mergerClass)) {
+            return response('Falta la dependencia iio/libmergepdf. Instala con: composer require iio/libmergepdf', 500)
+                ->header('Content-Type', 'text/plain');
+        }
+        $merger = new $mergerClass();
+
+        $saleController = app(SaleController::class);
+        foreach ($sales as $sale) {
+            if (isset($sale['typesale']) && $sale['typesale'] === '0') {
+                continue;
+            }
+            $saleId = $sale['correlativo'];
+            try {
+                if (method_exists($saleController, 'genera_pdflocal')) {
+                    $pdf = $saleController->genera_pdflocal($saleId);
+                } else {
+                    $pdf = $saleController->genera_pdf($saleId);
+                }
+                $merger->addRaw($pdf->output());
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+
+        $mesesDelAno = array(
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        );
+        $filename = 'Ventas_Contribuyentes_Documentos_' . $mesesDelAno[(int)$request['period']-1] . '_' . $request['year'] . '.pdf';
+
+        try {
+            $combined = $merger->merge();
+        } catch (\Throwable $e) {
+            return response('Error al unir PDFs: ' . $e->getMessage(), 500)
+                ->header('Content-Type', 'text/plain');
+        }
+
+        return response()->streamDownload(function () use ($combined) {
+            echo $combined;
+        }, $filename, [
+            'Content-Type' => 'application/pdf'
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
