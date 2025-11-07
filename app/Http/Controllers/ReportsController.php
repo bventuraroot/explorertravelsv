@@ -183,10 +183,43 @@ class ReportsController extends Controller
             THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
+        ->selectRaw("CASE
+            WHEN clients.tpersona = 'J' THEN clients.comercial_name
+            WHEN clients.tpersona = 'N' THEN CONCAT_WS(' ', clients.firstname, clients.secondname, clients.firstlastname, clients.secondlastname)
+            ELSE ''
+        END AS nombre_completo")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
         ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
+        ->selectRaw("(SELECT 
+            COALESCE(SUM(sd.fee), 0) + 
+            COALESCE(SUM(CASE 
+                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN 
+                    CASE 
+                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN 
+                            (sd.pricesale + sd.nosujeta + sd.exempt) / 1.13
+                        ELSE 0
+                    END
+                ELSE 0
+            END), 0)
+        FROM salesdetails AS sd 
+        LEFT JOIN products AS p ON p.id = sd.product_id
+        WHERE sd.sale_id = sales.id) AS fee")
+        ->selectRaw("(SELECT 
+            COALESCE(SUM(sd.feeiva), 0) + 
+            COALESCE(SUM(CASE 
+                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN 
+                    CASE 
+                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN 
+                            ((sd.pricesale + sd.nosujeta + sd.exempt) / 1.13) * 0.13
+                        ELSE 0
+                    END
+                ELSE 0
+            END), 0)
+        FROM salesdetails AS sd 
+        LEFT JOIN products AS p ON p.id = sd.product_id
+        WHERE sd.sale_id = sales.id) AS ivafee")
         ->where('sales.typedocument_id', "=", "6")
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -509,10 +542,43 @@ class ReportsController extends Controller
             THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
+        ->selectRaw("CASE
+            WHEN clients.tpersona = 'J' THEN clients.comercial_name
+            WHEN clients.tpersona = 'N' THEN CONCAT_WS(' ', clients.firstname, clients.secondname, clients.firstlastname, clients.secondlastname)
+            ELSE ''
+        END AS nombre_completo")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
         ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
         ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
+        ->selectRaw("(SELECT 
+            COALESCE(SUM(sd.fee), 0) + 
+            COALESCE(SUM(CASE 
+                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN 
+                    CASE 
+                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN 
+                            (sd.pricesale + sd.nosujeta + sd.exempt) / 1.13
+                        ELSE 0
+                    END
+                ELSE 0
+            END), 0)
+        FROM salesdetails AS sd 
+        LEFT JOIN products AS p ON p.id = sd.product_id
+        WHERE sd.sale_id = sales.id) AS fee")
+        ->selectRaw("(SELECT 
+            COALESCE(SUM(sd.feeiva), 0) + 
+            COALESCE(SUM(CASE 
+                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN 
+                    CASE 
+                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN 
+                            ((sd.pricesale + sd.nosujeta + sd.exempt) / 1.13) * 0.13
+                        ELSE 0
+                    END
+                ELSE 0
+            END), 0)
+        FROM salesdetails AS sd 
+        LEFT JOIN products AS p ON p.id = sd.product_id
+        WHERE sd.sale_id = sales.id) AS ivafee")
         ->where('sales.typedocument_id', "=", "6")
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -545,8 +611,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="12" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
-        $html .= '<tr><td colspan="12" style="text-align:center;">';
+        $html .= '<tr><th colspan="14" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
+        $html .= '<tr><td colspan="14" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>MES:</b> ' . $mesesDelAnoMayuscula[(int)$request['period']-1] . ' ';
@@ -563,6 +629,8 @@ class ReportsController extends Controller
         $html .= '<th>NO SUJETAS</th>';
         $html .= '<th>INTERNAS GRAVADAS</th>';
         $html .= '<th>DEBITO FISCAL</th>';
+        $html .= '<th>FEE</th>';
+        $html .= '<th>IVA FEE</th>';
         $html .= '<th>VENTA TOTAL</th>';
         $html .= '<th>NÚMERO CONTROL DTE</th>';
         $html .= '<th>CÓDIGO GENERACIÓN</th>';
@@ -575,6 +643,8 @@ class ReportsController extends Controller
         $tot_debfiscal = 0;
         $tot_nosujetas = 0;
         $tot_final = 0;
+        $tot_fee = 0;
+        $tot_ivafee = 0;
         $i = 1;
 
         foreach ($sales as $sale) {
@@ -583,15 +653,11 @@ class ReportsController extends Controller
             $html .= '<td>' . $sale['dateF'] . '</td>';
             $html .= '<td>' . ($sale['correlativo'] ?? '-') . '</td>';
 
-            // Nombre del cliente
+            // Nombre del cliente completo
             if($sale['typesale']=='0'){
                 $html .= '<td>ANULADO</td>';
             } else {
-                if($sale['tpersona']=='J'){
-                    $html .= '<td>' . strtoupper($sale['comercial_name']) . '</td>';
-                } else {
-                    $html .= '<td>' . strtoupper($sale['firstname'] . ' ' . $sale['firstlastname']) . '</td>';
-                }
+                $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
 
             if($sale['typesale']=='0'){
@@ -600,17 +666,26 @@ class ReportsController extends Controller
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
             } else {
+                $fee = $sale['fee'] ?? 0;
+                $ivafee = $sale['ivafee'] ?? 0;
+                
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($fee, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($ivafee, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'], 2, '.', '') . '</td>';
 
                 $tot_exentas += $sale['exenta'];
                 $tot_nosujetas += $sale['nosujeta'];
                 $tot_int_grav += $sale['gravada'];
                 $tot_debfiscal += $sale['iva'];
+                $tot_fee += $fee;
+                $tot_ivafee += $ivafee;
                 $tot_final += $sale['totalamount'];
             }
 
@@ -628,17 +703,19 @@ class ReportsController extends Controller
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_nosujetas, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_debfiscal, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_fee, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_ivafee, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_final, 2, '.', '') . '</td>';
         $html .= '<td>-</td><td>-</td><td>-</td>';
         $html .= '</tr>';
 
         // Liquidación del débito fiscal
-        $html .= '<tr><td colspan="12" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
+        $html .= '<tr><td colspan="14" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
 
         $html .= '<tr>';
         $html .= '<td colspan="6" style="text-align:right; font-weight:bold;">GRAVADAS, NO SUJETAS, EXENTAS, SIN IVA</td>';
         $html .= '<td colspan="2" style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_exentas + $tot_nosujetas, 2, '.', '') . '</td>';
-        $html .= '<td colspan="4"></td>';
+        $html .= '<td colspan="6"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -646,7 +723,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_exentas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">13 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="6"></td>';
+        $html .= '<td colspan="8"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -654,7 +731,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_nosujetas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">0 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-        $html .= '<td colspan="6"></td>';
+        $html .= '<td colspan="8"></td>';
         $html .= '</tr>';
 
         $html .= '<tr style="font-weight:bold;">';
@@ -662,7 +739,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">TOTAL</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="6"></td>';
+        $html .= '<td colspan="8"></td>';
         $html .= '</tr>';
 
         $html .= '</table>';

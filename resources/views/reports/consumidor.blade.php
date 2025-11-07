@@ -256,12 +256,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table" style="min-width: 1600px;">
             <thead>
                 <tr>
-                    <th class="text-center" colspan="13">
+                    <th class="text-center" colspan="15">
                         <b>LIBRO DE VENTAS CONSUMIDOR</b>
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="13">
+                    <td class="text-center" colspan="15">
                         <b>Nombre del Contribuyente: </b> <?php echo $heading['name']; ?>
                         <b>N.R.C.: </b> <?php echo $heading['ncr']; ?> <b>MES: </b><?php echo $mesesDelAnoMayuscula[(int)$period-1] ?>
                         <b>Año: </b> <?php echo $yearB; ?><p>(Valores expresados en Dolares Estadounidenses)</p>
@@ -279,6 +279,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right; width: 80px;">NO SUJETAS</td>
                     <td style="text-align: right; width: 100px;">INTERNAS GRAVADAS</td>
                     <td style="text-align: right; width: 80px;">DEBITO FISCAL</td>
+                    <td style="text-align: right; width: 80px;">FEE</td>
+                    <td style="text-align: right; width: 80px;">IVA FEE</td>
                     <td style="text-align: right; width: 80px;">VENTA TOTAL</td>
                     <td style="text-align: center; min-width: 200px;">NÚMERO CONTROL DTE</td>
                     <td style="text-align: center; min-width: 200px;">CÓDIGO GENERACIÓN</td>
@@ -295,6 +297,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         $tot_deb_fiscal2 = 0.00;
                         $tot_iva_percibido = 0.00;
                         $tot_final = 0.00;
+                        $tot_fee = 0.00;
+                        $tot_ivafee = 0.00;
                             ?>
                             @foreach ($sales as $sale)
                     <tr>
@@ -313,12 +317,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             @if($sale['typesale']=='0')
                             ANULADO
                             @else
-                            @if($sale['tpersona']=='J')
-                                {{$sale['comercial_name']}}
-                            @endif
-                            @if($sale['tpersona']=='N')
-                                {{$sale['firstname'] .' '.$sale['firstlastname'] }}
-                            @endif
+                                {{$sale['nombre_completo'] ?? ''}}
                         @endif
                         </td>
                         <td class="text-uppercase" style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
@@ -365,7 +364,28 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             ?>
 
                         </td>
-
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                            @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                             {{ number_format($sale['fee'] ?? 0, 2) }}
+                        @endif
+                            <?php
+                            $fee = $sale['fee'] ?? 0;
+                            $tot_fee += $fee;
+                            ?>
+                        </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                            @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                             {{ number_format($sale['ivafee'] ?? 0, 2) }}
+                        @endif
+                            <?php
+                            $ivafee = $sale['ivafee'] ?? 0;
+                            $tot_ivafee += $ivafee;
+                            ?>
+                        </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
                             ANULADO
@@ -428,6 +448,16 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                     <td class="text-center">
                     <?php
+                    echo number_format($tot_fee,2);
+                    ?>
+                    </td>
+                    <td class="text-center">
+                    <?php
+                    echo number_format($tot_ivafee,2);
+                    ?>
+                    </td>
+                    <td class="text-center">
+                    <?php
                     echo number_format($tot_final,2);
                     ?>
                     </td>
@@ -442,7 +472,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                 </tr>
                 <tr>
-                    <td colspan="13" style="text-align: center;">
+                    <td colspan="15" style="text-align: center;">
                         <br><br><b>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</b>
                     </td>
                 </tr>
@@ -453,7 +483,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td colspan="2" style="text-align: right;">
                         <?php echo number_format($tot_int_grav+$tot_exentas+$tot_nosujetas, 2); ?>
                     </td>
-                    <td colspan="5"></td>
+                    <td colspan="7"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -468,7 +498,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right;">
                         <?php echo number_format($tot_debfiscal, 2); ?>
                     </td>
-                    <td colspan="7"></td>
+                    <td colspan="9"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -483,7 +513,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: right;">
                         0.00
                     </td>
-                    <td colspan="7"></td>
+                    <td colspan="9"></td>
                 </tr>
                 <tr>
                     <td colspan="3">
@@ -501,7 +531,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         echo number_format($totales, 2);
                         ?>
                     </td>
-                    <td colspan="7"></td>
+                    <td colspan="9"></td>
                 </tr>
             </tbody>
         </table>
