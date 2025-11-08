@@ -158,11 +158,6 @@ class PermissionController extends Controller
                         "slug" => "report.contribuyentes"
                     ],
                     [
-                        "url" => "/report/directas",
-                        "name" => "Ventas Directas",
-                        "slug" => "report.directas"
-                    ],
-                    [
                         "url" => "/report/consumidor",
                         "name" => "Ventas Consumidor",
                         "slug" => "report.consumidor"

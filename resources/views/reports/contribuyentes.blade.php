@@ -225,12 +225,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table" style="min-width: 1800px;">
             <thead style="font-size: 13px;">
                 <tr>
-                    <th class="text-center" colspan="17">
+                    <th class="text-center" colspan="19">
                         LIBRO DE VENTAS CONTRIBUYENTES (Valores expresados en USD)
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="17" style="font-size: 13px;">
+                    <td class="text-center" colspan="19" style="font-size: 13px;">
                         <b>Nombre del Contribuyente:</b>
                         <?php echo $heading['name']; ?> &nbsp;&nbsp;<b>N.R.C.:</b>
                         <?php echo $heading['nrc']; ?> &nbsp;&nbsp;<b>NIT:</b>&nbsp;
@@ -241,7 +241,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 </tr>
                 <tr>
                     <td colspan="7"></td>
-                    <td colspan="3" class="text-right" style="font-size: 11px;">
+                    <td colspan="4" class="text-right" style="font-size: 11px;">
                         <b>VENTAS PROPIAS</b>
                     </td>
                     <td colspan="3" class="text-left" style="font-size: 11px;">
@@ -257,6 +257,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Exentas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 100px;"><b>Internas <br>Gravadas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Debito<br>Fiscal</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>FEE</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA FEE</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>No<br>Sujetas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Exentas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 100px;"><b>Internas<br>Gravadas</b></td>
@@ -279,6 +281,8 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     $tot_final = 0;
                     $vto = 0;
                     $total_iva2P = 0;
+                    $tot_fee = 0;
+                    $tot_ivafee = 0;
                     $i = 1;
                 ?>
                 @foreach ($sales as $sale)
@@ -300,12 +304,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @if($sale['typesale']=='0')
                             ANULADO
                             @else
-                            @if($sale['tpersona']=='J')
-                                {{$sale['comercial_name']}}
-                            @endif
-                            @if($sale['tpersona']=='N')
-                                {{$sale['firstname'] .' '.$sale['firstlastname'] }}
-                            @endif
+                                {{$sale['nombre_completo'] ?? ''}}
                         @endif
 
                     </td>
@@ -346,6 +345,30 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         $total_iva = $total_iva + $sale['iva'];
                             ?>
 
+                    </td>
+                    <td
+                        style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                             {{ number_format($sale['fee'] ?? 0, 2) }}
+                        @endif
+                        <?php
+                        $fee = $sale['fee'] ?? 0;
+                        $tot_fee += $fee;
+                        ?>
+                    </td>
+                    <td
+                        style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        @if($sale['typesale']=='0')
+                            ANULADO
+                            @else
+                             {{ number_format($sale['ivafee'] ?? 0, 2) }}
+                        @endif
+                        <?php
+                        $ivafee = $sale['ivafee'] ?? 0;
+                        $tot_ivafee += $ivafee;
+                        ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
@@ -461,6 +484,20 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         <b>
                             <?php
                                 echo number_format($total_iva,2);
+                            ?>
+                        </b>
+                    </td>
+                    <td style="font-size: 10px;">
+                        <b>
+                            <?php
+                                echo number_format($tot_fee,2);
+                            ?>
+                        </b>
+                    </td>
+                    <td style="font-size: 10px;">
+                        <b>
+                            <?php
+                                echo number_format($tot_ivafee,2);
                             ?>
                         </b>
                     </td>
