@@ -189,9 +189,41 @@ class ReportsController extends Controller
             ELSE ''
         END AS nombre_completo")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
-        ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
+        ->selectRaw("(SELECT
+            COALESCE(SUM(sdg.pricesale), 0) -
+            (SELECT
+                COALESCE(SUM(sd.fee), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
+                        CASE
+                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
+                                (sd.pricesale + sd.nosujeta + sd.exempt)
+                            ELSE 0
+                        END
+                    ELSE 0
+                END), 0)
+            FROM salesdetails AS sd
+            LEFT JOIN products AS p ON p.id = sd.product_id
+            WHERE sd.sale_id = sales.id)
+        FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
-        ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
+        ->selectRaw("(SELECT
+            COALESCE(SUM(sdi.detained13), 0) -
+            (SELECT
+                COALESCE(SUM(sd.feeiva), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
+                        CASE
+                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
+                                (sd.detained13)
+                            ELSE 0
+                        END
+                    ELSE 0
+                END), 0)
+            FROM salesdetails AS sd
+            LEFT JOIN products AS p ON p.id = sd.product_id
+            WHERE sd.sale_id = sales.id)
+        FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
             COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
@@ -548,16 +580,48 @@ class ReportsController extends Controller
             ELSE ''
         END AS nombre_completo")
         ->selectRaw("(SELECT SUM(sde.exempt) FROM salesdetails AS sde WHERE sde.sale_id=sales.id) AS exenta")
-        ->selectRaw("(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
+        ->selectRaw("(SELECT
+            COALESCE(SUM(sdg.pricesale), 0) -
+            (SELECT
+                COALESCE(SUM(sd.fee), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
+                        CASE
+                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
+                                (sd.pricesale + sd.nosujeta + sd.exempt)
+                            ELSE 0
+                        END
+                    ELSE 0
+                END), 0)
+            FROM salesdetails AS sd
+            LEFT JOIN products AS p ON p.id = sd.product_id
+            WHERE sd.sale_id = sales.id)
+        FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada")
         ->selectRaw("(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta")
-        ->selectRaw("(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
+        ->selectRaw("(SELECT
+            COALESCE(SUM(sdi.detained13), 0) -
+            (SELECT
+                COALESCE(SUM(sd.feeiva), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
+                        CASE
+                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
+                                (sd.detained13)
+                            ELSE 0
+                        END
+                    ELSE 0
+                END), 0)
+            FROM salesdetails AS sd
+            LEFT JOIN products AS p ON p.id = sd.product_id
+            WHERE sd.sale_id = sales.id)
+        FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
             COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
                 WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
                     CASE
                         WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.pricesale + sd.nosujeta + sd.exempt) / 1.13
+                            (sd.pricesale + sd.nosujeta + sd.exempt)
                         ELSE 0
                     END
                 ELSE 0
@@ -571,7 +635,7 @@ class ReportsController extends Controller
                 WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
                     CASE
                         WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            ((sd.pricesale + sd.nosujeta + sd.exempt) / 1.13) * 0.13
+                            (sd.detained13)
                         ELSE 0
                     END
                 ELSE 0
