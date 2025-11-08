@@ -100,14 +100,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdg.pricesale), 0) -
             (SELECT
-                COALESCE(SUM(sd.fee), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.pricesale + sd.nosujeta + sd.exempt)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.pricesale + sd.nosujeta + sd.exempt)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -118,14 +117,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdi.detained13), 0) -
             (SELECT
-                COALESCE(SUM(sd.feeiva), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.detained13)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.detained13)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -133,28 +131,26 @@ class ReportsController extends Controller
             WHERE sd.sale_id = sales.id)
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.pricesale + sd.nosujeta + sd.exempt)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.pricesale + sd.nosujeta + sd.exempt)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS fee")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.feeiva), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.detained13)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.detained13)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
@@ -257,14 +253,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdg.pricesale), 0) -
             (SELECT
-                COALESCE(SUM(sd.fee), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.pricesale + sd.nosujeta + sd.exempt)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.pricesale + sd.nosujeta + sd.exempt)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -275,14 +270,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdi.detained13), 0) -
             (SELECT
-                COALESCE(SUM(sd.feeiva), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.detained13)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.detained13)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -290,33 +284,33 @@ class ReportsController extends Controller
             WHERE sd.sale_id = sales.id)
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.pricesale + sd.nosujeta + sd.exempt)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.pricesale + sd.nosujeta + sd.exempt)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS fee")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.feeiva), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.detained13)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.detained13)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS ivafee")
+        ->selectRaw("(SELECT SUM(sdret.detained) FROM salesdetails AS sdret WHERE sdret.sale_id=sales.id) AS iva_retenido")
+        ->selectRaw("(SELECT SUM(sdper.detainedP) FROM salesdetails AS sdper WHERE sdper.sale_id=sales.id) AS iva_percibido")
         ->where('sales.typedocument_id', "=", "6")
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -470,14 +464,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdg.pricesale), 0) -
             (SELECT
-                COALESCE(SUM(sd.fee), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.pricesale + sd.nosujeta + sd.exempt)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.pricesale + sd.nosujeta + sd.exempt)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -488,14 +481,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdi.detained13), 0) -
             (SELECT
-                COALESCE(SUM(sd.feeiva), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.detained13)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.detained13)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -503,28 +495,26 @@ class ReportsController extends Controller
             WHERE sd.sale_id = sales.id)
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.pricesale + sd.nosujeta + sd.exempt)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.pricesale + sd.nosujeta + sd.exempt)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS fee")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.feeiva), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.detained13)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.detained13)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
@@ -724,14 +714,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdg.pricesale), 0) -
             (SELECT
-                COALESCE(SUM(sd.fee), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.pricesale + sd.nosujeta + sd.exempt)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.pricesale + sd.nosujeta + sd.exempt)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -742,14 +731,13 @@ class ReportsController extends Controller
         ->selectRaw("(SELECT
             COALESCE(SUM(sdi.detained13), 0) -
             (SELECT
-                COALESCE(SUM(sd.feeiva), 0) +
                 COALESCE(SUM(CASE
-                    WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                        CASE
-                            WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                                (sd.detained13)
-                            ELSE 0
-                        END
+                    WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                    ELSE 0
+                END), 0) +
+                COALESCE(SUM(CASE
+                    WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                        (sd.detained13)
                     ELSE 0
                 END), 0)
             FROM salesdetails AS sd
@@ -757,33 +745,33 @@ class ReportsController extends Controller
             WHERE sd.sale_id = sales.id)
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.fee), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.pricesale + sd.nosujeta + sd.exempt)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.fee
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.pricesale + sd.nosujeta + sd.exempt)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS fee")
         ->selectRaw("(SELECT
-            COALESCE(SUM(sd.feeiva), 0) +
             COALESCE(SUM(CASE
-                WHEN p.name IN ('Cargo administrativo', 'CXS') THEN
-                    CASE
-                        WHEN (sd.pricesale + sd.nosujeta + sd.exempt) > 0 THEN
-                            (sd.detained13)
-                        ELSE 0
-                    END
+                WHEN sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN sd.feeiva
+                ELSE 0
+            END), 0) +
+            COALESCE(SUM(CASE
+                WHEN p.name IN ('Cargo administrativo', 'CXS') AND sd.pricesale > 0 AND (sd.exempt = 0 OR sd.exempt IS NULL) AND (sd.nosujeta = 0 OR sd.nosujeta IS NULL) THEN
+                    (sd.detained13)
                 ELSE 0
             END), 0)
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS ivafee")
+        ->selectRaw("(SELECT SUM(sdret.detained) FROM salesdetails AS sdret WHERE sdret.sale_id=sales.id) AS iva_retenido")
+        ->selectRaw("(SELECT SUM(sdper.detainedP) FROM salesdetails AS sdper WHERE sdper.sale_id=sales.id) AS iva_percibido")
         ->where('sales.typedocument_id', "=", "6")
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -816,8 +804,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="14" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
-        $html .= '<tr><td colspan="14" style="text-align:center;">';
+        $html .= '<tr><th colspan="16" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
+        $html .= '<tr><td colspan="16" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>MES:</b> ' . $mesesDelAnoMayuscula[(int)$request['period']-1] . ' ';
@@ -836,6 +824,8 @@ class ReportsController extends Controller
         $html .= '<th>DEBITO FISCAL</th>';
         $html .= '<th>FEE</th>';
         $html .= '<th>IVA FEE</th>';
+        $html .= '<th>IVA RETENIDO</th>';
+        $html .= '<th>IVA PERCIBIDO</th>';
         $html .= '<th>VENTA TOTAL</th>';
         $html .= '<th>NÚMERO CONTROL DTE</th>';
         $html .= '<th>CÓDIGO GENERACIÓN</th>';
@@ -850,6 +840,8 @@ class ReportsController extends Controller
         $tot_final = 0;
         $tot_fee = 0;
         $tot_ivafee = 0;
+        $tot_iva_retenido = 0;
+        $tot_iva_percibido = 0;
         $i = 1;
 
         foreach ($sales as $sale) {
@@ -873,9 +865,13 @@ class ReportsController extends Controller
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
+                $iva_retenido = $sale['iva_retenido'] ?? 0;
+                $iva_percibido = $sale['iva_percibido'] ?? 0;
 
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'], 2, '.', '') . '</td>';
@@ -883,6 +879,8 @@ class ReportsController extends Controller
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($fee, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($ivafee, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($iva_retenido, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($iva_percibido, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'], 2, '.', '') . '</td>';
 
                 $tot_exentas += $sale['exenta'];
@@ -891,6 +889,8 @@ class ReportsController extends Controller
                 $tot_debfiscal += $sale['iva'];
                 $tot_fee += $fee;
                 $tot_ivafee += $ivafee;
+                $tot_iva_retenido += $iva_retenido;
+                $tot_iva_percibido += $iva_percibido;
                 $tot_final += $sale['totalamount'];
             }
 
@@ -910,17 +910,19 @@ class ReportsController extends Controller
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_debfiscal, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_fee, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_ivafee, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_retenido, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_percibido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_final, 2, '.', '') . '</td>';
         $html .= '<td>-</td><td>-</td><td>-</td>';
         $html .= '</tr>';
 
         // Liquidación del débito fiscal
-        $html .= '<tr><td colspan="14" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
+        $html .= '<tr><td colspan="16" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
 
         $html .= '<tr>';
         $html .= '<td colspan="6" style="text-align:right; font-weight:bold;">GRAVADAS, NO SUJETAS, EXENTAS, SIN IVA</td>';
         $html .= '<td colspan="2" style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_exentas + $tot_nosujetas, 2, '.', '') . '</td>';
-        $html .= '<td colspan="6"></td>';
+        $html .= '<td colspan="8"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -928,7 +930,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_exentas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">13 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="8"></td>';
+        $html .= '<td colspan="10"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -936,7 +938,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_nosujetas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">0 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-        $html .= '<td colspan="8"></td>';
+        $html .= '<td colspan="10"></td>';
         $html .= '</tr>';
 
         $html .= '<tr style="font-weight:bold;">';
@@ -944,7 +946,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">TOTAL</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="8"></td>';
+        $html .= '<td colspan="10"></td>';
         $html .= '</tr>';
 
         $html .= '</table>';
