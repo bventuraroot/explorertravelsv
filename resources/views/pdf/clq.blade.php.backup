@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Liquidación</title>
+
+    <style type="text/css">
+        * {
+            font-family: Verdana, Arial, sans-serif;
+        }
+
+        table {
+            font-size: xx-small;
+        }
+
+        tfoot tr td {
+            font-weight: bold;
+            font-size: xx-small;
+        }
+
+        .gray {
+            background-color: lightgray
+        }
+
+        .cuadro{
+            border:1px solid #000;
+            border-spacing: 0 0;
+            padding: 0;
+        }
+        .cuadro-izq{
+        border-left:1px solid #000;
+        border-spacing: 0 0;
+
+        }
+        .sumas{
+        border-left:1px solid #000;
+        border-bottom:1px solid #000;
+        border-spacing: 0 0;
+        margin: 0;
+
+        }
+        #watermark {
+        position: fixed;
+
+        bottom: 5cm;
+        left: 6.5cm;
+
+        width: 8cm;
+        height: 8cm;
+
+        -webkit-transform: rotate(-45deg);
+        -moz-transform: rotate(-45deg);
+        -ms-transform: rotate(-45deg);
+        -o-transform: rotate(-45deg);
+        transform: rotate(-45deg);
+
+        -webkit-transform-origin: 50% 50%;
+        -moz-transform-origin: 50% 50%;
+        -ms-transform-origin: 50% 50%;
+        -o-transform-origin: 50% 50%;
+        transform-origin: 50% 50%;
+
+        font-size: 100px;
+        width: 250px;
+
+        z-index: 1000;
+        }
+    </style>
+
+</head>
+
+<body>
+    @if ($codTransaccion == "02")
+    <div id="watermark">
+        ANULADO
+    </div>
+    @endif
+<!-- Encabezado y QR -->
+    <table width="100%">
+        <tr valign="top">
+            <td width=45%>
+                <table width="100%">
+                    <tr>
+                        <td>
+                            <img src="{{ logo_pdf($emisor[0]['nrc'] ?? ($emisor[0]['ncr'] ?? '')) }}" alt="logo" width="120px" style="display: block; margin: 0 auto; object-fit: contain;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: x-small;">
+                            <strong>{{$emisor[0]["nombre"] ?? ($emisor[0]["nombreComercial"] ?? '')}}</strong>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>NIT: {{$emisor[0]["nit"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>NRC: {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
+                    </tr>
+                    <tr>
+                        <td>Actividad económica: {{$emisor[0]["descActividad"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dirección:</strong> 
+                            @if(isset($emisor[0]["direccion"]["complemento"]))
+                                {{$emisor[0]["direccion"]["complemento"]}}<br>
+                                {{$MunicipioE}}, {{$DepartamentoE}}
+                            @else
+                                {{$emisor[0]["direccion"] ?? ''}}<br>
+                                {{$MunicipioE}}, {{$DepartamentoE}}
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Número de teléfono: {{$emisor[0]["telefono"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Correo electrónico: {{$emisor[0]["correo"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Nombre comercial: {{$emisor[0]["nombreComercial"] ?? ''}}</td>
+                    </tr>
+                    <tr>
+                        <td>Tipo de establecimiento: Casa Matriz</td>
+                    </tr>
+
+                </table>
+            </td>
+            <td>
+                <table width="100%" style="border:1px solid #000;">
+                    <tr style="background-color: lightgray;">
+                        <td colspan="3" align="center" style="font-size: x-small;">
+                            <strong>DOCUMENTO TRIBUTARIO ELECTRÓNICO</strong><br>
+                            <strong>COMPROBANTE DE LIQUIDACIÓN</strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Código de Generación:</strong></td>
+                        <td colspan="2">{{ $json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? '') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sello de recepción:</strong></td>
+                        <td colspan="2">{{$json["selloRecibido"] ?? 'N/A'}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Número de Control:</strong></td>
+                        <td colspan="2">{{ $json["identificacion"]["numeroControl"] ?? ($json["numeroControl"] ?? '') }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modélo facturación:</strong></td>
+                        <td>Previo</td>
+                        <td><strong>Versión del Json:</strong> {{ $documento[0]["versionjson"] ?? ($documento[0]["versionJson"] ?? ($documento[0]["version"] ?? ($json["version"] ?? ''))) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tipo de transmisión</strong></td>
+                        <td>Normal</td>
+                        <td><strong>Fecha emisión:</strong> {{ isset($json["fhRecibido"]) ? date('d/m/Y', strtotime($json["fhRecibido"])) : (isset($json["identificacion"]["fecEmi"]) ? date('d/m/Y', strtotime($json["identificacion"]["fecEmi"])) : (isset($json["fecEmi"]) ? date('d/m/Y', strtotime($json["fecEmi"])) : '')) }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hora de emisión:</strong></td>
+                        <td>{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? ($json["horEmi"] ?? '')) }}</td>
+                        <td><strong>Documento interno No:</strong>{{$documento[0]["actual"] ?? ''}}</td>
+                    </tr>
+                    @if(isset($json["estadoHacienda"]))
+                    <tr>
+                        <td><strong>Estado Hacienda:</strong></td>
+                        <td colspan="2">{{$json["estadoHacienda"]}}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td colspan="3" align="center">
+                            <img src="data:image/png;base64,{{@$qr}}" alt="">
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+
+    </table>
+
+ <!-- Final de Encabezado y QR -->
+
+ <!-- Datos Receptor -->
+    <table width="100%" style="border-collapse:collapse;"">
+        <tr valign="top" >
+
+            <td width="480px">
+                <table width="100%" style="border-top:1px solid #000;">
+
+                    <tr>
+                        <td align="right" width="100px"><strong>Nombre:</strong></td>
+                        <td colspan="2" >{{$cliente[0]["nombre"] ?? ($json["receptor"]["nombre"] ?? '')}}  </td>
+                    </tr>
+                    <tr>
+                        <td align="right"><strong>Actividad económica:</strong></td>
+                        <td width="60%">{{$cliente[0]["descActividad"] ?? ($json["receptor"]["descActividad"] ?? '')}}</td>
+                        <td><strong>NIT:</strong> {{$cliente[0]["nit"] ?? ($json["receptor"]["nit"] ?? '')}}</td>
+                    </tr>
+                    <tr>
+                        <td align="right"><strong>Correo electrónico:</strong></td>
+                        <td>{{$cliente[0]["correo"] ?? ($json["receptor"]["correo"] ?? '')}}</td>
+                        <td><strong>NRC:</strong> {{$cliente[0]["nrc"] ?? ($cliente[0]["ncr"] ?? ($json["receptor"]["nrc"] ?? ($json["receptor"]["ncr"] ?? '')))}}</td>
+                    </tr>
+                    <tr>
+                        <td align="right"><strong>Dirección:</strong></td>
+                        <td>
+                            @if(isset($cliente[0]["direccion"]) && is_array($cliente[0]["direccion"]))
+                                {{$cliente[0]["direccion"]["complemento"] ?? ''}}
+                            @else
+                                {{$cliente[0]["direccion"] ?? ($json["receptor"]["direccion"]["complemento"] ?? '')}}
+                            @endif
+                        </td>
+                        <td><strong>Teléfono:</strong> {{$cliente[0]["telefono"] ?? ($json["receptor"]["telefono"] ?? '')}}</td>
+                    </tr>
+
+
+                    <tr>
+                        <td align="right"><strong>Municipio:</strong></td>
+                        <td>{{get_name_municipio($cliente[0]['direccion']['municipio'] ?? '') ?: $MunicipioR}}</td>
+                        <td><strong>Forma pago:</strong> @if(($totales['condicionOperacion'] ?? ($json["condicionOperacion"] ?? ''))=="01")
+                            CONTADO
+                            @elseif (($totales['condicionOperacion'] ?? ($json["condicionOperacion"] ?? ''))=="02")
+                            CREDITO
+                            @elseif (($totales['condicionOperacion'] ?? ($json["condicionOperacion"] ?? ''))=="03")
+                            OTRO
+                        @endif</td>
+                    </tr>
+                    <tr>
+                        <td align="right"><strong>Departamento:</strong></td>
+                        <td>{{get_name_departamento($cliente[0]['direccion']['departamento'] ?? '') ?: $DepartamentoR}}</td>
+                        <td><strong>Moneda:</strong>USD</td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+
+    </table>
+
+<!-- Datos Receptor -->
+
+<!-- Cuerpo de detalle -->
+    <br>
+    <table width="100%" style="border:1px solid #000;">
+        <thead style="background-color: lightgray;">
+            <tr style="font-size: xx-small;">
+                <th width="40px" class="cuadro">CANT</th>
+                <th width="90px" class="cuadro">CODIGO</th>
+                <th width="200px" class="cuadro" align="left">DESCRIPCIÓN</th>
+                <th width="60px"  class="cuadro">PRECIO UNITARIO</th>
+                <th width="60px"  class="cuadro">VENTAS NO SUJETAS</th>
+                <th width="60px"  class="cuadro">VENTAS EXENTAS</th>
+                <th width="60px"  class="cuadro">VENTAS GRAVADAS</th>
+                <th width="60px"  class="cuadro">MONTO IVA</th>
+                <th width="60px"  class="cuadro">VENTAS TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($detalle as $d)
+            <tr style="font-size: xx-small;">
+                <td align="center" class="cuadro-izq">{{$d["cantidad"] ?? 0}}</td>
+                <td align="left" class="cuadro-izq">{{$d["codigo"] ?? ''}}</td>
+                <td align="left" class="cuadro-izq">{{$d["descripcion"] ?? ''}}</td>
+                <td align="right" class="cuadro-izq">{{number_format($d["precioUni"] ?? $d["precio_unitario"] ?? 0, 4)}}</td>
+                <td align="right" class="cuadro-izq">{{number_format($d["noSujeta"] ?? $d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0, 2)}}</td>
+                <td align="right" class="cuadro-izq">{{number_format($d["ventaExenta"] ?? $d["exentas"] ?? $d["ventaExenta"] ?? 0, 2)}}</td>
+                <td align="right" class="cuadro-izq">{{number_format($d["ventaGravada"] ?? $d["gravadas"] ?? $d["ventaGravada"] ?? 0, 2)}}</td>
+                <td align="right" class="cuadro-izq">{{number_format(round((($d["ventaGravada"] ?? $d["gravadas"] ?? 0)*13)/100, 2), 2)}}</td>
+                <td align="right" class="cuadro-izq">{{number_format(($d["montoDescu"] ?? 0) != "0.00" && ($d["montoDescu"] ?? 0) != 0 ? ($d["montoDescu"] ?? 0) : (($d["precioUni"] ?? $d["precio_unitario"] ?? 0) * ($d["cantidad"] ?? 0)), 2)}}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr style="font-size: xx-small;">
+                <td colspan="4" class="sumas"><strong>SUMAS</strong></td>
+                <td align="right" class="sumas"><strong>{{number_format($totales["totalNoSuj"] ?? $totales["totalNoSuj"] ?? 0, 2)}}</strong></td>
+                <td align="right" class="sumas"><strong>{{number_format($totales["totalExenta"] ?? $totales["totalExenta"] ?? 0, 2)}}</strong></td>
+                <td align="right" class="sumas"><strong>{{number_format($totales["totalGravada"] ?? $totales["totalGravada"] ?? 0, 2)}}</strong></td>
+                <td align="right" class="sumas"><strong>{{number_format(round((($totales["totalGravada"] ?? 0)*13)/100, 2), 2)}}</strong></td>
+                <td align="right" class="sumas"><strong>{{number_format($totales["subTotal"] ?? $totales["subTotal"] ?? 0, 2)}}</strong></td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td colspan="7" rowspan="8" class="cuadro-izq" ><strong>OBSERVACIONES:</strong></td>
+                <td align="left" class="sumas"><strong>SUB TOTAL</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["subTotal"] ?? $totales["subTotal"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>IVA RETENIDO</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["ivaRete1"] ?? $totales["ivaRete1"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>RETENCION RENTA</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["reteRenta"] ?? $totales["reteRenta"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>MONTO SUJETO PERCEPCION</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["montoTotalOperacion"] ?? $totales["montoTotalOperacion"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>IVA PERCIBIDO</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["ivaPerci1"] ?? $totales["ivaPerci1"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>MONTO TOTAL OPERACIÓN</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["montoTotalOperacion"] ?? $totales["montoTotalOperacion"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="sumas"><strong>TOTAL NO SUJETO</strong></td>
+                <td align="right" class="sumas">{{number_format($totales["totalNoSuj"] ?? $totales["totalNoSuj"] ?? 0, 2)}}</td>
+            </tr>
+            <tr style="font-size: xx-small;">
+                <td align="left" class="cuadro-izq" style="border-bottom:1px solid #000;"><strong>TOTAL A PAGAR</strong></td>
+                <td align="right" class="cuadro-izq" style="border-bottom:1px solid #000;">{{number_format($totales["totalPagar"] ?? $totales["totalPagar"] ?? 0, 2)}}</td>
+            </tr>
+        </tfoot>
+    </table>
+<!-- Fin Cuerpo de detalle -->
+<br>
+<table width="100%">
+    <tr>
+        <td align="center" style="font-size: xx-small;">
+            @if (!empty($json["observaciones"] ?? ''))
+                <strong>OBSERVACIONES: </strong>{{$json["observaciones"]}}
+            @else
+                <strong>OBSERVACIONES: </strong> N/A
+            @endif
+        </td>
+    </tr>
+</table>
+<br>
+<table width="100%">
+    <tr>
+        <td width="33%" style="font-size: xx-small; text-align: center; vertical-align: bottom;">
+            _______________________________<br>
+            <strong>ENTREGADO POR</strong>
+        </td>
+        <td width="33%" style="font-size: xx-small; text-align: center; vertical-align: bottom;">
+            _______________________________<br>
+            <strong>RECIBIDO POR</strong>
+        </td>
+        <td width="33%" style="font-size: xx-small; text-align: center; vertical-align: bottom;">
+            _______________________________<br>
+            <strong>SELLO</strong>
+        </td>
+    </tr>
+</table>
+
+</body>
+
+</html>

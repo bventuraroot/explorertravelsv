@@ -9,7 +9,6 @@ use App\Models\Dte;
 use App\Models\Sale;
 use App\Models\Config;
 use App\Models\Salesdetail;
-use App\Models\Provider;
 use DateTime;
 use Exception;
 use Illuminate\Http\Request;
@@ -63,7 +62,6 @@ class SaleController extends Controller
                 $join->on('dte_emis.sale_id', '=', 'sales.id');
             })
             ->where('sales.typesale', '<>', '3')
-            ->whereNull('sales.parent_sale_id') // Solo mostrar padres y ventas simples, NO hijos
             ->select(
                 'sales.*',
                 'typedocuments.description AS document_name',
@@ -91,8 +89,7 @@ class SaleController extends Controller
                         COALESCE((SELECT SUM(sd.nosujeta + sd.exempt + sd.pricesale + sd.detained13 - sd.renta - sd.detained)
                                  FROM salesdetails sd WHERE sd.sale_id = sales.id), 0)
                     ELSE sales.totalamount
-                END AS calculated_total'),
-                DB::raw('(SELECT COUNT(*) FROM sales children WHERE children.parent_sale_id = sales.id) AS children_count'));
+                END AS calculated_total'));
 
         // Si no es admin, solo muestra los clientes ingresados por él
         if (!$isAdmin) {
@@ -163,10 +160,8 @@ class SaleController extends Controller
             ->orderBy('id')
             ->first();
 
-        // Obtener las ventas filtradas ordenadas por fecha y hora de creación descendente
-        $sales = $sales->orderBy('sales.date', 'desc')
-                       ->orderBy('sales.created_at', 'desc')
-                       ->get();
+        // Obtener las ventas filtradas ordenadas por fecha descendente
+        $sales = $sales->orderBy('sales.date', 'desc')->get();
 
         return view('sales.index', compact('sales', 'tiposDocumento', 'clientes', 'empresaPrincipal'));
     }
@@ -195,7 +190,7 @@ class SaleController extends Controller
             'renta' => 'required|numeric',
             'ivarete' => 'required|numeric',
             'acuenta' => 'nullable|string',
-            'line_provider_id' => 'nullable|numeric|exists:providers,id',
+            'provider_id' => 'nullable|numeric|exists:providers,id',
             'fpago' => 'required',
             'fee' => 'nullable|numeric',
             'reserva' => 'nullable|string',
@@ -211,14 +206,11 @@ class SaleController extends Controller
             'clq_numero_documento' => 'nullable|string|max:100',
             'clq_fecha_generacion' => 'nullable|date',
             'clq_observaciones' => 'nullable|string',
-            'clq_total_gravadas' => 'nullable|numeric',
-            'clq_total_exentas' => 'nullable|numeric',
-            'clq_total_no_sujetas' => 'nullable|numeric',
         ]);
 
         // Normalizar valores nulos
         $acuenta = $request->input('acuenta', '');
-        $line_provider_id = $request->input('line_provider_id', null);
+        $provider_id = $request->input('provider_id', null);
         $fee = $request->input('fee', 0);
         $reserva = $request->input('reserva', '');
         $ruta = $request->input('ruta', '');
@@ -236,11 +228,17 @@ class SaleController extends Controller
         $clq_numero_documento = $request->input('clq_numero_documento', '');
         $clq_fecha_generacion = $request->input('clq_fecha_generacion', null);
         $clq_observaciones = $request->input('clq_observaciones', '');
-        $clq_total_gravadas = $request->input('clq_total_gravadas', 0);
-        $clq_total_exentas = $request->input('clq_total_exentas', 0);
-        $clq_total_no_sujetas = $request->input('clq_total_no_sujetas', 0);
 
-        $result = $this->savefactemp(
+        // Guardar provider_id antes de llamar a savefactemp
+        if ($provider_id) {
+            $sale = Sale::find($request->idsale);
+            if ($sale) {
+                $sale->provider_id = $provider_id;
+                $sale->save();
+            }
+        }
+
+        return $this->savefactemp(
             $request->idsale,
             $request->clientid,
             $request->productid,
@@ -268,25 +266,8 @@ class SaleController extends Controller
             $clq_tipo_generacion,
             $clq_numero_documento,
             $clq_fecha_generacion,
-            $clq_observaciones,
-            $clq_total_gravadas,
-            $clq_total_exentas,
-            $clq_total_no_sujetas
+            $clq_observaciones
         );
-
-        // Si tenemos line_provider_id, actualizar el salesdetail recién creado
-        if ($line_provider_id && $result->status() == 200) {
-            $responseData = json_decode($result->getContent(), true);
-            if (isset($responseData['idsaledetail'])) {
-                $salesdetail = Salesdetail::find($responseData['idsaledetail']);
-                if ($salesdetail) {
-                    $salesdetail->line_provider_id = $line_provider_id;
-                    $salesdetail->save();
-                }
-            }
-        }
-
-        return $result;
     }
 
     /**
@@ -298,6 +279,8 @@ class SaleController extends Controller
             'sale_id' => 'required|numeric|exists:sales,id',
             'client_id' => 'nullable|numeric|exists:clients,id',
             'date' => 'nullable|date|before_or_equal:today',
+            'provider_id' => 'nullable|numeric|exists:providers,id',
+            'acuenta' => 'nullable|string',
         ]);
 
         $sale = Sale::find($request->sale_id);
@@ -312,12 +295,22 @@ class SaleController extends Controller
             $sale->date = $request->date;
         }
 
+        // Permitir cambiar proveedor (venta a cuenta de tercero)
+        if ($request->has('provider_id')) {
+            $sale->provider_id = $request->provider_id ?: null;
+        }
+
+        // Permitir cambiar campo acuenta
+        if ($request->has('acuenta')) {
+            $sale->acuenta = $request->acuenta ?: null;
+        }
+
         $sale->save();
 
         return response()->json(['ok' => true]);
     }
 
-    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada', $retencion_agente = 0, $detainedP = 0, $clq_tipo_documento = '', $clq_tipo_generacion = '', $clq_numero_documento = '', $clq_fecha_generacion = null, $clq_observaciones = '', $clq_total_gravadas = 0, $clq_total_exentas = 0, $clq_total_no_sujetas = 0)
+    public function savefactemp($idsale, $clientid, $productid, $cantidad, $price, $pricenosujeta, $priceexenta, $pricegravada, $ivarete13, $renta, $ivarete, $acuenta, $fpago, $fee, $reserva, $ruta, $destino, $linea, $canal, $description, $tipoVenta = 'gravada', $retencion_agente = 0, $detainedP = 0, $clq_tipo_documento = '', $clq_tipo_generacion = '', $clq_numero_documento = '', $clq_fecha_generacion = null, $clq_observaciones = '')
     {
         // Limpiar parámetros que vienen como 'SIN_VALOR'
         $acuenta = ($acuenta === 'SIN_VALOR') ? '' : $acuenta;
@@ -428,66 +421,45 @@ class SaleController extends Controller
             $saledetails->sale_id = $idsale;
             $saledetails->product_id = $productid;
             $saledetails->amountp = $cantidad;
+            // Guardar con precisión 8 (BD 12,8)
+            $saledetails->priceunit = round($priceunitariofac, 8);
+            $saledetails->pricesale = round($pricegravadafac, 8);
 
-            // IMPORTANTE: Para CLQ (typedocument_id == '2'), usar los totales directamente del documento original
-            if ($sale->typedocument_id == '2' && ($clq_total_gravadas > 0 || $clq_total_exentas > 0 || $clq_total_no_sujetas > 0)) {
-                // Para CLQ, usar los totales del documento original directamente
-                $saledetails->pricesale = round($clq_total_gravadas, 8);
-                $saledetails->exempt = round($clq_total_exentas, 8);
-                $saledetails->nosujeta = round($clq_total_no_sujetas, 8);
+            // Asignar valores según el tipo de venta
+            if ($tipoVenta === 'gravada') {
+                $saledetails->nosujeta = 0.00;
+                $saledetails->exempt = 0.00;
+                $saledetails->detained13 = round($ivafac, 8);
 
-                // Calcular IVA solo de las gravadas (13% de gravadas)
-                $saledetails->detained13 = round($clq_total_gravadas * 0.13, 8);
-
-                // Calcular priceunit como promedio (total / cantidad)
-                $total_sin_iva = $clq_total_gravadas + $clq_total_exentas + $clq_total_no_sujetas;
-                if ($cantidad > 0) {
-                    $saledetails->priceunit = round($total_sin_iva / $cantidad, 8);
+            } elseif ($tipoVenta === 'exenta') {
+                $saledetails->nosujeta = 0.00;
+                $saledetails->exempt = $priceexenta;
+                // Si hay fee, va en pricesale (gravadas)
+                if ($fee > 0) {
+                    $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
                 } else {
-                    $saledetails->priceunit = round($total_sin_iva, 8);
+                    $saledetails->pricesale = 0.00;
+                    $saledetails->detained13 = 0.00;
                 }
+
+            } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
+                $saledetails->nosujeta = $pricenosujeta;
+                $saledetails->exempt = 0.00;
+                // Si hay fee, va en pricesale (gravadas)
+                if ($fee > 0) {
+                    $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
+                    $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
+                } else {
+                    $saledetails->pricesale = 0.00;
+                    $saledetails->detained13 = 0.00;
+                }
+
             } else {
-                // Lógica normal para otros documentos
-                // Guardar con precisión 8 (BD 12,8)
-                $saledetails->priceunit = round($priceunitariofac, 8);
-                $saledetails->pricesale = round($pricegravadafac, 8);
-
-                // Asignar valores según el tipo de venta
-                if ($tipoVenta === 'gravada') {
-                    $saledetails->nosujeta = 0.00;
-                    $saledetails->exempt = 0.00;
-                    $saledetails->detained13 = round($ivafac, 8);
-
-                } elseif ($tipoVenta === 'exenta') {
-                    $saledetails->nosujeta = 0.00;
-                    $saledetails->exempt = $priceexenta;
-                    // Si hay fee, va en pricesale (gravadas)
-                    if ($fee > 0) {
-                        $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
-                        $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
-                    } else {
-                        $saledetails->pricesale = 0.00;
-                        $saledetails->detained13 = 0.00;
-                    }
-
-                } elseif ($tipoVenta === 'nosujeta' || $tipoVenta === 'no_sujeta') {
-                    $saledetails->nosujeta = $pricenosujeta;
-                    $saledetails->exempt = 0.00;
-                    // Si hay fee, va en pricesale (gravadas)
-                    if ($fee > 0) {
-                        $saledetails->pricesale = round($feesiniva * $cantidad, 8); // Fee sin IVA como gravadas
-                        $saledetails->detained13 = round($ivafee * $cantidad, 8); // IVA del fee
-                    } else {
-                        $saledetails->pricesale = 0.00;
-                        $saledetails->detained13 = 0.00;
-                    }
-
-                } else {
-                    // Por defecto, usar valores originales
-                    $saledetails->nosujeta = $pricenosujeta;
-                    $saledetails->exempt = $priceexenta;
-                    $saledetails->detained13 = round($ivafac, 8);
-                }
+                // Por defecto, usar valores originales
+                $saledetails->nosujeta = $pricenosujeta;
+                $saledetails->exempt = $priceexenta;
+                $saledetails->detained13 = round($ivafac, 8);
             }
 
             $saledetails->detained = round($ivarete, 8);
@@ -663,20 +635,10 @@ class SaleController extends Controller
 
     public function createdocument($corr, $amount)
     {
-        $saleId = base64_decode($corr);
-        $sale = Sale::with('salesdetails')->find($saleId);
-
-        // Verificar si tiene múltiples proveedores Y NO es hijo (evitar recursión)
-        // Si parent_sale_id es null, NO es hijo
-        if (is_null($sale->parent_sale_id) && $this->hasMultipleProviders($sale)) {
-            return $this->processMultiProviderSale($sale, $amount);
-        }
-
-        // Flujo normal para venta simple O venta hija
         DB::beginTransaction();
         try {
             $amount = substr($amount, 1);
-            $salesave = Sale::find($saleId);
+            $salesave = Sale::find(base64_decode($corr));
             $salesave->totalamount = $amount;
             $salesave->typesale = 1; // finalizar venta como en RomaCopies
             //buscar el correlativo actual
@@ -689,10 +651,6 @@ class SaleController extends Controller
                     return response()->json(['error' => 'No se encontró el correlativo', 'message' => 'No se encontró el correlativo'], 404);
                 }
             $salesave->nu_doc = $newCorr[0]->actual;
-            // Asignar provider_id desde el primer detalle de venta si existe
-            if (!empty($sale->salesdetails) && isset($sale->salesdetails[0]) && !empty($sale->salesdetails[0]->line_provider_id)) {
-                $salesave->provider_id = $sale->salesdetails[0]->line_provider_id;
-            }
             $salesave->save();
             $idempresa = $salesave->company_id;
             $createdby = $salesave->user_id;
@@ -771,17 +729,19 @@ class SaleController extends Controller
         d.typeTransmission tipogeneracion,
         e.cod ambiente,
         a.updated_at,
-        1 aparece_ventas
+        1 aparece_ventas,
+        a.provider_id,
+        f.razonsocial provider_name,
+        f.nit provider_nit
         FROM sales a
         INNER JOIN typedocuments b ON a.typedocument_id = b.id
         INNER JOIN docs ON b.id = (SELECT t.id FROM typedocuments t WHERE t.type = docs.id_tipo_doc)
         INNER JOIN users c ON a.user_id = c.id
         LEFT JOIN config d ON a.company_id = d.company_id
         LEFT JOIN ambientes e ON d.ambiente = e.id
+        LEFT JOIN providers f ON a.provider_id = f.id
         WHERE a.id = " . base64_decode($corr) . "";
             $documento = DB::select(DB::raw($querydocumento));
-
-            //informacion del producto
             $queryproducto = "SELECT
         c.id id_producto,
         CASE
@@ -808,14 +768,10 @@ class SaleController extends Controller
         b.clq_tipo_generacion,
         b.clq_numero_documento,
         b.clq_fecha_generacion,
-        b.clq_observaciones,
-        b.line_provider_id,
-        d.razonsocial provider_name,
-        d.nit provider_nit
+        b.clq_observaciones
         FROM sales a
         INNER JOIN salesdetails b ON b.sale_id=a.id
         INNER JOIN products c ON b.product_id=c.id
-        LEFT JOIN providers d ON b.line_provider_id=d.id
         WHERE a.id=" . base64_decode($corr) . "";
             $producto = DB::select(DB::raw($queryproducto));
             $detalle = $producto;
@@ -983,45 +939,21 @@ class SaleController extends Controller
                 $dtecreate->save();
 
                 // Envío automático de correo tras confirmación exitosa en Hacienda (solo producción)
-                // No enviar por cada hijo: sendConsolidatedEmail enviará un solo correo al final del flujo multi‑proveedor
-                $codEstado = $dtecreate->codEstado ?? null;
-                $ambienteId = $dtecreate->ambiente_id ?? null;
-                $esAceptado = in_array((string)$codEstado, ['02', '2'], true);
-                $esProduccion = in_array((string)$ambienteId, ['01', '1', '0', '00'], true);
-
-                if ($esAceptado && $esProduccion) {
-                    $saleIdCorreo = (int) base64_decode($corr);
-                    $saleParaCorreo = Sale::find($saleIdCorreo);
-                    // Verificar si es hijo: si parent_sale_id es null, NO es hijo
-                    if (!$saleParaCorreo || is_null($saleParaCorreo->parent_sale_id)) {
-                        try {
-                            $this->enviarCorreoAutomaticoVenta($saleIdCorreo, $dtecreate);
-                            Log::info('Correo automático enviado tras confirmación exitosa de Hacienda', [
-                                'dte_id' => $dtecreate->id,
-                                'sale_id' => $dtecreate->sale_id,
-                                'codigo_generacion' => $dtecreate->codigoGeneracion
-                            ]);
-                        } catch (\Exception $e) {
-                            Log::error('Error enviando correo automático tras confirmación de Hacienda', [
-                                'dte_id' => $dtecreate->id,
-                                'sale_id' => $dtecreate->sale_id,
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    } else {
-                        Log::info('Correo automático omitido: venta hija (enviará sendConsolidatedEmail)', [
-                            'sale_id' => $saleIdCorreo,
-                            'parent_sale_id' => $saleParaCorreo->parent_sale_id
+                if (($dtecreate->codEstado ?? null) === '02' && (string)($dtecreate->ambiente_id ?? '') === '01') {
+                    try {
+                        $this->enviarCorreoAutomaticoVenta((int) base64_decode($corr), $dtecreate);
+                        Log::info('Correo automático enviado tras confirmación exitosa de Hacienda', [
+                            'dte_id' => $dtecreate->id,
+                            'sale_id' => $dtecreate->sale_id,
+                            'codigo_generacion' => $dtecreate->codigoGeneracion
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Error enviando correo automático tras confirmación de Hacienda', [
+                            'dte_id' => $dtecreate->id,
+                            'sale_id' => $dtecreate->sale_id,
+                            'error' => $e->getMessage()
                         ]);
                     }
-                } else {
-                    Log::info('Correo automático no enviado: condición Hacienda/ambiente', [
-                        'sale_id' => base64_decode($corr),
-                        'codEstado' => $codEstado,
-                        'ambiente_id' => $ambienteId,
-                        'esAceptado' => $esAceptado,
-                        'esProduccion' => $esProduccion
-                    ]);
                 }
             } else {
                 // DTE deshabilitado - solo guardar la venta sin emisión
@@ -1036,27 +968,8 @@ class SaleController extends Controller
             $updateCorr = Correlativo::find($newCorr[0]->id);
             $updateCorr->actual = ($updateCorr->actual + 1);
             $updateCorr->save();
-
-            // Recargar la venta para obtener datos actualizados (incluyendo el DTE recién guardado)
             $salesave = Sale::find(base64_decode($corr));
             $salesave->json = json_encode($comprobante);
-
-            // IMPORTANTE: Actualizar state = 1 cuando el DTE es confirmado por Hacienda
-            // Esto aplica tanto para ventas simples como para ventas hijas
-            // codEstado = '02' significa "Aceptado" y estadoHacienda = 'PROCESADO'
-            if (isset($dtecreate) &&
-                (($dtecreate->codEstado ?? null) === '02' ||
-                 ($dtecreate->estadoHacienda ?? null) === 'PROCESADO')) {
-                $salesave->state = 1; // Confirmar la venta
-                Log::info('State actualizado a 1 tras confirmación de Hacienda', [
-                    'sale_id' => $salesave->id,
-                    'codEstado' => $dtecreate->codEstado,
-                    'estadoHacienda' => $dtecreate->estadoHacienda,
-                    'is_child' => !is_null($salesave->parent_sale_id),
-                    'parent_sale_id' => $salesave->parent_sale_id
-                ]);
-            }
-
             $salesave->save();
             $exit = 1;
             DB::commit();
@@ -1082,7 +995,6 @@ class SaleController extends Controller
     public function getdetailsdoc($corr)
     {
         $saledetails = Salesdetail::leftJoin('products', 'products.id', '=', 'salesdetails.product_id')
-            ->leftJoin('providers', 'providers.id', '=', 'salesdetails.line_provider_id')
             ->select(
                 'salesdetails.*',
                 DB::raw('CASE
@@ -1091,9 +1003,7 @@ class SaleController extends Controller
                     WHEN salesdetails.reserva IS NOT NULL
                     THEN CONCAT(products.name, " - ", salesdetails.reserva)
                     ELSE products.name
-                END as product_name'),
-                'providers.razonsocial as provider_name',
-                'providers.nit as provider_nit'
+                END as product_name')
             )
             ->where('sale_id', '=', base64_decode($corr))
             ->get();
@@ -1813,17 +1723,12 @@ class SaleController extends Controller
             $query = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
                 ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
                 ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
-                ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
                 ->select(
                     'sales.id',
                     'sales.date',
                     'sales.totalamount',
                     'sales.typedocument_id',
                     'sales.company_id',
-                    'sales.provider_id',
-                    'sales.parent_sale_id',
-                    'sales.is_parent',
-                    'providers.razonsocial as proveedor_nombre',
                     'typedocuments.description as tipo_documento',
                     'typedocuments.codemh as codigo_mh',
                     'typedocuments.type as tipo_doc_code',
@@ -1835,20 +1740,7 @@ class SaleController extends Controller
                         ELSE 'Sin cliente'
                     END AS cliente_nombre")
                 )
-                ->where('sales.state', 1) // Solo ventas confirmadas
-                // Solo documentos con tercero (venta a cuenta de)
-                // IMPORTANTE: Solo ventas que tienen sales.provider_id
-                ->whereNotNull('sales.provider_id')
-                // IMPORTANTE: El provider_id de sales debe coincidir con line_provider_id de salesdetails
-                // Verificar que existe al menos un salesdetail con line_provider_id = sales.provider_id
-                ->whereExists(function($subquery) {
-                    $subquery->select(DB::raw(1))
-                        ->from('salesdetails')
-                        ->whereColumn('salesdetails.sale_id', 'sales.id')
-                        ->whereColumn('salesdetails.line_provider_id', 'sales.provider_id');
-                })
-                // Excluir CLQ (typedocument_id = 2) de los resultados
-                ->where('sales.typedocument_id', '!=', '2');
+                ->where('sales.state', 1); // Solo ventas confirmadas
 
             // Primero filtrar por empresa (OBLIGATORIO)
             if ($request->filled('company_id')) {
@@ -1862,44 +1754,6 @@ class SaleController extends Controller
                     'data' => []
                 ]);
             }
-
-            // NUEVO: Filtrar por cliente (proveedor/tercero de la venta original)
-            // El cliente del CLQ debe ser el proveedor de la factura/CCF original
-            // Comparar por NIT en lugar de ID
-            // IMPORTANTE: El provider_id de la venta debe coincidir con el cliente del CLQ (por NIT)
-            if ($request->filled('client_id')) {
-                // Obtener el NIT del cliente seleccionado
-                $clienteCLQ = \App\Models\Client::find($request->client_id);
-                if ($clienteCLQ && $clienteCLQ->nit) {
-                    $nitCliente = str_replace('-', '', $clienteCLQ->nit);
-                    // Comparar NIT del proveedor con NIT del cliente del CLQ
-                    // El provider_id de sales debe tener un NIT que coincida con el cliente del CLQ
-                    $query->whereRaw('REPLACE(providers.nit, "-", "") = ?', [$nitCliente]);
-                    \Log::info('Filtrando por NIT del proveedor = NIT del cliente CLQ', [
-                        'client_id' => $request->client_id,
-                        'nit_cliente' => $nitCliente,
-                        'nota' => 'El sales.provider_id debe coincidir con line_provider_id y el NIT del provider debe coincidir con el cliente del CLQ'
-                    ]);
-                } else {
-                    \Log::warning('Cliente del CLQ no encontrado o sin NIT', ['client_id' => $request->client_id]);
-                }
-            }
-
-            // NUEVO: Excluir documentos que ya tienen CLQ (liquidados)
-            // Un documento está liquidado si existe un CLQ que lo referencia por codigoGeneracion
-            $query->where(function($q) {
-                // Si no tiene codigoGeneracion, no puede estar liquidado (mostrarlo)
-                $q->whereNull('dte.codigoGeneracion')
-                  // Si tiene codigoGeneracion, verificar que NO esté en ningún CLQ activo
-                  ->orWhereNotExists(function($subquery) {
-                      $subquery->select(DB::raw(1))
-                          ->from('salesdetails as clq_sd')
-                          ->join('sales as clq_sales', 'clq_sales.id', '=', 'clq_sd.sale_id')
-                          ->whereColumn('clq_sd.clq_numero_documento', 'dte.codigoGeneracion')
-                          ->where('clq_sales.typedocument_id', '2') // Solo CLQ
-                          ->where('clq_sales.state', '!=', 0); // Excluir CLQ anulados
-                  });
-            });
 
             // Filtrar por tipo de documento si se especifica
             if ($request->filled('tipo_documento')) {
@@ -1935,122 +1789,22 @@ class SaleController extends Controller
             // Log de la query SQL para debugging
             $sql = $query->toSql();
             $bindings = $query->getBindings();
-            \Log::info('Query SQL CLQ:', ['sql' => $sql, 'bindings' => $bindings]);
+            \Log::info('Query SQL:', ['sql' => $sql, 'bindings' => $bindings]);
 
-            // Ordenar por fecha descendente (más recientes primero)
-            // Aumentar límite a 1000 para mostrar más resultados
-            $documentos = $query->orderBy('sales.date', 'desc')
-                ->orderBy('sales.id', 'desc')
-                ->limit(1000)
+            $documentos = $query->orderBy('sales.id', 'desc')
+                ->limit(100)
                 ->get();
 
-            \Log::info('Documentos CLQ encontrados', [
-                'count' => $documentos->count(),
-                'ids' => $documentos->pluck('id')->toArray(),
-                'provider_ids' => $documentos->pluck('provider_id')->toArray(),
-                'nota' => 'Solo ventas con sales.provider_id que coincide con line_provider_id de salesdetails'
-            ]);
+            \Log::info('Documentos encontrados: ' . $documentos->count());
 
-            // Si no hay resultados, hacer diagnóstico detallado
+            // Si no hay resultados, hacer una búsqueda básica para verificar si hay datos
             if ($documentos->count() === 0 && $request->filled('company_id')) {
-                $totalVentas = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
-                    ->whereIn('sales.typedocument_id', [3, 6])
+                $totalVentas = Sale::where('company_id', $request->company_id)
+                    ->where('state', 1)
+                    ->whereIn('typedocument_id', [3, 6])
                     ->count();
 
-                // Ventas con tercero (provider_id) - incluir todas las ventas hijas
-                // IMPORTANTE: Solo buscar en ventas hijas (is_parent = 0) que tienen provider_id
-                // Las ventas padre no tienen provider_id, solo las hijas lo tienen
-                $ventasConTercero = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
-                    ->whereIn('sales.typedocument_id', [3, 6])
-                    ->whereNotNull('sales.provider_id')
-                    ->where('sales.typedocument_id', '!=', '2') // Excluir CLQ
-                    ->count();
-
-                // Log detallado de ventas con tercero
-                $ventasConTerceroDetalle = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
-                    ->whereIn('sales.typedocument_id', [3, 6])
-                    ->whereNotNull('sales.provider_id')
-                    ->where('sales.typedocument_id', '!=', '2')
-                    ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id')
-                    ->get();
-
-                \Log::info('Ventas con tercero encontradas', [
-                    'count' => $ventasConTercero,
-                    'detalle' => $ventasConTerceroDetalle->toArray()
-                ]);
-
-                // También verificar ventas que tienen line_provider_id en salesdetails pero no provider_id en sales
-                // Esto puede pasar si la venta aún no se ha separado en hijas
-                $ventasConLineProvider = DB::table('sales')
-                    ->join('salesdetails', 'sales.id', '=', 'salesdetails.sale_id')
-                    ->where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
-                    ->whereIn('sales.typedocument_id', [3, 6])
-                    ->where('sales.typedocument_id', '!=', '2')
-                    ->whereNotNull('salesdetails.line_provider_id')
-                    ->whereNull('sales.provider_id')
-                    ->distinct()
-                    ->count('sales.id');
-
-                \Log::info('Ventas con line_provider_id pero sin provider_id (pendientes de separar)', [
-                    'count' => $ventasConLineProvider
-                ]);
-
-                // Ventas con el tercero específico (comparando por NIT)
-                $ventasConTerceroEspecifico = 0;
-                $ventasConTerceroEspecificoDetalle = collect();
-                if ($request->filled('client_id')) {
-                    $clienteCLQ = \App\Models\Client::find($request->client_id);
-                    if ($clienteCLQ && $clienteCLQ->nit) {
-                        $nitCliente = str_replace('-', '', $clienteCLQ->nit);
-                        $ventasConTerceroEspecifico = DB::table('sales')
-                            ->join('providers', 'sales.provider_id', '=', 'providers.id')
-                            ->where('sales.company_id', $request->company_id)
-                            ->where('sales.state', 1)
-                            ->whereIn('sales.typedocument_id', [3, 6])
-                            ->whereNotNull('sales.provider_id')
-                            ->where('sales.typedocument_id', '!=', '2') // Excluir CLQ
-                            ->whereRaw('REPLACE(providers.nit, "-", "") = ?', [$nitCliente])
-                            ->count();
-
-                        // Obtener detalles de estas ventas
-                        $ventasConTerceroEspecificoDetalle = DB::table('sales')
-                            ->join('providers', 'sales.provider_id', '=', 'providers.id')
-                            ->where('sales.company_id', $request->company_id)
-                            ->where('sales.state', 1)
-                            ->whereIn('sales.typedocument_id', [3, 6])
-                            ->whereNotNull('sales.provider_id')
-                            ->where('sales.typedocument_id', '!=', '2')
-                            ->whereRaw('REPLACE(providers.nit, "-", "") = ?', [$nitCliente])
-                            ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id', 'providers.nit as provider_nit')
-                            ->get();
-
-                        \Log::info('Ventas con tercero específico (NIT)', [
-                            'nit_buscado' => $nitCliente,
-                            'count' => $ventasConTerceroEspecifico,
-                            'detalle' => $ventasConTerceroEspecificoDetalle->toArray()
-                        ]);
-                    }
-                }
-
-                $nitBuscado = null;
-                if ($request->filled('client_id')) {
-                    $clienteCLQ = \App\Models\Client::find($request->client_id);
-                    if ($clienteCLQ && $clienteCLQ->nit) {
-                        $nitBuscado = str_replace('-', '', $clienteCLQ->nit);
-                    }
-                }
-
-                \Log::info('Diagnóstico CLQ', [
-                    'total_ventas' => $totalVentas,
-                    'ventas_con_tercero' => $ventasConTercero,
-                    'ventas_con_tercero_especifico' => $ventasConTerceroEspecifico,
-                    'client_id' => $request->client_id,
-                    'nit_buscado' => $nitBuscado
-                ]);
+                \Log::info('Total de ventas FAC/CCF en la empresa: ' . $totalVentas);
 
                 return response()->json([
                     'success' => true,
@@ -2058,29 +1812,8 @@ class SaleController extends Controller
                     'count' => 0,
                     'debug' => [
                         'total_ventas_empresa' => $totalVentas,
-                        'ventas_con_tercero' => $ventasConTercero,
-                        'ventas_con_tercero_especifico' => $ventasConTerceroEspecifico,
-                        'nit_buscado' => $nitBuscado ?? null,
-                        'client_id' => $request->client_id ?? null,
                         'filtros_aplicados' => $request->except('_token'),
-                        'ventas_detalle' => $ventasConTerceroEspecificoDetalle->map(function($v) {
-                            return [
-                                'id' => $v->id,
-                                'provider_id' => $v->provider_id,
-                                'provider_nit' => $v->provider_nit,
-                                'is_parent' => $v->is_parent,
-                                'parent_sale_id' => $v->parent_sale_id,
-                                'date' => $v->date
-                            ];
-                        })->toArray(),
-                        'ventas_pendientes_separar' => $ventasConLineProvider ?? 0,
-                        'mensaje' => $ventasConTerceroEspecifico > 0
-                            ? 'Hay ' . $ventasConTerceroEspecifico . ' venta(s) con ese tercero pero ya están liquidadas o no cumplen otros filtros'
-                            : ($ventasConTercero > 0
-                                ? 'Hay ' . $ventasConTercero . ' venta(s) con terceros pero no del proveedor seleccionado (NIT buscado: ' . ($nitBuscado ?? 'N/A') . ')'
-                                : ($ventasConLineProvider > 0
-                                    ? 'Hay ' . $ventasConLineProvider . ' venta(s) con productos a terceros pero aún no se han separado. Confirma la venta primero.'
-                                    : 'No hay ventas a terceros confirmadas en esta empresa'))
+                        'mensaje' => $totalVentas > 0 ? 'Hay documentos pero no coinciden con los filtros' : 'No hay documentos FAC/CCF en esta empresa'
                     ]
                 ]);
             }
@@ -2929,13 +2662,6 @@ class SaleController extends Controller
             $email = $request->email;
             $nombre_cliente = $request->nombre_cliente;
 
-            // Verificar si es una venta padre
-            $sale = Sale::find($id_factura);
-            if ($sale && $sale->is_parent) {
-                // Si es padre, enviar correo con todos los hijos
-                return $this->enviar_correo_padre($request, $sale);
-            }
-
             // Verificar si existe DTE para esta venta
             $dte = \App\Models\Dte::where('sale_id', $id_factura)->first();
 
@@ -3141,135 +2867,6 @@ class SaleController extends Controller
         }
     }
 
-    /**
-     * Envía correo con todos los DTEs de una venta padre
-     */
-    private function enviar_correo_padre(Request $request, Sale $parentSale)
-    {
-        try {
-            $email = $request->email;
-            $nombre_cliente = $request->nombre_cliente;
-
-            // Obtener todos los hijos con DTE
-            $childSales = Sale::with(['dte', 'client'])
-                ->where('parent_sale_id', $parentSale->id)
-                ->whereHas('dte', function($query) {
-                    $query->whereNotNull('json');
-                })
-                ->get();
-
-            if ($childSales->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay DTEs emitidos para enviar. Primero debe emitir los DTEs de los hijos.'
-                ], 400);
-            }
-
-            // Preparar datos del correo
-            $client = $parentSale->client;
-            $nombre = $nombre_cliente ?: ($client ? ($client->tpersona == 'J'
-                ? $client->name_contribuyente
-                : $client->firstname . ' ' . $client->firstlastname)
-                : 'Cliente');
-
-            // Preparar archivos adjuntos
-            $archivos = [];
-            $archivosNombres = [];
-
-            foreach ($childSales as $childSale) {
-                $dte = $childSale->dte;
-                if (!$dte) {
-                    continue; // Saltar si no tiene DTE
-                }
-
-                try {
-                    // Generar PDF del hijo
-                    $pdf = $this->genera_pdf($childSale->id);
-
-                    // Obtener JSON desde sales.json (como en enviar_correo_con_dte)
-                    $sale_json = $childSale->json;
-                    if (!$sale_json) {
-                        Log::warning("No hay JSON en sales para hijo ID: {$childSale->id}");
-                        continue;
-                    }
-
-                    $json_root = json_decode($sale_json, true);
-
-                    if (!is_array($json_root)) {
-                        Log::warning("JSON inválido para hijo ID: {$childSale->id}");
-                        continue;
-                    }
-
-                    // Obtener json_enviado de la respuesta de Hacienda
-                    $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
-                    $json = $this->limpiarJsonParaCorreo($json_enviado);
-
-                    // Obtener nombre de archivo
-                    $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
-
-                    // Agregar PDF
-                    $archivos[$nombreArchivo . '.pdf'] = $pdf->output();
-                    $archivosNombres[] = $nombreArchivo . '.pdf';
-
-                    // Agregar JSON
-                    $archivos[$nombreArchivo . '.json'] = $json;
-                    $archivosNombres[] = $nombreArchivo . '.json';
-
-                } catch (\Exception $e) {
-                    Log::error("Error generando PDF/JSON para hijo ID: {$childSale->id} - " . $e->getMessage());
-                    // Continuar con los demás hijos aunque uno falle
-                    continue;
-                }
-            }
-
-            if (empty($archivos)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pudieron generar los archivos para enviar'
-                ], 500);
-            }
-
-            // Preparar data para el correo (venta padre: no es local, tiene DTEs en los hijos)
-            $data = [
-                "nombre" => $nombre,
-                "numero" => $request->numero ?? $parentSale->id,
-                "json" => null, // No hay un JSON único para venta padre
-                "es_venta_padre" => true,
-                "documentos_count" => count($childSales)
-            ];
-
-            $asunto = "Documentos Tributarios - Venta #" . $parentSale->id . " (" . count($childSales) . " documento" . (count($childSales) > 1 ? 's' : '') . ")";
-
-            // Crear y enviar correo
-            $correo = new EnviarCorreo($data);
-            $correo->subject($asunto);
-
-            foreach ($archivos as $nombreArchivo => $contenido) {
-                $correo->attachData($contenido, $nombreArchivo);
-            }
-
-            Mail::to($email)->send($correo);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Correo enviado exitosamente con ' . count($childSales) . ' documento(s)',
-                'data' => [
-                    'numero_factura' => $data["numero"],
-                    'email' => $email,
-                    'archivos' => $archivosNombres,
-                    'documentos_enviados' => count($childSales)
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error("Error en enviar_correo_padre para venta ID: {$request->id_factura} - " . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al enviar el correo: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
     public function genera_pdf($id)
     {
         $factura = Sale::leftjoin('dte', 'dte.sale_id', '=', 'sales.id')
@@ -3284,11 +2881,9 @@ class SaleController extends Controller
             ->join('departments as dep', 'dep.id', '=', 'add.department_id')
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
             ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
+            ->leftJoin('providers', 'providers.id', '=', 'sales.provider_id')
             ->select(
                 'dte.json as jsondte',
-                'dte.selloRecibido as dte_selloRecibido',
-                'dte.codigoGeneracion as dte_codigoGeneracion',
-                'dte.fhRecibido as dte_fhRecibido',
                 'sales.json as json',
                 'countries.name as PaisE',
                 'departments.name as DepartamentoE',
@@ -3296,7 +2891,9 @@ class SaleController extends Controller
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
                 'muni.name as MunicipioR',
-                'typedoc.codemh'
+                'typedoc.codemh',
+                'providers.razonsocial as provider_name',
+                'providers.nit as provider_nit'
             )
             ->where('sales.id', '=', $id)
             ->get();
@@ -3311,186 +2908,13 @@ class SaleController extends Controller
             }
         }
         $json = [];
-        // PRIORIDAD 1: Intentar obtener json desde salesJson
         if (isset($salesJson["json"]["json_enviado"])) {
             $json = is_string($salesJson["json"]["json_enviado"]) ? json_decode($salesJson["json"]["json_enviado"], true) : $salesJson["json"]["json_enviado"];
         } elseif (isset($salesJson["json"])) {
-            // Verificar si salesJson["json"] es directamente json_enviado o tiene estructura anidada
-            if (isset($salesJson["json"]["identificacion"]) || isset($salesJson["json"]["emisor"]) || isset($salesJson["json"]["receptor"])) {
-                // Es directamente json_enviado
-                $json = $salesJson["json"];
-            } elseif (isset($salesJson["json"]["json_enviado"])) {
-                $json = is_string($salesJson["json"]["json_enviado"]) ? json_decode($salesJson["json"]["json_enviado"], true) : $salesJson["json"]["json_enviado"];
-            } else {
-                $json = $salesJson["json"];
-            }
+            $json = $salesJson["json"];
         }
-
-        // Si salesJson está vacío pero tenemos DTE, intentar obtener json_enviado desde dte.json
-        // CRÍTICO: Esto es necesario porque cuando se envía el correo automático, sales.json puede estar vacío
-        // pero dte.json tiene todos los datos necesarios
-        if (empty($salesJson) && isset($comprobante[0]["jsondte"])) {
-            $dteJsonRaw = $comprobante[0]["jsondte"];
-
-            // Log para debugging del contenido RAW de jsondte
-            Log::info('genera_pdf: dteJsonRaw extraído', [
-                'sale_id' => $id,
-                'tipo' => gettype($dteJsonRaw),
-                'es_string' => is_string($dteJsonRaw),
-                'es_array' => is_array($dteJsonRaw),
-                'es_object' => is_object($dteJsonRaw),
-                'preview' => is_string($dteJsonRaw) ? substr($dteJsonRaw, 0, 200) : (is_array($dteJsonRaw) ? 'ARRAY' : (is_object($dteJsonRaw) ? 'OBJECT:'.get_class($dteJsonRaw) : 'UNKNOWN'))
-            ]);
-
-            // Decodificar según el tipo
-            if (is_string($dteJsonRaw)) {
-                // Primer intento de decodificación
-                $dteJson = json_decode($dteJsonRaw, true);
-
-                // CRÍTICO: Si el resultado es TODAVÍA un string, significa que está doblemente codificado
-                // Necesitamos decodificar una segunda vez
-                if (is_string($dteJson)) {
-                    Log::info('genera_pdf: JSON doblemente codificado, decodificando segunda vez', [
-                        'sale_id' => $id,
-                        'preview_segunda' => substr($dteJson, 0, 200)
-                    ]);
-                    $dteJson = json_decode($dteJson, true);
-                }
-            } elseif (is_array($dteJsonRaw)) {
-                $dteJson = $dteJsonRaw;
-            } elseif (is_object($dteJsonRaw)) {
-                // Convertir objeto a array
-                $dteJson = json_decode(json_encode($dteJsonRaw), true);
-            } else {
-                $dteJson = [];
-            }
-
-            Log::info('genera_pdf: dteJson decodificado', [
-                'sale_id' => $id,
-                'dteJson_tipo' => gettype($dteJson),
-                'dteJson_keys' => is_array($dteJson) ? array_keys($dteJson) : 'No es array',
-                'tiene_json' => isset($dteJson["json"]),
-                'json_type' => isset($dteJson["json"]) ? gettype($dteJson["json"]) : 'N/A'
-            ]);
-
-            // PRIORIDAD 1: Extraer json_enviado desde dte.json PRIMERO
-            // porque es la estructura completa que necesitamos
-            if (isset($dteJson["json"])) {
-                $dteJsonInner = $dteJson["json"];
-
-                // Si es string, decodificar
-                if (is_string($dteJsonInner)) {
-                    $dteJsonInner = json_decode($dteJsonInner, true);
-                }
-
-                // Buscar json_enviado en diferentes estructuras posibles
-                if (isset($dteJsonInner["json_enviado"])) {
-                    // json_enviado está anidado
-                    $jsonEnviado = is_string($dteJsonInner["json_enviado"]) ? json_decode($dteJsonInner["json_enviado"], true) : $dteJsonInner["json_enviado"];
-                    if (is_array($jsonEnviado) && !empty($jsonEnviado)) {
-                        $json = $jsonEnviado;
-                        Log::info('genera_pdf: json_enviado extraído desde dte.json (anidado)', [
-                            'sale_id' => $id,
-                            'json_keys' => array_keys($json),
-                            'tiene_emisor' => isset($json["emisor"]),
-                            'tiene_receptor' => isset($json["receptor"]),
-                            'tiene_cuerpoDocumento' => isset($json["cuerpoDocumento"]),
-                            'tiene_resumen' => isset($json["resumen"])
-                        ]);
-                    }
-                } elseif (is_array($dteJsonInner) && (isset($dteJsonInner["identificacion"]) || isset($dteJsonInner["emisor"]) || isset($dteJsonInner["receptor"]))) {
-                    // Es directamente json_enviado
-                    $json = $dteJsonInner;
-                    Log::info('genera_pdf: json_enviado extraído desde dte.json (directo)', [
-                        'sale_id' => $id,
-                        'json_keys' => array_keys($json),
-                        'tiene_emisor' => isset($json["emisor"]),
-                        'tiene_receptor' => isset($json["receptor"]),
-                        'tiene_cuerpoDocumento' => isset($json["cuerpoDocumento"]),
-                        'tiene_resumen' => isset($json["resumen"])
-                    ]);
-                }
-            }
-
-            // PRIORIDAD 2: Si dte.json tiene la estructura completa (emisor, cliente, etc.), usarla como salesJson
-            // Esto es para compatibilidad con documentos antiguos
-            if (isset($dteJson["emisor"]) || isset($dteJson["cliente"]) || isset($dteJson["detalle"])) {
-                $salesJson = $dteJson;
-                Log::info('genera_pdf: salesJson reemplazado desde dte.json', [
-                    'sale_id' => $id,
-                    'dteJson_keys' => is_array($dteJson) ? array_keys($dteJson) : 'No es array',
-                    'tiene_emisor' => isset($dteJson["emisor"]),
-                    'tiene_cliente' => isset($dteJson["cliente"]),
-                    'tiene_detalle' => isset($dteJson["detalle"])
-                ]);
-            }
-        }
-
-        // DEBUG: Log detallado de la estructura de salesJson para identificar el problema
-        Log::info('genera_pdf: Estructura de salesJson', [
-            'sale_id' => $id,
-            'salesJson_keys' => is_array($salesJson) ? array_keys($salesJson) : 'No es array',
-            'tiene_emisor' => isset($salesJson["emisor"]),
-            'tiene_cliente' => isset($salesJson["cliente"]),
-            'tiene_detalle' => isset($salesJson["detalle"]),
-            'tiene_totales' => isset($salesJson["totales"]),
-            'tiene_documento' => isset($salesJson["documento"]),
-            'tiene_json' => isset($salesJson["json"]),
-            'emisor_type' => isset($salesJson["emisor"]) ? gettype($salesJson["emisor"]) : 'N/A',
-            'cliente_type' => isset($salesJson["cliente"]) ? gettype($salesJson["cliente"]) : 'N/A',
-            'detalle_type' => isset($salesJson["detalle"]) ? gettype($salesJson["detalle"]) : 'N/A',
-            'detalle_count' => (isset($salesJson["detalle"]) && is_array($salesJson["detalle"])) ? count($salesJson["detalle"]) : 'N/A',
-            'json_keys' => (isset($json) && is_array($json)) ? array_keys($json) : 'No es array',
-            'json_has_emisor' => isset($json["emisor"]),
-            'json_has_receptor' => isset($json["receptor"]),
-            'tiene_jsondte' => isset($comprobante[0]["jsondte"])
-        ]);
-
-        // Agregar selloRecibido, codigoGeneracion y fhRecibido desde el DTE si no están en el JSON
-        // Esto asegura que la vista siempre tenga acceso a estos campos
-        if (!isset($json["selloRecibido"]) && isset($comprobante[0]["dte_selloRecibido"])) {
-            $json["selloRecibido"] = $comprobante[0]["dte_selloRecibido"];
-        }
-        if (!isset($json["codigoGeneracion"]) && isset($comprobante[0]["dte_codigoGeneracion"])) {
-            $json["codigoGeneracion"] = $comprobante[0]["dte_codigoGeneracion"];
-        }
-        if (!isset($json["fhRecibido"]) && isset($comprobante[0]["dte_fhRecibido"])) {
-            $json["fhRecibido"] = $comprobante[0]["dte_fhRecibido"];
-        }
-
-        // Asegurar que receptor esté disponible en el JSON (la vista lo usa directamente)
-        // Nota: El receptor se puede construir desde $data["cliente"] más adelante si no existe
-        if (!isset($json["receptor"]) || !is_array($json["receptor"])) {
-            // Se construirá desde la BD más adelante si es necesario
-            $json["receptor"] = [
-                "nombre" => "",
-                "tipoDocumento" => "",
-                "numDocumento" => "",
-                "correo" => "",
-                "descActividad" => ""
-            ];
-        } else {
-            // Asegurar que receptor tenga todos los campos necesarios
-            if (!isset($json["receptor"]["descActividad"])) {
-                $json["receptor"]["descActividad"] = "";
-            }
-        }
-
         // Documento meta si existe en sales.json
         $documento = $salesJson["documento"] ?? [];
-
-        // Asegurar que documento sea un array y tenga al menos un elemento
-        if (!is_array($documento) || empty($documento) || !isset($documento[0])) {
-            $documento = [[
-                "versionjson" => "",
-                "versionJson" => "",
-                "version" => "",
-                "actual" => "",
-                "ambiente" => "",
-                "tipodocumento" => "",
-                "fechacreacion" => date('Y-m-d')
-            ]];
-        }
         //print_r($data);
         //dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
@@ -3524,371 +2948,41 @@ class SaleController extends Controller
                 break;
         }
         // Inicializar $data básico para todas las plantillas
-        // IMPORTANTE: Inicializar todos los campos que las vistas pueden necesitar
         $data = [
             "json" => $json,
             "documento" => $documento,
-            "emisor" => [],
-            "cliente" => [],
-            "detalle" => [],
-            "totales" => [],
         ];
 
         // Para FAC, CRF, CLQ, FSE, NCR y NDB, alinear estructura (emisor/cliente/detalle/totales del tope de sales.json)
-        // Misma lógica que funcionaba antes, pero con validaciones adicionales
         if (in_array($tipo_comprobante, ['01', '03', '08', '14', '05', '06'])) {
-            // PRIORIDAD 1: Usar datos desde sales.json (como funcionaba originalmente)
-            // CRÍTICO: Convertir TODOS los objetos stdClass a arrays asociativos
-            if (isset($salesJson["emisor"])) {
-                // Convertir objetos a arrays si es necesario (los objetos stdClass de DB::select)
-                // Usar json_decode(json_encode()) para convertir recursivamente todos los objetos
-                $emisorConvertido = json_decode(json_encode($salesJson["emisor"]), true);
-                if (is_array($emisorConvertido)) {
-                    $data["emisor"] = $emisorConvertido;
-                } elseif (is_object($salesJson["emisor"])) {
-                    $data["emisor"] = json_decode(json_encode($salesJson["emisor"]), true);
-                } elseif (is_array($salesJson["emisor"])) {
-                    $data["emisor"] = $salesJson["emisor"]; // ya viene como arreglo [ {...} ]
-                }
-                // Asegurar que sea array indexado y tenga campos necesarios
-                if (isset($data["emisor"]) && is_array($data["emisor"])) {
-                    // Si no es array indexado, convertirlo
-                    if (!isset($data["emisor"][0]) || !is_numeric(key($data["emisor"]))) {
-                        $data["emisor"] = [$data["emisor"]];
-                    }
-                    // Asegurar campos necesarios
-                    foreach ($data["emisor"] as $index => $emisorItem) {
-                        if (is_array($emisorItem)) {
-                            if (!isset($emisorItem["descActividad"])) {
-                                $data["emisor"][$index]["descActividad"] = "";
-                            }
-                            // Asegurar que tanto nrc como ncr estén disponibles
-                            if (!isset($emisorItem["nrc"]) && isset($emisorItem["ncr"])) {
-                                $data["emisor"][$index]["nrc"] = $emisorItem["ncr"];
-                            }
-                            if (!isset($emisorItem["ncr"]) && isset($emisorItem["nrc"])) {
-                                $data["emisor"][$index]["ncr"] = $emisorItem["nrc"];
-                            }
-                            // Si no tiene ninguno, inicializar vacío
-                            if (!isset($emisorItem["nrc"])) {
-                                $data["emisor"][$index]["nrc"] = "";
-                            }
-                            if (!isset($emisorItem["ncr"])) {
-                                $data["emisor"][$index]["ncr"] = "";
-                            }
-                            if (isset($emisorItem["direccion"]) && is_string($emisorItem["direccion"])) {
-                                $data["emisor"][$index]["direccion"] = ["complemento" => $emisorItem["direccion"]];
-                            }
-                        }
-                    }
-                }
+            if (isset($salesJson["emisor"]) && is_array($salesJson["emisor"])) {
+                $data["emisor"] = $salesJson["emisor"]; // ya viene como arreglo [ {...} ]
+            }
+            if (isset($salesJson["cliente"]) && is_array($salesJson["cliente"])) {
+                $data["cliente"] = $salesJson["cliente"]; // ya viene como arreglo [ {...} ]
+            }
+            if (isset($salesJson["detalle"]) && is_array($salesJson["detalle"])) {
+                $data["detalle"] = $salesJson["detalle"]; // arreglo de items
+            }
+            if (isset($salesJson["totales"]) && is_array($salesJson["totales"])) {
+                $data["totales"] = $salesJson["totales"]; // objeto asociativo
             }
 
-            if (isset($salesJson["cliente"])) {
-                // Convertir objetos a arrays si es necesario (CRÍTICO: usar json_decode/json_encode para conversión recursiva)
-                $clienteConvertido = json_decode(json_encode($salesJson["cliente"]), true);
-                if (is_array($clienteConvertido)) {
-                    $data["cliente"] = $clienteConvertido;
-                } elseif (is_object($salesJson["cliente"])) {
-                    $data["cliente"] = json_decode(json_encode($salesJson["cliente"]), true);
-                } elseif (is_array($salesJson["cliente"])) {
-                    $data["cliente"] = $salesJson["cliente"]; // ya viene como arreglo [ {...} ]
-                }
-                // Asegurar que sea array indexado
-                if (isset($data["cliente"]) && is_array($data["cliente"])) {
-                    if (!isset($data["cliente"][0]) || !is_numeric(key($data["cliente"]))) {
-                        $data["cliente"] = [$data["cliente"]];
-                    }
-                }
+            // Para FAC, CRF, CLQ, FSE, NCR y NDB, si tenemos json_enviado, usar su estructura de emisor que es compatible con el template
+            if (isset($json["emisor"]) && is_array($json["emisor"])) {
+                $data["emisor"] = [$json["emisor"]]; // convertir a arreglo como espera el template
             }
-
-            if (isset($salesJson["detalle"])) {
-                // CRÍTICO: Convertir objetos a arrays recursivamente
-                $detalleConvertido = json_decode(json_encode($salesJson["detalle"]), true);
-                if (is_array($detalleConvertido)) {
-                    $data["detalle"] = $detalleConvertido;
-                } elseif (is_object($salesJson["detalle"])) {
-                    $data["detalle"] = json_decode(json_encode($salesJson["detalle"]), true);
-                } elseif (is_array($salesJson["detalle"])) {
-                    $data["detalle"] = $salesJson["detalle"]; // arreglo de items
-                }
+            if (isset($json["receptor"]) && is_array($json["receptor"])) {
+                $data["cliente"] = [$json["receptor"]]; // convertir a arreglo como espera el template
             }
-
-            if (isset($salesJson["totales"])) {
-                // CRÍTICO: Convertir objetos a arrays recursivamente
-                $totalesConvertido = json_decode(json_encode($salesJson["totales"]), true);
-                if (is_array($totalesConvertido)) {
-                    $data["totales"] = $totalesConvertido;
-                } elseif (is_object($salesJson["totales"])) {
-                    $data["totales"] = json_decode(json_encode($salesJson["totales"]), true);
-                } elseif (is_array($salesJson["totales"])) {
-                    $data["totales"] = $salesJson["totales"]; // objeto asociativo
-                }
+            // Mapear detalle y totales desde json_enviado si están disponibles
+            if (isset($json["cuerpoDocumento"]) && is_array($json["cuerpoDocumento"])) {
+                $data["detalle"] = $json["cuerpoDocumento"];
             }
-
-            // PRIORIDAD 2: Si tenemos json_enviado, usar su estructura (como funcionaba originalmente)
-            // IMPORTANTE: Si no hay datos en salesJson, usar json_enviado como fuente principal
-            // Esto es crítico porque cuando se envía el correo automático, puede que salesJson no tenga la estructura completa
-            // NOTA: Para CLQ, el detalle puede estar vacío si no hay documentos relacionados, así que no lo incluimos en la verificación
-            $emisorVacio = empty($data["emisor"]) ||
-                          (isset($data["emisor"][0]) && empty($data["emisor"][0]["nombre"]));
-            $clienteVacio = empty($data["cliente"]) ||
-                           (isset($data["cliente"][0]) && empty($data["cliente"][0]["nombre"]));
-            // CRÍTICO: Si salesJson está vacío, SIEMPRE usar json_enviado como fuente principal
-            $usarJsonEnviado = empty($salesJson) || $emisorVacio || $clienteVacio ||
-                              (empty($data["detalle"]) && $tipo_comprobante != '08'); // CLQ puede tener detalle vacío
-
-            // Log para debugging
-            if (empty($salesJson) || $usarJsonEnviado) {
-                Log::info('genera_pdf: Usando json_enviado como fuente principal', [
-                    'sale_id' => $id,
-                    'salesJson_vacio' => empty($salesJson) ? 'Sí' : 'No',
-                    'emisor_vacio' => $emisorVacio ? 'Sí' : 'No',
-                    'cliente_vacio' => $clienteVacio ? 'Sí' : 'No',
-                    'detalle_vacio' => empty($data["detalle"]) ? 'Sí' : 'No',
-                    'json_has_emisor' => isset($json["emisor"]),
-                    'json_has_receptor' => isset($json["receptor"]),
-                    'json_has_cuerpoDocumento' => isset($json["cuerpoDocumento"]),
-                    'json_has_resumen' => isset($json["resumen"])
-                ]);
-            }
-
-            // Si necesitamos usar json_enviado, extraer todos los datos disponibles
-            if ($usarJsonEnviado) {
-                // Extraer emisor desde json_enviado
-                if (isset($json["emisor"]) && is_array($json["emisor"])) {
-                    $emisorData = $json["emisor"];
-                    if (!isset($emisorData["descActividad"])) {
-                        $emisorData["descActividad"] = "";
-                    }
-                    // Asegurar que tanto nrc como ncr estén disponibles
-                    if (!isset($emisorData["nrc"]) && isset($emisorData["ncr"])) {
-                        $emisorData["nrc"] = $emisorData["ncr"];
-                    }
-                    if (!isset($emisorData["ncr"]) && isset($emisorData["nrc"])) {
-                        $emisorData["ncr"] = $emisorData["nrc"];
-                    }
-                    // Si no tiene ninguno, inicializar vacío
-                    if (!isset($emisorData["nrc"])) {
-                        $emisorData["nrc"] = "";
-                    }
-                    if (!isset($emisorData["ncr"])) {
-                        $emisorData["ncr"] = "";
-                    }
-                    $data["emisor"] = [$emisorData]; // convertir a arreglo como espera el template
-                }
-
-                // Extraer cliente/receptor desde json_enviado
-                if (isset($json["receptor"]) && is_array($json["receptor"])) {
-                    $receptorData = $json["receptor"];
-                    // Asegurar campos necesarios
-                    if (!isset($receptorData["descActividad"])) {
-                        $receptorData["descActividad"] = "";
-                    }
-                    if (!isset($receptorData["nrc"]) && isset($receptorData["ncr"])) {
-                        $receptorData["nrc"] = $receptorData["ncr"];
-                    }
-                    if (!isset($receptorData["ncr"]) && isset($receptorData["nrc"])) {
-                        $receptorData["ncr"] = $receptorData["nrc"];
-                    }
-                    if (!isset($receptorData["nrc"])) {
-                        $receptorData["nrc"] = "";
-                    }
-                    if (!isset($receptorData["ncr"])) {
-                        $receptorData["ncr"] = "";
-                    }
-                    $data["cliente"] = [$receptorData]; // convertir a arreglo como espera el template
-                }
-            } else {
-                // Si ya tenemos datos pero json_enviado tiene emisor/receptor, usarlos como complemento
-                if (isset($json["emisor"]) && is_array($json["emisor"]) && $emisorVacio) {
-                    $emisorData = $json["emisor"];
-                    if (!isset($emisorData["descActividad"])) {
-                        $emisorData["descActividad"] = "";
-                    }
-                    if (!isset($emisorData["nrc"]) && isset($emisorData["ncr"])) {
-                        $emisorData["nrc"] = $emisorData["ncr"];
-                    }
-                    if (!isset($emisorData["ncr"]) && isset($emisorData["nrc"])) {
-                        $emisorData["ncr"] = $emisorData["nrc"];
-                    }
-                    if (!isset($emisorData["nrc"])) {
-                        $emisorData["nrc"] = "";
-                    }
-                    if (!isset($emisorData["ncr"])) {
-                        $emisorData["ncr"] = "";
-                    }
-                    $data["emisor"] = [$emisorData];
-                }
-
-                if (isset($json["receptor"]) && is_array($json["receptor"]) && $clienteVacio) {
-                    $receptorData = $json["receptor"];
-                    if (!isset($receptorData["descActividad"])) {
-                        $receptorData["descActividad"] = "";
-                    }
-                    if (!isset($receptorData["nrc"]) && isset($receptorData["ncr"])) {
-                        $receptorData["nrc"] = $receptorData["ncr"];
-                    }
-                    if (!isset($receptorData["ncr"]) && isset($receptorData["nrc"])) {
-                        $receptorData["ncr"] = $receptorData["nrc"];
-                    }
-                    if (!isset($receptorData["nrc"])) {
-                        $receptorData["nrc"] = "";
-                    }
-                    if (!isset($receptorData["ncr"])) {
-                        $receptorData["ncr"] = "";
-                    }
-                    $data["cliente"] = [$receptorData];
-                }
-            }
-
-            // Mapear detalle y totales desde json_enviado si están disponibles o si no hay datos
-            // NOTA: Para CLQ, el detalle puede venir como "documentosRelacionados" en lugar de "cuerpoDocumento"
-            // CRÍTICO: Si salesJson está vacío, SIEMPRE intentar extraer desde json_enviado
-            if ($usarJsonEnviado || empty($salesJson) || (isset($json["cuerpoDocumento"]) && is_array($json["cuerpoDocumento"]))) {
-                if (isset($json["cuerpoDocumento"]) && is_array($json["cuerpoDocumento"]) && !empty($json["cuerpoDocumento"])) {
-                    $data["detalle"] = $json["cuerpoDocumento"];
-                    Log::info('genera_pdf: detalle extraído desde json_enviado.cuerpoDocumento', [
-                        'sale_id' => $id,
-                        'detalle_count' => count($data["detalle"])
-                    ]);
-                }
-            }
-            // Para CLQ, también verificar documentosRelacionados
-            if ($tipo_comprobante == '08' && (empty($data["detalle"]) || $usarJsonEnviado || empty($salesJson))) {
-                if (isset($json["documentosRelacionados"]) && is_array($json["documentosRelacionados"]) && !empty($json["documentosRelacionados"])) {
-                    $data["detalle"] = $json["documentosRelacionados"];
-                    Log::info('genera_pdf: detalle extraído desde json_enviado.documentosRelacionados (CLQ)', [
-                        'sale_id' => $id,
-                        'detalle_count' => count($data["detalle"])
-                    ]);
-                }
-            }
-
-            // CRÍTICO: Si salesJson está vacío, SIEMPRE intentar extraer totales desde json_enviado
-            if ($usarJsonEnviado || empty($salesJson) || (isset($json["resumen"]) && is_array($json["resumen"]))) {
-                if (isset($json["resumen"]) && is_array($json["resumen"]) && !empty($json["resumen"])) {
-                    $data["totales"] = $json["resumen"];
-                    Log::info('genera_pdf: totales extraídos desde json_enviado.resumen', [
-                        'sale_id' => $id,
-                        'totales_keys' => is_array($data["totales"]) ? array_keys($data["totales"]) : 'No es array'
-                    ]);
-                }
-            }
-
-            // Asegurar que emisor siempre tenga al menos un elemento para evitar errores en la vista
-            if (!isset($data["emisor"]) || !is_array($data["emisor"]) || empty($data["emisor"]) || !isset($data["emisor"][0]) || !is_array($data["emisor"][0])) {
-                // Último recurso: construir emisor básico vacío
-                $data["emisor"] = [[
-                    "nombre" => "",
-                    "nit" => "",
-                    "nrc" => "",
-                    "ncr" => "",
-                    "descActividad" => "",
-                    "direccion" => "",
-                    "telefono" => "",
-                    "correo" => "",
-                    "nombreComercial" => ""
-                ]];
-            }
-
-            // Asegurar que cliente siempre tenga al menos un elemento (la vista lo usa como $cliente[0])
-            if (!isset($data["cliente"]) || !is_array($data["cliente"]) || empty($data["cliente"]) || !isset($data["cliente"][0]) || !is_array($data["cliente"][0])) {
-                // Último recurso: construir cliente básico vacío
-                $data["cliente"] = [[
-                    "nombre" => "",
-                    "tipoDocumento" => "",
-                    "numDocumento" => "",
-                    "correo" => ""
-                ]];
-            }
-
-            // Asegurar que receptor en JSON tenga los mismos datos que cliente
-            if (!isset($json["receptor"]) || !is_array($json["receptor"]) || empty($json["receptor"]["nombre"])) {
-                if (isset($data["cliente"][0]) && !empty($data["cliente"][0]["nombre"])) {
-                    $json["receptor"] = [
-                        "nombre" => $data["cliente"][0]["nombre"] ?? "",
-                        "tipoDocumento" => $data["cliente"][0]["tipoDocumento"] ?? "",
-                        "numDocumento" => $data["cliente"][0]["numDocumento"] ?? "",
-                        "correo" => $data["cliente"][0]["correo"] ?? "",
-                        "nit" => $data["cliente"][0]["nit"] ?? "",
-                        "nrc" => $data["cliente"][0]["nrc"] ?? ($data["cliente"][0]["ncr"] ?? ""),
-                        "ncr" => $data["cliente"][0]["ncr"] ?? ($data["cliente"][0]["nrc"] ?? ""),
-                        "descActividad" => $data["cliente"][0]["descActividad"] ?? ""
-                    ];
-                }
-            } else {
-                // Asegurar que receptor existente tenga nrc y ncr definidos
-                if (!isset($json["receptor"]["nrc"]) && isset($json["receptor"]["ncr"])) {
-                    $json["receptor"]["nrc"] = $json["receptor"]["ncr"];
-                }
-                if (!isset($json["receptor"]["ncr"]) && isset($json["receptor"]["nrc"])) {
-                    $json["receptor"]["ncr"] = $json["receptor"]["nrc"];
-                }
-                // Si no tiene ninguno, inicializar vacío
-                if (!isset($json["receptor"]["nrc"])) {
-                    $json["receptor"]["nrc"] = "";
-                }
-                if (!isset($json["receptor"]["ncr"])) {
-                    $json["receptor"]["ncr"] = "";
-                }
+            if (isset($json["resumen"]) && is_array($json["resumen"])) {
+                $data["totales"] = $json["resumen"];
             }
         }
-
-        // Asegurar que documento siempre tenga al menos un elemento (fuera del if para todos los tipos)
-        if (!is_array($documento) || empty($documento) || !isset($documento[0])) {
-            $documento = [[
-                "versionjson" => "",
-                "versionJson" => "",
-                "version" => "",
-                "actual" => "",
-                "ambiente" => "",
-                "tipodocumento" => "",
-                "fechacreacion" => date('Y-m-d')
-            ]];
-        }
-
-        // Actualizar documento en $data
-        $data["documento"] = $documento;
-
-        // Actualizar JSON en $data con receptor actualizado (si se construyó desde BD)
-        $data["json"] = $json;
-
-        // CRÍTICO: Log final para verificar qué se está pasando a la vista
-        // Esto ayuda a identificar por qué el PDF puede estar vacío
-        Log::info('genera_pdf: Estado final de $data antes de pasar a la vista', [
-            'sale_id' => $id,
-            'tipo_comprobante' => $tipo_comprobante,
-            'emisor_count' => isset($data["emisor"]) && is_array($data["emisor"]) ? count($data["emisor"]) : 0,
-            'emisor_has_nombre' => isset($data["emisor"][0]["nombre"]) && !empty($data["emisor"][0]["nombre"]),
-            'emisor_has_nit' => isset($data["emisor"][0]["nit"]) && !empty($data["emisor"][0]["nit"]),
-            'emisor_has_nrc' => isset($data["emisor"][0]["nrc"]) && !empty($data["emisor"][0]["nrc"]),
-            'cliente_count' => isset($data["cliente"]) && is_array($data["cliente"]) ? count($data["cliente"]) : 0,
-            'cliente_has_nombre' => isset($data["cliente"][0]["nombre"]) && !empty($data["cliente"][0]["nombre"]),
-            'detalle_count' => isset($data["detalle"]) && is_array($data["detalle"]) ? count($data["detalle"]) : 0,
-            'totales_has_totalPagar' => isset($data["totales"]["totalPagar"]) && !empty($data["totales"]["totalPagar"]),
-            'json_has_emisor' => isset($json["emisor"]),
-            'json_has_receptor' => isset($json["receptor"]),
-            'json_has_cuerpoDocumento' => isset($json["cuerpoDocumento"]),
-            'json_has_resumen' => isset($json["resumen"]),
-            'salesJson_vacio' => empty($salesJson) ? 'Sí' : 'No'
-        ]);
-
-        // Asegurar que detalle y totales siempre estén definidos (incluso si están vacíos)
-        // Esto previene errores de "Undefined variable" en las vistas
-        if (!isset($data["detalle"]) || !is_array($data["detalle"])) {
-            $data["detalle"] = [];
-        }
-        if (!isset($data["totales"]) || !is_array($data["totales"])) {
-            $data["totales"] = [];
-        }
-        if (!isset($data["emisor"]) || !is_array($data["emisor"])) {
-            $data["emisor"] = [];
-        }
-        if (!isset($data["cliente"]) || !is_array($data["cliente"])) {
-            $data["cliente"] = [];
-        }
-
         @$fecha = $json["fhRecibido"] ?? null;
         @$qr = base64_encode(codigoQR(($documento[0]["ambiente"] ?? ($json["identificacion"]["ambiente"] ?? null)), ($json["codigoGeneracion"] ?? ($json["identificacion"]["codigoGeneracion"] ?? null)), $fecha));
         //return  '<img src="data:image/png;base64,'.$qr .'">';
@@ -3901,40 +2995,13 @@ class SaleController extends Controller
         $data["MunicipioR"] = $factura[0]['MunicipioR'];
         $data["qr"] = $qr;
 
-        // VERIFICACIÓN FINAL: Asegurar que todas las variables que las vistas necesitan estén definidas
-        // Esto es crítico para evitar errores de "Undefined variable" en las vistas
-        $data["detalle"] = $data["detalle"] ?? [];
-        $data["totales"] = $data["totales"] ?? [];
-        $data["emisor"] = $data["emisor"] ?? [];
-        $data["cliente"] = $data["cliente"] ?? [];
-        $data["json"] = $data["json"] ?? [];
-        $data["documento"] = $data["documento"] ?? [];
-
-        // Debug: Log para verificar que detalle esté definido antes de pasar a la vista
-        Log::info('genera_pdf: Verificación final antes de loadView', [
-            'sale_id' => $id,
-            'tipo_comprobante' => $tipo_comprobante,
-            'detalle_isset' => isset($data["detalle"]),
-            'detalle_is_array' => is_array($data["detalle"] ?? null),
-            'detalle_count' => is_array($data["detalle"] ?? null) ? count($data["detalle"]) : 'N/A',
-            'emisor_isset' => isset($data["emisor"]),
-            'emisor_count' => (isset($data["emisor"]) && is_array($data["emisor"])) ? count($data["emisor"]) : 'N/A',
-            'emisor_has_nombre' => (isset($data["emisor"][0]) && is_array($data["emisor"][0])) ? !empty($data["emisor"][0]["nombre"]) : false,
-            'cliente_isset' => isset($data["cliente"]),
-            'cliente_count' => (isset($data["cliente"]) && is_array($data["cliente"])) ? count($data["cliente"]) : 'N/A',
-            'cliente_has_nombre' => (isset($data["cliente"][0]) && is_array($data["cliente"][0])) ? !empty($data["cliente"][0]["nombre"]) : false,
-            'totales_isset' => isset($data["totales"]),
-            'data_keys' => array_keys($data),
-            'rptComprobante' => $rptComprobante,
-            'json_has_emisor' => isset($json["emisor"]),
-            'json_has_receptor' => isset($json["receptor"]),
-            'json_has_cuerpoDocumento' => isset($json["cuerpoDocumento"]),
-            'json_has_resumen' => isset($json["resumen"]),
-            'salesJson_tiene_emisor' => isset($salesJson["emisor"]),
-            'salesJson_tiene_cliente' => isset($salesJson["cliente"]),
-            'salesJson_tiene_detalle' => isset($salesJson["detalle"]),
-            'salesJson_tiene_totales' => isset($salesJson["totales"])
-        ]);
+        // Agregar información del proveedor (venta a cuenta de tercero) si existe
+        if (!empty($factura[0]['provider_name']) && !empty($factura[0]['provider_nit'])) {
+            $data["comprobante"][3] = [[
+                "nombre" => $factura[0]['provider_name'],
+                "nit" => $factura[0]['provider_nit']
+            ]];
+        }
 
         $tamaño = "Letter";
         $orientacion = "Portrait";
@@ -3964,6 +3031,7 @@ class SaleController extends Controller
             ->join('departments as dep', 'dep.id', '=', 'add.department_id')
             ->join('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
             ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
+            ->leftJoin('providers', 'providers.id', '=', 'sales.provider_id')
             ->select(
                 'sales.*',
                 'dte.json',
@@ -3974,7 +3042,9 @@ class SaleController extends Controller
                 'cou.name as PaisR',
                 'dep.name as DepartamentoR',
                 'muni.name as MunicipioR',
-                'typedoc.codemh'
+                'typedoc.codemh',
+                'providers.razonsocial as provider_name',
+                'providers.nit as provider_nit'
             )
             ->where('sales.id', '=', $id)
             ->get();
@@ -4042,6 +3112,14 @@ class SaleController extends Controller
         $data["DepartamentoE"] = $factura[0]['DepartamentoE'];
         $data["MunicipioR"] = $factura[0]['MunicipioR'];
         $data["DepartamentoR"] = $factura[0]['DepartamentoR'];
+
+        // Agregar información del proveedor (venta a cuenta de tercero) si existe
+        if (!empty($factura[0]['provider_name']) && !empty($factura[0]['provider_nit'])) {
+            $data["comprobante"][3] = [[
+                "nombre" => $factura[0]['provider_name'],
+                "nit" => $factura[0]['provider_nit']
+            ]];
+        }
 
         $tamaño = "Letter";
         $orientacion = "Portrait";
@@ -4216,16 +3294,8 @@ class SaleController extends Controller
             ->where('sales.id', $saleId)
             ->first();
 
-        if (!$venta) {
-            Log::warning('enviarCorreoAutomaticoVenta: venta no encontrada', ['sale_id' => $saleId]);
-            return;
-        }
-        if (empty(trim((string)($venta->client_email ?? '')))) {
-            Log::warning('enviarCorreoAutomaticoVenta: cliente sin email', [
-                'sale_id' => $saleId,
-                'client_id' => $venta->client_id
-            ]);
-            return;
+        if (!$venta || empty($venta->client_email)) {
+            return; // sin correo, no se envía
         }
 
         // Construir nombre del cliente
@@ -4236,94 +3306,58 @@ class SaleController extends Controller
         $numero = $venta->nu_doc ?: ('#' . $venta->id);
         $email = $venta->client_email;
 
-        // Usar la misma lógica que envia_correo (desde sales.index)
-        // SIEMPRE buscar el DTE desde la base de datos para asegurar datos actualizados
-        // Ignorar el objeto $dte pasado como parámetro para garantizar consistencia
-        // Esto asegura que siempre tengamos los datos más recientes guardados en la BD
-        $dte = \App\Models\Dte::where('sale_id', $saleId)->latest('id')->first();
-
-        // Debug: Log para verificar qué se está encontrando
-        Log::info('Debug enviarCorreoAutomaticoVenta', [
-            'id_factura' => $saleId,
-            'dte_encontrado' => $dte ? 'Sí' : 'No',
-            'dte_json' => $dte ? ($dte->json ? 'Sí' : 'No') : 'N/A',
-            'dte_codigoGeneracion' => $dte ? $dte->codigoGeneracion : 'N/A',
-            'dte_selloRecibido' => $dte ? ($dte->selloRecibido ? 'Sí' : 'No') : 'N/A',
-            'dte_fhRecibido' => $dte ? ($dte->fhRecibido ? 'Sí' : 'No') : 'N/A'
-        ]);
-
         if ($dte && $dte->json) {
-            // Si hay DTE, usar PDF oficial y JSON enviado (misma lógica que envia_correo)
+            // Armar PDF oficial y JSON
             $pdf = $this->genera_pdf($saleId);
-            $json_root = json_decode($dte->json, true); // Decodificar como array
-            $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
-            $json = $this->limpiarJsonParaCorreo($json_enviado);
+            $jsonRoot = json_decode($dte->json, true); // Decodificar como array
+            $jsonEnviado = $jsonRoot['json']['json_enviado'] ?? null;
 
-            // Debug: Log para verificar el JSON
-            Log::info('Debug JSON en enviarCorreoAutomaticoVenta', [
-                'json_root_keys' => $json_root ? array_keys($json_root) : 'No keys',
-                'json_enviado_keys' => $json_enviado ? array_keys($json_enviado) : 'No keys',
-                'codigoGeneracion_en_json' => $json_enviado['identificacion']['codigoGeneracion'] ?? 'No encontrado'
-            ]);
+            // Usar json_enviado si existe, sino usar el json completo
+            $jsonParaCorreo = $jsonEnviado ?: $jsonRoot;
+            $jsonLimpio = $this->limpiarJsonParaCorreo($jsonParaCorreo);
 
-            // Obtener nombre de archivo basado en código de generación
-            $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
+            // Obtener nombre de archivo basado en sello de recepción
+            $nombreArchivo = $this->obtenerNombreArchivo($dte, $jsonEnviado);
 
-            // Debug: Log para verificar el nombre del archivo
-            Log::info('Debug nombre archivo en enviarCorreoAutomaticoVenta', [
-                'nombreArchivo_final' => $nombreArchivo,
-                'dte_codigoGeneracion' => $dte->codigoGeneracion
-            ]);
-
-            $archivos = [
-                $nombreArchivo . '.pdf' => $pdf->output(),
-                $nombreArchivo . '.json' => $json
-            ];
-
-            $data = [
-                "nombre" => $json_enviado['receptor']['nombre'] ?? $nombreCliente,
-                "numero" => $numero,
-                "json" => $json_enviado // Ya es un array
+            $dataCorreo = [
+                'nombre' => $nombreCliente,
+                'numero' => $numero,
+                'json' => $jsonParaCorreo // Ya es un array
             ];
 
             // CORRECCIÓN: Asegurar que el JSON sea un array, no string
-            if (is_string($data["json"])) {
-                $data["json"] = json_decode($data["json"], true);
+            if (is_string($dataCorreo["json"])) {
+                $dataCorreo["json"] = json_decode($dataCorreo["json"], true);
                 Log::info('JSON convertido de string a array en enviarCorreoAutomaticoVenta');
             }
 
             // Debug: Log para verificar qué se está enviando al correo
             Log::info('Debug data para correo en enviarCorreoAutomaticoVenta', [
-                'json_tipo' => gettype($data["json"]),
-                'json_keys' => is_array($data["json"]) ? array_keys($data["json"]) : 'No es array',
-                'identificacion_existe' => isset($data["json"]["identificacion"]) ? 'Sí' : 'No'
+                'json_tipo' => gettype($dataCorreo["json"]),
+                'json_keys' => is_array($dataCorreo["json"]) ? array_keys($dataCorreo["json"]) : 'No es array',
+                'identificacion_existe' => isset($dataCorreo["json"]["identificacion"]) ? 'Sí' : 'No'
             ]);
 
-            $asunto = "Comprobante de Venta No." . ($json_enviado['identificacion']['numeroControl'] ?? $numero) . ' de Proveedor: ' . ($json_enviado['emisor']['nombre'] ?? 'Empresa');
-        } else {
-            // Si no hay DTE, usar PDF local (misma lógica que envia_correo)
-            $pdf = $this->genera_pdflocal($saleId);
-
-            $archivos = [
-                'venta_' . $saleId . '.pdf' => $pdf->output()
-            ];
-
-            $data = [
-                "nombre" => $nombreCliente,
-                "numero" => $numero,
-                "json" => null
-            ];
-
-            $asunto = "Comprobante de Venta No." . $numero;
+            $correo = new EnviarCorreo($dataCorreo);
+            $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
+            $correo->subject($asunto);
+            $correo->attachData($pdf->output(), $nombreArchivo . '.pdf');
+            $correo->attachData($jsonLimpio, $nombreArchivo . '.json');
+            Mail::to($email)->send($correo);
+            return;
         }
 
-        $correo = new EnviarCorreo($data);
+        // Sin DTE: PDF local
+        $pdf = $this->genera_pdflocal($saleId);
+        $dataCorreo = [
+            'nombre' => $nombreCliente,
+            'numero' => $numero,
+            'json' => null
+        ];
+        $correo = new EnviarCorreo($dataCorreo);
+        $asunto = 'Comprobante de Venta No. ' . $numero . ' - ' . $venta->company_name;
         $correo->subject($asunto);
-        foreach ($archivos as $nombreArchivo => $rutaArchivo) {
-            $correo->attachData($rutaArchivo, $nombreArchivo);
-        }
-
-        Log::info('enviarCorreoAutomaticoVenta: enviando correo', ['sale_id' => $saleId, 'email' => $email, 'tiene_dte' => ($dte && $dte->json) ? 'Sí' : 'No']);
+        $correo->attachData($pdf->output(), 'venta_' . $saleId . '.pdf');
         Mail::to($email)->send($correo);
     }
 
@@ -4409,544 +3443,5 @@ class SaleController extends Controller
     {
         $lineas = DB::table('aerolineas')->get();
         return response()->json($lineas, 200);
-    }
-
-    /**
-     * Obtiene las ventas hijas de una venta padre
-     */
-    public function getChildSales($parent_id)
-    {
-        $parentSale = Sale::find($parent_id);
-
-        $childSales = Sale::with(['dte', 'salesdetails.lineProvider', 'typedocument'])
-            ->where('parent_sale_id', $parent_id)
-            ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($child) use ($parentSale) {
-                // Buscar DTE de invalidación (codTransaction = "02")
-                $dteInvalidacion = \App\Models\Dte::where('sale_id', $child->id)
-                    ->where('codTransaction', '02')
-                    ->latest()
-                    ->first();
-
-                return [
-                    'id' => $child->id,
-                    'date' => $child->date->format('d/m/Y'),
-                    'created_at' => $child->created_at ? $child->created_at->format('H:i') : null,
-                    'totalamount' => $child->totalamount,
-                    'state' => $child->state,
-                    'acuenta' => $child->acuenta,
-                    'provider' => $child->salesdetails->first()->lineProvider ?? null,
-                    'document_type' => $child->typedocument ? $child->typedocument->description : 'N/A',
-                    'dte' => $child->dte ? [
-                        'id' => $child->dte->id,
-                        'codigoGeneracion' => $child->dte->codigoGeneracion,
-                        'estadoHacienda' => $child->dte->estadoHacienda,
-                        'id_doc' => $child->dte->id_doc,
-                        'selloRecibido' => $child->dte->selloRecibido,
-                        'fhRecibido' => $child->dte->fhRecibido
-                    ] : null,
-                    'dte_invalidacion' => $dteInvalidacion ? [
-                        'id' => $dteInvalidacion->id,
-                        'codigoGeneracion' => $dteInvalidacion->codigoGeneracion,
-                        'estadoHacienda' => $dteInvalidacion->estadoHacienda,
-                        'fhRecibido' => $dteInvalidacion->fhRecibido
-                    ] : null,
-                    'correlativo_dte' => $child->dte ? $child->dte->id_doc : null,
-                    'has_dte' => $child->dte ? true : false,
-                    'is_success' => $child->dte && $child->dte->estadoHacienda === 'PROCESADO',
-                    'can_reemit' => !$child->dte || $child->dte->estadoHacienda !== 'PROCESADO',
-                    // Información del padre
-                    'parent_client' => $parentSale ? $parentSale->client : null,
-                    'parent_client_name' => $parentSale && $parentSale->client
-                        ? ($parentSale->client->tpersona == 'J'
-                            ? $parentSale->client->name_contribuyente
-                            : $parentSale->client->firstname . ' ' . $parentSale->client->firstlastname)
-                        : '-',
-                    'parent_waytopay' => $parentSale ? $parentSale->waytopay : null,
-                    'parent_waytopay_text' => $parentSale ? ($parentSale->waytopay == 1 ? 'CONTADO' : ($parentSale->waytopay == 2 ? 'CRÉDITO' : 'OTRO')) : '-'
-                ];
-            });
-
-        return response()->json($childSales);
-    }
-
-    /**
-     * Reemite un DTE de una venta hija que falló
-     */
-    public function reemitChild($id)
-    {
-        try {
-            $childSale = Sale::with('salesdetails')->find($id);
-
-            // Verificar si es hijo: si parent_sale_id es null, NO es hijo
-            if (!$childSale || is_null($childSale->parent_sale_id)) {
-                return redirect()->route('sale.index')
-                    ->with('error', 'Venta no encontrada o no es una venta hija');
-            }
-
-            // Calcular monto
-            $total = 0;
-            foreach ($childSale->salesdetails as $detail) {
-                $total += $detail->pricesale + $detail->detained13 - $detail->detained - $detail->renta + $detail->nosujeta + $detail->exempt;
-            }
-
-            $amount = '$' . number_format($total, 2, '.', '');
-            $corrEncoded = base64_encode($childSale->id);
-
-            // Intentar emitir nuevamente
-            $response = $this->createdocument($corrEncoded, $amount);
-            $responseData = json_decode($response->getContent(), true);
-
-            if (isset($responseData['res']) && $responseData['res'] == 1) {
-                return redirect()->route('sale.index')
-                    ->with('success', 'DTE reemitido correctamente');
-            } else {
-                return redirect()->route('sale.index')
-                    ->with('error', 'Error al reemitir DTE: ' . ($responseData['message'] ?? 'Error desconocido'));
-            }
-        } catch (\Exception $e) {
-            Log::error('Error reemitiendo DTE hijo: ' . $e->getMessage());
-            return redirect()->route('sale.index')
-                ->with('error', 'Error: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Verifica si una venta tiene múltiples proveedores en sus detalles
-     */
-    private function hasMultipleProviders($sale)
-    {
-        $providers = Salesdetail::where('sale_id', $sale->id)
-            ->whereNotNull('line_provider_id')
-            ->distinct()
-            ->pluck('line_provider_id')
-            ->toArray();
-
-        // Si tiene al menos un proveedor Y además tiene líneas sin proveedor
-        $hasNoProvider = Salesdetail::where('sale_id', $sale->id)
-            ->whereNull('line_provider_id')
-            ->exists();
-
-        // Hay múltiples grupos si:
-        // 1. Hay más de un proveedor diferente, O
-        // 2. Hay al menos un proveedor Y hay líneas sin proveedor
-        return count($providers) > 1 || (count($providers) >= 1 && $hasNoProvider);
-    }
-
-    /**
-     * Procesa una venta con múltiples proveedores (padre con hijos)
-     */
-    private function processMultiProviderSale($parentSale, $amount)
-    {
-        DB::beginTransaction();
-        try {
-            $amount = substr($amount, 1);
-
-            // Agrupar detalles por proveedor ANTES de guardar para determinar provider_id
-            $groups = $this->groupDetailsByProvider($parentSale);
-
-            // Si todos los productos son de terceros y hay un solo proveedor, establecer provider_id en la venta padre
-            // Esto es necesario para que el CLQ pueda encontrar el documento cuando solo hay un proveedor
-            $providerIds = array_filter(array_column($groups, 'provider_id'), function($id) {
-                return $id !== null;
-            });
-
-            // Si hay exactamente un proveedor (todos los productos son del mismo tercero), establecer provider_id
-            if (count($providerIds) === 1 && count($groups) === 1) {
-                $parentSale->provider_id = reset($providerIds);
-                Log::info('Estableciendo provider_id en venta padre', [
-                    'sale_id' => $parentSale->id,
-                    'provider_id' => $parentSale->provider_id,
-                    'provider_name' => $groups[array_key_first($groups)]['provider_name'] ?? 'N/A'
-                ]);
-            } elseif (count($providerIds) === 0) {
-                // Si no hay proveedores (todos son productos propios), asegurar que provider_id sea null
-                $parentSale->provider_id = null;
-            }
-            // Si hay múltiples proveedores, provider_id queda null (es una venta padre con múltiples terceros)
-
-            // Marcar como padre
-            $parentSale->is_parent = 1;
-            $parentSale->totalamount = $amount;
-            $parentSale->typesale = 1; // Finalizar
-
-            // Log antes de guardar para verificar provider_id
-            Log::info('Guardando venta padre', [
-                'sale_id' => $parentSale->id,
-                'provider_id' => $parentSale->provider_id,
-                'is_parent' => $parentSale->is_parent,
-                'total_grupos' => count($groups),
-                'provider_ids' => $providerIds
-            ]);
-
-            $parentSale->save();
-
-            $childResults = [];
-            $allSuccess = true;
-
-            foreach ($groups as $key => $group) {
-                try {
-                    // Crear venta hija
-                    $childSale = $this->createChildSale($parentSale, $group);
-
-                    // Calcular monto del hijo
-                    $childAmount = $this->calculateChildAmount($group['details']);
-
-                    // Emitir DTE para el hijo (usar la función actual createdocument)
-                    $dteResponse = $this->emitDTEForChild($childSale, $childAmount);
-
-                    if ($dteResponse['success']) {
-                        $childResults[] = [
-                            'sale_id' => $childSale->id,
-                            'success' => true,
-                            'provider' => $group['provider_name'] ?? 'Servicio Propio',
-                            'provider_id' => $group['provider_id'] ?? null,
-                            'amount' => str_replace('$', '', $childAmount),
-                            'dte_id' => $dteResponse['dte_id'] ?? null,
-                            'codigo_generacion' => $dteResponse['codigo_generacion'] ?? null
-                        ];
-                    } else {
-                        $allSuccess = false;
-                        $childResults[] = [
-                            'sale_id' => $childSale->id,
-                            'success' => false,
-                            'error' => $dteResponse['error'] ?? 'Error desconocido',
-                            'provider' => $group['provider_name'] ?? 'Servicio Propio',
-                            'provider_id' => $group['provider_id'] ?? null,
-                            'amount' => str_replace('$', '', $childAmount)
-                        ];
-                    }
-                } catch (\Exception $e) {
-                    $allSuccess = false;
-                    $childResults[] = [
-                        'sale_id' => null,
-                        'success' => false,
-                        'error' => $e->getMessage(),
-                        'provider' => $group['provider_name'] ?? 'Desconocido',
-                        'provider_id' => $group['provider_id'] ?? null
-                    ];
-                    Log::error('Error creando hijo: ' . $e->getMessage());
-                }
-            }
-
-            DB::commit();
-
-            // Si todos los DTEs se emitieron bien, enviar un solo correo consolidado al cliente
-            if ($allSuccess) {
-                $this->sendConsolidatedEmail($parentSale);
-            }
-
-            return response()->json([
-                'res' => $allSuccess ? 1 : 0,
-                'type' => 'multi_provider',
-                'parent_sale_id' => $parentSale->id,
-                'all_success' => $allSuccess,
-                'children' => $childResults,
-                'message' => $allSuccess
-                    ? 'Todos los DTEs se emitieron correctamente. Revisa tu correo.'
-                    : 'Algunos DTEs fallaron. Puedes reemitirlos desde el listado de ventas.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error en processMultiProviderSale: ' . $e->getMessage());
-            return response()->json([
-                'res' => 0,
-                'error' => 'Error al procesar venta múltiple',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Agrupa los detalles de venta por proveedor
-     */
-    private function groupDetailsByProvider($sale)
-    {
-        $details = Salesdetail::where('sale_id', $sale->id)->get();
-        $groups = [];
-
-        foreach ($details as $detail) {
-            $key = $detail->line_provider_id ?? 'no_provider';
-
-            if (!isset($groups[$key])) {
-                $provider = null;
-                $providerId = $detail->line_provider_id; // Obtener directamente de line_provider_id
-
-                if ($providerId) {
-                    $provider = Provider::find($providerId);
-                }
-
-                $groups[$key] = [
-                    'provider_id' => $providerId, // Guardar el line_provider_id directamente
-                    'provider_name' => $provider ? $provider->razonsocial : 'Servicio Propio',
-                    'details' => []
-                ];
-
-                // Log para debugging
-                Log::info('Grupo creado', [
-                    'key' => $key,
-                    'provider_id' => $providerId,
-                    'provider_name' => $groups[$key]['provider_name']
-                ]);
-            }
-
-            $groups[$key]['details'][] = $detail;
-        }
-
-        return $groups;
-    }
-
-    /**
-     * Crea una venta hija a partir del padre
-     */
-    private function createChildSale($parentSale, $group)
-    {
-        $childSale = new Sale();
-        $childSale->parent_sale_id = $parentSale->id;
-        $childSale->is_parent = 0;
-        $childSale->client_id = $parentSale->client_id;
-        $childSale->company_id = $parentSale->company_id;
-        $childSale->typedocument_id = $parentSale->typedocument_id;
-        $childSale->user_id = $parentSale->user_id;
-        $childSale->date = $parentSale->date;
-        $childSale->waytopay = $parentSale->waytopay;
-        $childSale->typesale = 2; // Borrador inicialmente
-        $childSale->acuenta = $group['provider_name'];
-
-        // IMPORTANTE: Guardar el provider_id desde line_provider_id del primer detalle del grupo
-        // Esto es necesario para que el CLQ pueda encontrar el documento por provider_id
-        // El provider_id debe ser el mismo que line_provider_id de salesdetails
-        $firstDetail = !empty($group['details']) ? $group['details'][0] : null;
-
-        // Obtener provider_id del grupo o del primer detalle
-        $providerId = $group['provider_id'] ?? ($firstDetail ? $firstDetail->line_provider_id : null);
-
-        // Asignar provider_id directamente (puede ser null para "Servicio Propio")
-        $childSale->provider_id = $providerId;
-
-        // Log para debugging
-        Log::info('Creando venta hija', [
-            'parent_id' => $parentSale->id,
-            'provider_id_asignado' => $childSale->provider_id,
-            'provider_name' => $group['provider_name'] ?? 'N/A',
-            'group_provider_id' => $group['provider_id'] ?? 'N/A',
-            'first_detail_line_provider_id' => $firstDetail ? $firstDetail->line_provider_id : 'N/A',
-            'details_count' => count($group['details'] ?? [])
-        ]);
-
-        // Calcular total
-        $total = 0;
-        foreach ($group['details'] as $detail) {
-            $total += $detail->pricesale + $detail->detained13 - $detail->detained - $detail->renta + $detail->nosujeta + $detail->exempt;
-        }
-        $childSale->totalamount = round($total, 2);
-        $childSale->save();
-
-        // Verificar que se guardó correctamente
-        $savedChild = Sale::find($childSale->id);
-        Log::info('Venta hija guardada - Verificación provider_id', [
-            'child_id' => $childSale->id,
-            'provider_id_guardado' => $savedChild->provider_id ?? 'NULL',
-            'provider_id_esperado' => $childSale->provider_id ?? 'NULL',
-            'coincide' => ($savedChild->provider_id == $childSale->provider_id) ? 'SÍ' : 'NO'
-        ]);
-
-        if ($savedChild && $savedChild->provider_id != $childSale->provider_id) {
-            Log::error('ERROR: provider_id no se guardó correctamente', [
-                'child_id' => $childSale->id,
-                'expected' => $childSale->provider_id,
-                'actual' => $savedChild->provider_id
-            ]);
-        }
-
-        // Copiar detalles
-        foreach ($group['details'] as $detail) {
-            $newDetail = $detail->replicate();
-            $newDetail->sale_id = $childSale->id;
-            $newDetail->save();
-        }
-
-        return $childSale;
-    }
-
-    /**
-     * Calcula el monto total de un grupo de detalles
-     */
-    private function calculateChildAmount($details)
-    {
-        $total = 0;
-        foreach ($details as $detail) {
-            $total += $detail->pricesale + $detail->detained13 - $detail->detained - $detail->renta + $detail->nosujeta + $detail->exempt;
-        }
-        return '$' . number_format($total, 2, '.', '');
-    }
-
-    /**
-     * Emite DTE para una venta hija usando la lógica existente
-     */
-    private function emitDTEForChild($childSale, $amount)
-    {
-        try {
-            $corrEncoded = base64_encode($childSale->id);
-
-            // Llamar a la función actual de emisión de DTE
-            // (El código de emisión ya existe en createdocument, se reutiliza)
-            $response = $this->createdocument($corrEncoded, $amount);
-
-            // Manejar tanto Response como string
-            if ($response instanceof \Illuminate\Http\JsonResponse || $response instanceof \Illuminate\Http\Response) {
-                $responseData = json_decode($response->getContent(), true);
-            } else {
-                // Si es string, decodificarlo directamente
-                $responseData = is_string($response) ? json_decode($response, true) : $response;
-            }
-
-            // Validar que se pudo decodificar el JSON
-            if ($responseData === null && json_last_error() !== JSON_ERROR_NONE) {
-                throw new \Exception('Error al decodificar respuesta de createdocument: ' . json_last_error_msg());
-            }
-
-            // Obtener información del DTE creado
-            $dte = Dte::where('sale_id', $childSale->id)->latest()->first();
-
-            // Obtener rutas de PDF y JSON desde la respuesta o desde el DTE
-            $pdfPath = $responseData['pdf_path'] ?? null;
-            $jsonPath = $responseData['json_path'] ?? null;
-
-            // Si no están en la respuesta, intentar obtenerlas del DTE
-            if (!$pdfPath && $dte) {
-                // La ruta del PDF generalmente se genera en genera_pdf
-                // Por ahora, usamos null si no está disponible
-            }
-
-            return [
-                'success' => isset($responseData['res']) && $responseData['res'] == 1,
-                'data' => $responseData,
-                'pdf' => $pdfPath,
-                'json' => $jsonPath,
-                'dte_id' => $dte ? $dte->id : null,
-                'codigo_generacion' => $dte ? $dte->codigoGeneracion : null,
-                'estado_hacienda' => $dte ? $dte->estadoHacienda : null,
-                'error' => $responseData['message'] ?? ($responseData['error'] ?? null)
-            ];
-        } catch (\Exception $e) {
-            Log::error('Error emitiendo DTE hijo: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
-    }
-
-    /**
-     * Envía UN correo con todos los PDFs y JSONs de las ventas hijas.
-     * Se invoca al completar el flujo de presentación a Hacienda (processMultiProviderSale).
-     * Reutiliza la lógica de enviar_correo_padre: genera PDFs y JSONs desde los hijos con DTE.
-     */
-    private function sendConsolidatedEmail(Sale $parentSale)
-    {
-        try {
-            $client = $parentSale->client;
-
-            if (!$client || !$client->email) {
-                Log::warning('Cliente sin email, no se envió correo consolidado para venta padre #' . $parentSale->id);
-                return;
-            }
-
-            // Obtener todos los hijos con DTE (misma lógica que enviar_correo_padre)
-            $childSales = Sale::with(['dte'])
-                ->where('parent_sale_id', $parentSale->id)
-                ->whereHas('dte', function ($query) {
-                    $query->whereNotNull('json');
-                })
-                ->get();
-
-            if ($childSales->isEmpty()) {
-                Log::warning('No hay hijos con DTE para correo consolidado, venta padre #' . $parentSale->id);
-                return;
-            }
-
-            $nombre = $client->tpersona == 'J'
-                ? ($client->name_contribuyente ?? 'Cliente')
-                : trim(($client->firstname ?? '') . ' ' . ($client->firstlastname ?? ''));
-            if (empty(trim($nombre ?? ''))) {
-                $nombre = 'Cliente';
-            }
-
-            $archivos = [];
-            $archivosNombres = [];
-
-            foreach ($childSales as $childSale) {
-                $dte = $childSale->dte;
-                if (!$dte) {
-                    continue;
-                }
-
-                try {
-                    $pdf = $this->genera_pdf($childSale->id);
-
-                    $sale_json = $childSale->json;
-                    if (!$sale_json) {
-                        Log::warning("No hay JSON en sales para hijo ID: {$childSale->id}");
-                        continue;
-                    }
-
-                    $json_root = json_decode($sale_json, true);
-                    if (!is_array($json_root)) {
-                        Log::warning("JSON inválido para hijo ID: {$childSale->id}");
-                        continue;
-                    }
-
-                    $json_enviado = $json_root['json']['json_enviado'] ?? $json_root;
-                    $json = $this->limpiarJsonParaCorreo($json_enviado);
-                    $nombreArchivo = $this->obtenerNombreArchivo($dte, $json_enviado);
-
-                    $archivos[$nombreArchivo . '.pdf'] = $pdf->output();
-                    $archivosNombres[] = $nombreArchivo . '.pdf';
-
-                    $archivos[$nombreArchivo . '.json'] = $json;
-                    $archivosNombres[] = $nombreArchivo . '.json';
-                } catch (\Exception $e) {
-                    Log::error("Error generando PDF/JSON para hijo ID: {$childSale->id} en sendConsolidatedEmail: " . $e->getMessage());
-                    continue;
-                }
-            }
-
-            if (empty($archivos)) {
-                Log::warning('No se pudieron generar archivos para correo consolidado, venta padre #' . $parentSale->id);
-                return;
-            }
-
-            $data = [
-                'nombre' => $nombre,
-                'numero' => $parentSale->id,
-                'json' => null,
-                'es_venta_padre' => true,
-                'documentos_count' => count($childSales),
-            ];
-
-            $asunto = 'Documentos Tributarios - Venta #' . $parentSale->id . ' (' . count($childSales) . ' documento' . (count($childSales) > 1 ? 's' : '') . ')';
-
-            $correo = new EnviarCorreo($data);
-            $correo->subject($asunto);
-
-            foreach ($archivos as $nombreArchivo => $contenido) {
-                $correo->attachData($contenido, $nombreArchivo);
-            }
-
-            Mail::to($client->email)->send($correo);
-
-            Log::info('Correo consolidado enviado tras presentación a Hacienda', [
-                'parent_sale_id' => $parentSale->id,
-                'email' => $client->email,
-                'documentos' => count($childSales),
-                'archivos' => $archivosNombres,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error enviando correo consolidado: ' . $e->getMessage());
-        }
     }
 }

@@ -37,180 +37,6 @@
 
 @section('page-script')
     <script src="{{ asset('assets/js/app-sale-list.js') }}"></script>
-    <script>
-    /**
-     * Expande/colapsa las ventas hijas de una venta padre
-     */
-    function toggleChildren(parentId) {
-        const icon = document.getElementById('icon-' + parentId);
-        const isExpanded = icon.classList.contains('ti-chevron-down');
-
-        if (isExpanded) {
-            // Colapsar
-            $(`.child-sale-row[data-parent-id="${parentId}"]`).remove();
-            icon.classList.remove('ti-chevron-down');
-            icon.classList.add('ti-chevron-right');
-        } else {
-            // Expandir - cargar hijos via AJAX
-            icon.classList.remove('ti-chevron-right');
-            icon.classList.add('ti-chevron-down');
-
-            // Mostrar loading
-            const parentRow = $(`tr[data-sale-id="${parentId}"]`);
-            parentRow.after(`
-                <tr class="child-sale-row loading-row" data-parent-id="${parentId}">
-                    <td colspan="8" class="py-3 text-center">
-                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                        Cargando DTEs hijos...
-                    </td>
-                </tr>
-            `);
-
-            // Cargar hijos
-            $.ajax({
-                url: `/sale/get-child-sales/${parentId}`,
-                method: 'GET',
-                success: function(children) {
-                    // Remover loading
-                    $(`.loading-row[data-parent-id="${parentId}"]`).remove();
-
-                    if (children.length === 0) {
-                        parentRow.after(`
-                            <tr class="child-sale-row" data-parent-id="${parentId}">
-                                <td colspan="8" class="py-2 text-center text-muted">
-                                    <i class="ti ti-info-circle me-1"></i>No hay DTEs hijos
-                                </td>
-                            </tr>
-                        `);
-                        return;
-                    }
-
-                    // Base URL para rutas (construir desde la ruta actual)
-                    const baseUrl = window.location.origin;
-
-                    // Renderizar todos los hijos en orden inverso para que aparezcan en orden correcto
-                    let childRows = '';
-                    children.forEach((child, index) => {
-                        // Verificar si está invalidado (state == 0)
-                        const isInvalidated = child.state == 0;
-
-                        // Estado DTE: priorizar invalidado sobre otros estados
-                        const dteStatus = isInvalidated
-                            ? '<span class="badge bg-danger"><i class="ti ti-x me-1"></i>INVALIDADO</span>'
-                            : (child.has_dte
-                                ? (child.is_success
-                                    ? '<span class="badge bg-success">PROCESADO</span>'
-                                    : '<span class="badge bg-danger">ERROR</span>')
-                                : '<span class="badge bg-warning">PENDIENTE</span>');
-
-                        const provider = child.acuenta || 'Servicio Propio';
-
-                        // Estilo para fila invalidada
-                        const rowClass = isInvalidated ? 'child-sale-row bg-light invalidated-row' : 'child-sale-row bg-light';
-                        const rowStyle = isInvalidated ? 'opacity: 0.7; text-decoration: line-through;' : '';
-
-                        const reemitBtn = child.can_reemit
-                            ? `<a href="${baseUrl}/sale/reemit-child/${child.id}"
-                                  class="btn btn-icon btn-sm btn-warning me-1"
-                                  title="Reemitir DTE"
-                                  onclick="return confirm('¿Deseas reemitir este DTE?')">
-                                  <i class="ti ti-refresh"></i>
-                               </a>`
-                            : '';
-
-                        const printBtn = child.has_dte
-                            ? `<a href="${baseUrl}/sale/sale/print/${child.id}"
-                                  class="btn btn-icon btn-sm btn-outline-secondary me-1"
-                                  target="_blank"
-                                  title="Imprimir DTE">
-                                  <i class="ti ti-printer"></i>
-                               </a>`
-                            : '';
-
-                        // Botón de anular (solo si no está anulado)
-                        const cancelBtn = (child.state != 0)
-                            ? `<div class="btn-group">
-                                  <button type="button" class="btn btn-icon btn-sm btn-outline-secondary dropdown-toggle"
-                                          data-bs-toggle="dropdown"
-                                          title="Más opciones">
-                                      <i class="ti ti-dots-vertical"></i>
-                                  </button>
-                                  <div class="dropdown-menu">
-                                      <a href="javascript:cancelsale(${child.id});" class="dropdown-item">
-                                          <i class="ti ti-x me-2"></i>Anular
-                                      </a>
-                                  </div>
-                               </div>`
-                            : '';
-
-                        // Mostrar correlativo del DTE (id_doc) si existe, sino el ID de la venta
-                        const correlativo = child.correlativo_dte || child.id;
-                        const correlativoStyle = child.correlativo_dte
-                            ? 'color: green; font-weight: bold; font-size: 0.7rem;'
-                            : '';
-
-                        // Tipo de documento fiscal
-                        const docType = child.document_type || 'DTE Hijo';
-
-                        childRows += `
-                            <tr class="${rowClass}" data-parent-id="${parentId}" style="${rowStyle}">
-                                <td>
-                                    <div class="d-flex align-items-center ps-4">
-                                        ${reemitBtn}
-                                        ${printBtn}
-                                        ${cancelBtn}
-                                    </div>
-                                </td>
-                                <td style="${correlativoStyle}">
-                                    <i class="ti ti-corner-down-right text-muted me-1"></i>
-                                    <small>${correlativo}</small>
-                                </td>
-                                <td>
-                                    <small>${child.date}</small>
-                                    ${child.created_at ? `<br><small class="text-muted" style="font-size: 0.7rem;">${child.created_at}</small>` : ''}
-                                </td>
-                                <td>
-                                    <small>${docType}</small>
-                                    <br><small class="badge bg-info" style="font-size: 0.65rem;">${provider}</small>
-                                </td>
-                                <td>
-                                    ${dteStatus}
-                                    ${isInvalidated && child.dte_invalidacion
-                                        ? `<br><small class="text-danger" style="font-size: 0.65rem;"><i class="ti ti-alert-circle"></i> Invalidado: ${child.dte_invalidacion.fhRecibido ? new Date(child.dte_invalidacion.fhRecibido).toLocaleDateString('es-SV') : 'N/A'}</small>`
-                                        : ''}
-                                </td>
-                                <td><small>${child.parent_client_name || '-'}</small></td>
-                                <td class="text-end"><small>$${parseFloat(child.totalamount).toFixed(2)}</small></td>
-                                <td>
-                                    <small>
-                                        ${child.parent_waytopay == 1
-                                            ? '<span class="badge bg-primary">CONTADO</span>'
-                                            : child.parent_waytopay == 2
-                                                ? '<span class="badge bg-secondary">CRÉDITO</span>'
-                                                : '<span class="badge bg-info">OTRO</span>'}
-                                    </small>
-                                </td>
-                            </tr>
-                        `;
-                    });
-
-                    // Insertar todas las filas de una vez
-                    parentRow.after(childRows);
-                },
-                error: function(xhr) {
-                    $(`.loading-row[data-parent-id="${parentId}"]`).remove();
-                    parentRow.after(`
-                        <tr class="child-sale-row" data-parent-id="${parentId}">
-                            <td colspan="8" class="py-2 text-center text-danger">
-                                <i class="ti ti-alert-circle me-1"></i>Error al cargar DTEs hijos
-                            </td>
-                        </tr>
-                    `);
-                }
-            });
-        }
-    }
-    </script>
 @endsection
 
 @section('title', 'Ventas')
@@ -773,78 +599,6 @@
 @endsection
 
 @section('content')
-<style>
-    /* Estilos para ventas padre/hijo */
-    .parent-sale-row {
-        background-color: #f8f9fa !important;
-        font-weight: 500;
-    }
-
-    .child-sale-row {
-        background-color: #fafbfc !important;
-        border-left: 4px solid #7367f0 !important;
-    }
-
-    .invalidated-row {
-        background-color: #fff5f5 !important;
-        border-left: 4px solid #dc3545 !important;
-    }
-
-    .invalidated-row td {
-        color: #6c757d !important;
-    }
-
-    /* Aplicar también a filas padre invalidadas */
-    .parent-sale-row.invalidated-row {
-        background-color: #fff5f5 !important;
-        border-left: 4px solid #dc3545 !important;
-    }
-
-    .child-sale-row td {
-        font-size: 0.85rem;
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.5rem !important;
-    }
-
-    .btn-expand-children {
-        width: 1.75rem;
-        height: 1.75rem;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .btn-expand-children i {
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-    }
-
-    /* Animación del icono */
-    .ti-chevron-down {
-        transform: rotate(90deg);
-    }
-
-    /* Indentación de hijos */
-    .child-sale-row td:first-child {
-        padding-left: 1rem !important;
-    }
-
-    /* Modo oscuro */
-    .dark-layout .parent-sale-row {
-        background-color: #2f3349 !important;
-    }
-
-    .dark-layout .child-sale-row {
-        background-color: #283144 !important;
-        border-left-color: #7367f0 !important;
-    }
-
-    .dark-layout .child-sale-row:hover {
-        background-color: #2d3650 !important;
-    }
-</style>
     <div class="card">
         <div class="card-header border-bottom">
             <h5 class="mb-3 card-title">
@@ -939,31 +693,15 @@
                 <tbody>
                     @isset($sales)
                         @forelse($sales as $sale)
-                            @php
-                                $esAnulado = ($sale->state == 0);
-                                $rowClass = $sale->is_parent ? 'parent-sale-row' : '';
-                                if ($esAnulado) {
-                                    $rowClass .= ' invalidated-row';
-                                }
-                            @endphp
-                            <tr class="{{ $rowClass }}" data-sale-id="{{ $sale->id }}" style="{{ $esAnulado ? 'opacity: 0.7; text-decoration: line-through;' : '' }}">
+                            <tr>
                                 <td>
                                     @switch($sale->typesale)
                                         @case(1)
                                         <div class="d-flex align-items-center">
-                                            @if($sale->is_parent && $sale->children_count > 0)
-                                                <button class="btn btn-icon btn-outline-primary btn-sm me-1 btn-expand-children"
-                                                        onclick="toggleChildren({{ $sale->id }})"
-                                                        title="Ver DTEs hijos">
-                                                    <i class="ti ti-chevron-right" id="icon-{{ $sale->id }}"></i>
-                                                </button>
-                                            @else
-                                                {{-- Solo mostrar imprimir si NO es padre --}}
-                                                <a href="{{route('sale.print', $sale->id)}}"
-                                                        class="btn btn-icon btn-outline-secondary btn-sm me-1" target="_blank" title="Imprimir">
-                                                    <i class="ti ti-printer"></i>
-                                                </a>
-                                            @endif
+                                            <a href="{{route('sale.print', $sale->id)}}"
+                                                    class="btn btn-icon btn-outline-secondary btn-sm me-1" target="_blank" title="Imprimir">
+                                                <i class="ti ti-printer"></i>
+                                            </a>
                                             <a href="#"
                                                     onclick="EnviarCorreo({{$sale->id}} ,'{{ $sale->mailClient}}','{{$sale->id_doc }}')"
                                                     class="btn btn-icon btn-outline-success btn-sm me-1" title="Enviar por correo">
@@ -988,7 +726,7 @@
                                                     <i class="ti ti-dots-vertical"></i>
                                                 </button>
                                                 <div class="dropdown-menu">
-                                                    @if ($sale->state != 0 && !$sale->is_parent)
+                                                    @if ($sale->state != 0)
                                                     <a href="javascript:cancelsale({{ $sale->id }});" class="dropdown-item">
                                                         <i class="ti ti-x me-2"></i>Anular
                                                     </a>
@@ -1008,20 +746,13 @@
 
                                         @case(2)
                                         <div class="d-flex align-items-center">
-                                            @if($sale->is_parent && $sale->children_count > 0)
-                                                <button class="btn btn-icon btn-outline-primary btn-sm me-1 btn-expand-children"
-                                                        onclick="toggleChildren({{ $sale->id }})"
-                                                        title="Ver DTEs hijos">
-                                                    <i class="ti ti-chevron-right" id="icon-{{ $sale->id }}"></i>
-                                                </button>
-                                            @endif
                                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="retomarsale({{ $sale->id }}, {{ $sale->typedocument_id}})">
                                                 <i class="ti ti-pencil me-1"></i>Retomar Borrador
                                             </button>
                                             <!--<a class="btn btn-success btn-sm ms-1" href="{{ route('sale.create') }}?corr={{ $sale->id }}&draft=true&typedocument={{ $sale->typedocument_id }}">
                                                 <i class="ti ti-send me-1"></i> Presentar Hacienda
                                             </a>-->
-                                            @if ($sale->state != 0 && !$sale->is_parent)
+                                            @if ($sale->state != 0)
                                             <div class="btn-group ms-1">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical"></i>
@@ -1043,7 +774,7 @@
 
                                         @default
                                         <div class="d-flex align-items-center">
-                                            @if ($sale->state != 0 && !$sale->is_parent)
+                                            @if ($sale->state != 0)
                                             <div class="btn-group">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
                                                     <i class="ti ti-dots-vertical"></i>
@@ -1068,73 +799,37 @@
                                     }
                                 @endphp
                                 <td style="{{ (!$esAnulado && $sale->estadoHacienda=='PROCESADO') ? 'color: green; font-weight: bold; font-size: 0.7rem;' : '' }}">
-                                    <div class="flex-wrap d-flex align-items-center">
-                                        <span>{{ $mostrarId }}</span>
-                                        @if($sale->is_parent && $sale->children_count > 0)
-                                            <span class="badge bg-label-primary ms-2" style="font-size: 0.65rem; white-space: nowrap;">
-                                                <i class="ti ti-folder"></i> {{ $sale->children_count }}
-                                            </span>
-                                        @endif
-                                    </div>
+                                    {{ $mostrarId }}
                                     @if($esAnulado && !empty($sale->codigoGeneracion))
                                         <div class="mt-1 small text-danger" style="font-size: 0.6rem;">CG: {{ $sale->codigoGeneracion }}</div>
                                     @endif
                                 </td>
 
-                                <td>
-                                    @if($sale->date)
-                                        {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}
-                                        @if($sale->created_at)
-                                            <br><small class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($sale->created_at)->format('H:i') }}</small>
-                                        @endif
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
+                                <td>{{ $sale->date ? \Carbon\Carbon::parse($sale->date)->format('d/m/Y') : 'N/A' }}</td>
                                 <td>{{ $sale->document_name ?? 'N/A' }}</td>
                                 <td>
                                     @if($sale->typesale == 2)
                                         <span class="badge bg-warning">BORRADOR</span>
                                     @else
-                                        @php
-                                            // Buscar DTE de invalidación si está anulado
-                                            $dteInvalidacion = null;
-                                            if ($sale->state == 0) {
-                                                $dteInvalidacion = \App\Models\Dte::where('sale_id', $sale->id)
-                                                    ->where('codTransaction', '02')
-                                                    ->latest()
-                                                    ->first();
-                                            }
-                                        @endphp
+                                    @switch($sale->state)
+                                        @case(0)
+                                            <span class="badge bg-danger">ANULADO</span>
+                                        @break
 
-                                        @switch($sale->state)
-                                            @case(0)
-                                                <span class="badge bg-danger"><i class="ti ti-x me-1"></i>INVALIDADO</span>
-                                                @if($dteInvalidacion && $dteInvalidacion->fhRecibido)
-                                                    <br><small class="text-danger" style="font-size: 0.65rem;">
-                                                        <i class="ti ti-alert-circle"></i> Invalidado: {{ \Carbon\Carbon::parse($dteInvalidacion->fhRecibido)->format('d/m/Y H:i') }}
-                                                    </small>
-                                                @endif
-                                            @break
+                                        @case(1)
+                                            <span class="badge bg-success">CONFIRMADO</span>
+                                        @break
 
-                                            @case(1)
-                                                @if($sale->estadoHacienda == 'PROCESADO')
-                                                    <span class="badge bg-success">PROCESADO</span>
-                                                @else
-                                                    <span class="badge bg-success">CONFIRMADO</span>
-                                                @endif
-                                            @break
+                                        @case(2)
+                                            <span class="badge bg-warning">PENDIENTE</span>
+                                        @break
 
-                                            @case(2)
-                                                <span class="badge bg-warning">PENDIENTE</span>
-                                            @break
+                                        @case(3)
+                                            <span class="badge bg-info">FACTURADO</span>
+                                        @break
 
-                                            @case(3)
-                                                <span class="badge bg-info">FACTURADO</span>
-                                            @break
-
-                                            @default
-                                        @endswitch
+                                        @default
+                                    @endswitch
                                     @endif
                                 </td>
                                 <td>

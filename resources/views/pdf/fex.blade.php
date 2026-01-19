@@ -31,45 +31,45 @@
         .cuadro-izq{
         border-left:1px solid #000;
         border-spacing: 0 0;
-       
+
         }
         .sumas{
         border-left:1px solid #000;
         border-bottom:1px solid #000;
         border-spacing: 0 0;
         margin: 0;
-       
+
         }
         #watermark {
         position: fixed;
-        
+
         /**
         Set a position in the page for your image
         This should center it vertically
         **/
-        
+
         bottom: 10cm;
         left: 6.5cm;
-        
+
         /** Change image dimensions**/
         width: 8cm;
         height: 8cm;
-        
+
         -webkit-transform: rotate(-45deg);
         -moz-transform: rotate(-45deg);
         -ms-transform: rotate(-45deg);
         -o-transform: rotate(-45deg);
         transform: rotate(-45deg);
-        
+
         -webkit-transform-origin: 50% 50%;
         -moz-transform-origin: 50% 50%;
         -ms-transform-origin: 50% 50%;
         -o-transform-origin: 50% 50%;
         transform-origin: 50% 50%;
-        
+
         font-size: 100px;
         width: 250px;
-        
+
         /** Your watermark should be behind every content**/
         z-index: 1000;
         }
@@ -98,7 +98,7 @@
                             <strong>{{$comprobante[0][0]["nombre_empresa"]}}</strong>
                         </td>
                     </tr>
-                    
+
                     <tr>
                         <td>NIT:{{$comprobante[0][0]["nit_emisor"]}}</td>
                     </tr>
@@ -176,15 +176,15 @@
 
     </table>
 
- <!-- Final de Encabezado y QR -->  
+ <!-- Final de Encabezado y QR -->
 
  <!-- Datos Receptor -->
     <table width="100%" style="border-collapse:collapse;"">
         <tr valign="top" >
-            
+
             <td width="480px">
                 <table width="100%" style="border-top:1px solid #000;">
-                    
+
                     <tr>
                         <td align="right" width="100px"><strong>Nombre:</strong></td>
                         <td colspan="2" >{{$comprobante[0][0]["id_cliente"]}} - {{$comprobante[0][0]["nombre"]}}  </td>
@@ -197,15 +197,15 @@
                     <tr>
                         <td align="right"><strong>Correo electrónico:</strong></td>
                         <td colspan="2">{{$comprobante[0][0]["correo_receptor"]}}</td>
-                        
+
                     </tr>
                     <tr>
                         <td align="right"><strong>Dirección:</strong></td>
                         <td>{{$comprobante[0][0]["complemento_receptor"]}}</td>
                         <td><strong>Teléfono:</strong> {{$comprobante[0][0]["telefono_receptor"]}}</td>
                     </tr>
-                    
-                    
+
+
                     <tr>
                         <td align="right"><strong>Actividad:</strong></td>
                         <td>{{$comprobante[0][0]["descActividad_receptor"]}}</td>
@@ -216,7 +216,7 @@
                         <td>{{$comprobante[0][0]["Pais"]}}</td>
                         <td><strong>Moneda:</strong>USD</td>
                     </tr>
-                    
+
                 </table>
             </td>
         </tr>
@@ -225,7 +225,7 @@
 
 <!-- Datos Receptor -->
 @if (!empty($comprobante[3]))
-    
+
 
     <table width="100%" style="border-top:1px solid #000;">
         <tr align="center" >
@@ -250,14 +250,14 @@
                 <th class="cuadro">Precio<br>Unitario</th>
                 <th class="cuadro">Descuento<br>por Item</th>
                 <th class="cuadro">Otros montos<br>no afectos</th>
-                
+
                 <th class="cuadro">Ventas<br>Gravadas</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($comprobante[1] as $d)
-                
-            
+
+
             <tr>
                 <th>{{$loop->index+1}}</th>
                 <td>1</td>
@@ -265,13 +265,13 @@
                 <td align="right">{{FNumero($d["pre_unitario"])}}</td>
                 <td align="right">0.00</td>
                 <td align="right">{{FNumero($d["imp_int_det"])}}</td>
-               
+
                 <td align="right">{{FNumero($d["gravado"])}}</td>
             </tr>
             @endforeach
         </tbody>
 
-        
+
     </table>
     <footer>
         <div class="footer" style="position: absolute; bottom: 0;border-spacing: 0 0;border-collapse:collapse;margin-top:0;">
@@ -296,7 +296,7 @@
                             <tr>
                                 <td colspan="2" align="center" style="background-color: lightgray;"><strong>OBSERVACIONES</strong></td>
                             </tr>
-                            <tr> 
+                            <tr>
                                 <td width="245px">
                                    <center><strong>Forma de Pago</strong></center>
                                 </td>
@@ -308,9 +308,9 @@
                                     <tr>
                                         <td align="center"><strong>Credito</strong></td>
                                         <td align="center"><strong>Contado</strong></td>
-                                        <td align="center"><strong>Tarjeta</strong></td>         
+                                        <td align="center"><strong>Tarjeta</strong></td>
                                     </tr>
-                                </table>    
+                                </table>
                                 </td>
                                 <td></td>
                             </tr>
@@ -325,9 +325,9 @@
                                     </table>
                                 </td>
                             </tr>
-                           
+
                         </table>
-                    
+
                     </td>
                     <td style="border:1px solid #000;" width="230px">
                         <!--- Totales-->
@@ -335,56 +335,56 @@
                             <tr>
                                 <td width="180px">Sumas $</td>
                                 <td colspan="3"></td>
-                             
+
                                 <td align="right" width="50px" class="sumas" colspan="2">{{FNumero($comprobante[0][0]["tot_gravado"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="4" width="160px">Suma total de operaciones</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero($comprobante[0][0]["subTotalVentas"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="4">Total descuentos</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero(0.00)}}</td>
-                                
+
                             </tr>
-                           
+
                             <tr>
                                 <td colspan="4">Sub-Total</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
-                                
+
                             </tr>
                             <tr>
                                 <td colspan="4">Seguro</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero(0.00)}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="4">Flete</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero(0.00)}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="4">Monto Total de la operación</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero($comprobante[0][0]["subTotal"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="4">Total otros montos no afectos</td>
                                 <td align="right" class="cuadro-izq" colspan="2">{{FNumero($comprobante[0][0]["totalNoGravado"])}}</td>
-                            
+
                             </tr>
                             <tr>
                                 <td colspan="4" ><strong>TOTAL A PAGAR</strong></td>
                                 <td align="right" class="cuadro-izq" colspan="2"><strong>{{FNumero($comprobante[0][0]["totalPagar"])}}</strong></td>
-                            
+
                             </tr>
-                    
+
                         </table>
                         <!--- Fin Totales-->
                     </td>
-                </tr> 
+                </tr>
                 <tr class="cuadro">
                     <td colspan="2" style="font-size:6px;"><span style="margin:0;padding=0;"><center>Condiciones generales de los servicios prestados por
                         {{$comprobante[0][0]["nombre_empresa"]}}</center><br style="margin:0;padding=0;">
@@ -409,8 +409,8 @@
                     {{$comprobante[0][0]["nombre_empresa"]}}, explicaron cada una de las condiciones descritas anteriormente, entendiéndolas
                     y aceptándolas, eximiéndola
                     de tal forma de cualquier responsabilidad que se derive de ellas.</span>
-                    </td>    
-                </tr>     
+                    </td>
+                </tr>
             </table>
         </div>
     </footer>

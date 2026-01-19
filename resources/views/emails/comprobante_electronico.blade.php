@@ -191,7 +191,26 @@
                                         <strong>🔒 Documento Verificado:</strong> Este comprobante ha sido validado y registrado en el sistema de Hacienda
                                     </p>
                                 </div>
+                                @elseif(!empty($data["es_venta_padre"]) && $data["es_venta_padre"])
+                                {{-- Venta padre: agrupa varios DTEs (hijos), todos con DTE emitido en Hacienda --}}
+                                <div style="background-color:#ffffff;border:1px solid #e9ecef;border-radius:8px;padding:20px;margin-bottom:20px;">
+                                    <h4 style="margin:0 0 15px 0;color:#495057;font-size:16px;font-weight:bold;border-bottom:2px solid #1e3c72;padding-bottom:8px;">
+                                        <span class="travel-icon">📋</span> Información de la Venta
+                                    </h4>
+                                    <p style="margin:0;color:#6c757d;font-size:16px;line-height:1.6;">
+                                        <strong>Venta #:</strong> {{$data["numero"]}}
+                                    </p>
+                                    <p style="margin:10px 0 0 0;color:#6c757d;font-size:14px;line-height:1.6;">
+                                        Esta venta incluye <strong>{{ $data["documentos_count"] ?? 1 }} documento(s) tributario(s) electrónico(s)</strong> emitidos y validados en Hacienda. Cada PDF y JSON adjunto corresponde a un DTE independiente.
+                                    </p>
+                                </div>
+                                <div class="verification-badge" style="margin-bottom:20px;">
+                                    <p style="margin:0;color:#1976d2;font-size:14px;text-align:center;">
+                                        <strong>🔒 Documentos Verificados:</strong> Los comprobantes adjuntos han sido validados y registrados en el sistema de Hacienda.
+                                    </p>
+                                </div>
                                 @else
+                                {{-- Comprobante local sin DTE (sin venta padre ni json) --}}
                                 <div style="background-color:#ffffff;border:1px solid #e9ecef;border-radius:8px;padding:20px;margin-bottom:20px;">
                                     <h4 style="margin:0 0 15px 0;color:#495057;font-size:16px;font-weight:bold;border-bottom:2px solid #1e3c72;padding-bottom:8px;">
                                         <span class="travel-icon">📋</span> Información del Documento

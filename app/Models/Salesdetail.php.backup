@@ -12,7 +12,6 @@ class Salesdetail extends Model
     protected $fillable = [
         'sale_id',
         'product_id',
-        'line_provider_id',
         'amountp',
         'priceunit',
         'pricesale',
@@ -60,13 +59,5 @@ class Salesdetail extends Model
     public function sale()
     {
         return $this->belongsTo(Sale::class);
-    }
-
-    /**
-     * Relación con el proveedor (para ventas a cuenta de tercero)
-     */
-    public function lineProvider()
-    {
-        return $this->belongsTo(Provider::class, 'line_provider_id');
     }
 }

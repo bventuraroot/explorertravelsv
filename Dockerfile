@@ -8,13 +8,26 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     zip \
-    unzip
-
-# Limpiar cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    unzip \
+    libmagickwand-dev \
+    imagemagick \
+    pkg-config \
+    build-essential \
+    tzdata
 
 # Instalar extensiones PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Instalar extensión imagick usando PECL
+RUN pecl install imagick && \
+    docker-php-ext-enable imagick
+
+# Configurar zona horaria de El Salvador
+ENV TZ=America/El_Salvador
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Limpiar cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Obtener Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

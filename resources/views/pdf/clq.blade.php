@@ -7,13 +7,13 @@
 
     <style type="text/css">
         * {
-            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-family: 'Segoe UI', 'Arial', 'Helvetica', sans-serif;
         }
 
         body {
             margin: 0;
             padding: 0;
-            color: #333;
+            color: #000000;
         }
 
         table {
@@ -49,7 +49,6 @@
         padding: 6px;
 
         }
-
         #watermark {
         position: fixed;
 
@@ -112,7 +111,7 @@
                         <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>Tipo:</strong> Casa Matriz</td>
                     </tr>
                     <tr>
-                        <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>NIT:</strong> {{$emisor[0]["nit"] ?? ''}} | <strong>NRC:</strong> {{$emisor[0]["ncr"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
+                        <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>NIT:</strong> {{$emisor[0]["nit"] ?? ''}} | <strong>NRC:</strong> {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
                     </tr>
                     <tr>
                         <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>Act. económica:</strong> {{$emisor[0]["descActividad"] ?? ''}}</td>
@@ -140,7 +139,7 @@
                     <tr style="background-color: #e8e8e8;">
                         <td colspan="3" align="center" style="font-size: 10px; padding: 7px; border-bottom: 2px solid #333333;">
                             <strong style="color: #000000; letter-spacing: 0.3px;">DOCUMENTO TRIBUTARIO ELECTRÓNICO</strong><br>
-                            <strong style="color: #000000; font-size: 10px; letter-spacing: 0.3px;">FACTURA DE CONSUMIDOR FINAL</strong>
+                            <strong style="color: #000000; font-size: 10px; letter-spacing: 0.3px;">COMPROBANTE DE LIQUIDACIÓN</strong>
                         </td>
                     </tr>
                     <tr style="background-color: #ffffff;">
@@ -203,12 +202,8 @@
                                     <td width="60%" style="padding: 3px; font-size: 10px;">{{$cliente[0]["nombre"] ?? ($json["receptor"]["nombre"] ?? '')}}</td>
                                 </tr>
                                 <tr>
-                                    <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Tipo Documento:</strong></td>
-                                    <td style="padding: 3px; font-size: 10px;">{{ tipoDocumento(($cliente[0]["tipoDocumento"] ?? ($json["receptor"]["tipoDocumento"] ?? null))) }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>No. Documento:</strong></td>
-                                    <td style="padding: 3px; font-size: 10px;">{{ $cliente[0]["numDocumento"] ?? ($json["receptor"]["numDocumento"] ?? '') }}</td>
+                                    <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Actividad económica:</strong></td>
+                                    <td style="padding: 3px; font-size: 10px; line-height: 1.3;">{{$cliente[0]["descActividad"] ?? ($json["receptor"]["descActividad"] ?? '')}}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Correo electrónico:</strong></td>
@@ -263,7 +258,7 @@
     </table>
 
 <!-- Datos Receptor -->
-@if (!empty($json["ventaTercero"]))
+@if (!empty($comprobante[3]))
     <table width="100%" style="border-top: 1px solid #ddd; margin-bottom: 15px; padding-top: 10px;" cellpadding="5" cellspacing="0">
         <tr align="center">
             <td colspan="2" style="padding: 5px; background-color: #ddd; border-bottom: 1px solid #ddd;">
@@ -271,151 +266,147 @@
             </td>
         </tr>
         <tr>
-            <td style="padding: 3px; font-size: 10px; width: 20%;"><strong>Nombre, denominación o razón social:&nbsp;</strong> {{$json["ventaTercero"]["nombre"] ?? ''}}</td>
-            <td style="padding: 3px; font-size: 10px; width: 20%;"><strong>NIT:&nbsp;</strong> {{$json["ventaTercero"]["nit"] ?? ''}}</td>
+            <td style="padding: 6px; font-size: 10px; width: 50%;"><strong>NIT:</strong> {{$comprobante[3][0]["nit"] ?? ''}}</td>
+            <td style="padding: 6px; font-size: 10px; width: 50%;"><strong>Nombre, denominación o razón social:</strong> {{$comprobante[3][0]["nombre"] ?? ''}}</td>
         </tr>
+
     </table>
 @endif
 
-    <table width="100%" style="border-collapse:collapse; page-break-after: auto;">
+<!-- Tabla de Documentos Relacionados -->
+@if(isset($detalle) && count($detalle) > 0)
+    <table width="100%" style="border-collapse:collapse; table-layout: fixed; margin-bottom: 15px;">
         <thead style="background-color: #e8e8e8;">
             <tr>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">No</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Cantidad</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Descripcion</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Precio<br>Unitario</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Descuento<br>por Item</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Otros montos<br>no afectos</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Ventas No<br>Sujetas</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Ventas<br>Exentas</th>
-                <th class="cuadro" style="font-size: 10px; font-weight: bold; color: #000000; padding: 6px 4px;">Ventas<br>Gravadas</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 3%; color: #000000;">No</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 7%; color: #000000;">Tipo Doc</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 22%; color: #000000;">No.Doc Relacionado</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 7%; color: #000000;">Fecha</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 15%; color: #000000;">Observación</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 7%; color: #000000;">Exportaciones</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 10%; color: #000000;">Ventas No Sujetas</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 10%; color: #000000;">Ventas Exentas</th>
+                <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 11%; color: #000000;">Ventas Gravadas</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($detalle as $d)
             <tr style="background-color: {{ $loop->index % 2 == 0 ? '#ffffff' : '#f8f9fa' }};">
-                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap; ">{{$loop->index+1}}</td>
-                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap; ">{{$d["cantidad"] ?? ''}}</td>
-                <td style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ; word-break: break-all;">{{$d["descripcion"] ?? ''}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["precioUni"] ?? 0)}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["descu"] ?? 0)}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["no_imponible"] ?? $d["noGravado"] ?? 0)}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0)}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
-                <td align="center" style="padding: 6px 4px; font-size: 10px; white-space: nowrap; ">{{FNumero($d["ventaGravada"] ?? 0)}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{$loop->index+1}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{$d["tipoDte"] ?? ''}}</td>
+                <td style="padding: 6px 4px; font-size: 10px; white-space: nowrap; word-break: break-all;" title="{{$d["numeroDocumento"] ?? ''}}">{{$d["numeroDocumento"] ?? ''}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{isset($d["fechaGeneracion"]) ? date('Y-m-d', strtotime($d["fechaGeneracion"])) : ''}}</td>
+                <td style="padding: 6px 4px; font-size: 10px; white-space: nowrap;" title="{{$d["obsItem"] ?? ''}}">{{$d["obsItem"] ?? ''}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["exportaciones"] ?? 0)}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaNoSuj"] ?? $d["no_sujetas"] ?? $d["ventaNoSuj"] ?? 0)}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaExenta"] ?? $d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
+                <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaGravada"] ?? $d["gravadas"] ?? $d["ventaGravada"] ?? 0)}}</td>
             </tr>
-            @if (($loop->index+1) % 37 == 0)
-            <tr style='page-break-after: always;'>
-                <td align="right" colspan="9">Pasan ......</td>
-            </tr>
-
-            @endif
             @endforeach
         </tbody>
 
 
     </table>
+@endif
     <footer>
         <div class="footer" style="position: absolute; bottom: 0;border-spacing: 0 0;border-collapse:collapse;margin-top:0;">
-            <table width="100%" style="border-collapse:collapse;margin-top:0;border-spacing: 0 0;" class="cuadro">
+            <table width="100%" style="border-collapse:collapse;margin-top:0;border-spacing: 0 0; border: 2px solid #333333;">
                 <tr>
-                    <td width="460px" style="padding: 1;">
-                        <table width="100%" cellpadding="2" cellspacing="0" style="border-spacing: 0;">
+                    <td width="424px" style="padding: 1; vertical-align: top; background-color: #ffffff;">
+                        <table width="100%" border="0" cellpadding="2" cellspacing="0" style="border-collapse: collapse;">
                             <tr>
-                                <td colspan="2" style="padding: 3px 0; font-size: 10px;"><strong>Valor en Letras:</strong> {{$totales["totalLetras"] ?? ''}}</td>
+                                <td colspan="2" style="padding: 3px 0; font-size: 10px; line-height: 1.5;"><strong>Valor en Letras:</strong> {{$totales["totalLetras"] ?? ''}}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" align="center" style="padding: 3px; background-color: #f5f5f5; font-size: 10px; font-weight: bold;"><strong>EXTENSIÓN</strong></td>
                             </tr>
                             <tr>
-                                <td width="245px" style="padding: 2px 0; font-size: 10px;"><strong>Nombre entrega:</strong> {{$json["extension"]["nombEntrega"] ?? ''}}</td>
-                                <td style="padding: 2px 0; font-size: 10px;"><strong>No Documento:</strong> {{$json["extension"]["docuEntrega"] ?? ''}}</td>
+                                <td width="50%" style="padding: 5px; font-size: 10px;"><strong>Nombre entrega:</strong><br>{{$json["extension"]["nombEntrega"] ?? ''}}</td>
+                                <td width="50%" style="padding: 5px; font-size: 10px;"><strong>No Documento:</strong><br>{{$json["extension"]["docuEntrega"] ?? ''}}</td>
                             </tr>
                             <tr>
-                                <td width="245px" style="padding: 2px 0; font-size: 10px;"><strong>Nombre recibe:</strong> {{$json["extension"]["nombRecibe"] ?? ''}}</td>
-                                <td style="padding: 2px 0; font-size: 10px;"><strong>No Documento:</strong> {{$json["extension"]["docuRecibe"] ?? ''}}</td>
+                                <td width="50%" style="padding: 5px; font-size: 10px;"><strong>Nombre recibe:</strong><br>{{$json["extension"]["nombRecibe"] ?? ''}}</td>
+                                <td width="50%" style="padding: 5px; font-size: 10px;"><strong>No Documento:</strong><br>{{$json["extension"]["docuRecibe"] ?? ''}}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" align="center" style="padding: 3px; background-color: #f5f5f5; font-size: 10px; font-weight: bold; margin-top: 3px;"><strong>OBSERVACIONES</strong></td>
                             </tr>
                             <tr>
-                                <td colspan="2" style="padding: 2px 0;">
-                                    <table width="100%" cellpadding="2" cellspacing="0" style="border-spacing: 0;">
-                                        <tr>
-                                            <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Forma de Pago</strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td align="center" style="font-size: 10px; padding: 2px;">
-                                                <table width="100%" cellpadding="2" cellspacing="0">
-                                                    <tr>
-                                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Crédito</strong></td>
-                                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Contado</strong></td>
-                                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Tarjeta</strong></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero(($totales["condicionOperacion"] ?? '') == "02" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
-                                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero(($totales["condicionOperacion"] ?? '') == "01" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
-                                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero(($totales["condicionOperacion"] ?? '') == "03" ? ($totales["totalPagar"] ?? 0) : 0.00)}}</td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                <td colspan="2" style="padding: 6px; text-align: center;">
+                                   <strong style="font-size: 10px;">Forma de Pago</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 4px;">
+                                <table width="100%" style="border-collapse: collapse; border: 1px solid #ddd;">
+                                    <tr>
+                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Crédito</strong></td>
+                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Contado</strong></td>
+                                        <td align="center" style="font-size: 10px; font-weight: bold; padding: 2px;"><strong>Tarjeta</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero((($totales["condicionOperacion"] ?? '') == "02")?($totales["totalPagar"] ?? $totales["montoTotalOperacion"] ?? ($json["resumen"]["totalPagar"] ?? ($json["resumen"]["montoTotalOperacion"] ?? 0))):0.00)}}</td>
+                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero((($totales["condicionOperacion"] ?? '') == "01")?($totales["totalPagar"] ?? $totales["montoTotalOperacion"] ?? ($json["resumen"]["totalPagar"] ?? ($json["resumen"]["montoTotalOperacion"] ?? 0))):0.00)}}</td>
+                                        <td align="center" style="font-size: 10px; padding: 2px;">{{FNumero((($totales["condicionOperacion"] ?? '') == "03")?($totales["totalPagar"] ?? $totales["montoTotalOperacion"] ?? ($json["resumen"]["totalPagar"] ?? ($json["resumen"]["montoTotalOperacion"] ?? 0))):0.00)}}</td>
+                                    </tr>
+                                </table>
                                 </td>
                             </tr>
                         </table>
+
                     </td>
-                    <td style="border: 2px solid #333333; padding: 2px; background-color: #f9f9f9;" width="230px">
+                    <td style="border-left: 2px solid #333333; padding: 8px; vertical-align: top; background-color: #f9f9f9;" width="230px">
                         <!--- Totales-->
-                        <table width="100%" cellpadding="2" cellspacing="0" style="border-spacing: 0; font-size: 10px;">
+                        <table style="border-spacing: 0 0; width: 100%; border-collapse: collapse;" cellpadding="2" cellspacing="0">
                             <tr>
-                                <td width="80px" style="padding: 2px;">Sumas $</td>
-                                <td align="right" width="50px" class="sumas" style="padding: 2px;">{{FNumero($totales["totalNoSuj"] ?? 0)}}</td>
-                                <td align="right" width="50px" class="sumas" style="padding: 2px;">{{FNumero($totales["totalExenta"] ?? 0)}}</td>
-                                <td align="right" width="50px" class="sumas" style="padding: 2px;">{{FNumero(($totales["totalGravada"] ?? 0))}}</td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" width="160px" style="padding: 2px;">Suma total de operaciones</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero(($totales["subTotalVentas"] ?? 0))}}</td>
+                                <td width="80px" style="padding: 4px; font-size: 10px;"><strong>Sumas $</strong></td>
+                                <td align="right" width="37px" style="padding: 4px; border-left: 0.75px solid #666666; border-bottom: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["exportaciones"] ?? 0)}}</td>
+                                <td align="right" width="37px" style="padding: 4px; border-left: 0.75px solid #666666; border-bottom: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["totalNoSuj"] ?? 0)}}</td>
+                                <td align="right" width="37px" style="padding: 4px; border-left: 0.75px solid #666666; border-bottom: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["totalExenta"] ?? 0)}}</td>
+                                <td align="right" width="37px" style="padding: 4px; border-left: 0.75px solid #666666; border-bottom: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["totalGravada"] ?? 0)}}</td>
+
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">Total descuentos</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero(0.00)}}</td>
+                                <td colspan="4" width="160px" style="padding: 4px; font-size: 10px;">Suma total de operaciones</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["subTotalVentas"] ?? $totales["subTotal"] ?? 0)}}</td>
+
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">Sub-Total</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero(($totales["subTotal"] ?? $totales["subTotal"] ?? 0))}}</td>
+                                <td colspan="4" style="padding: 4px; font-size: 10px;">Total descuentos</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero(0.00)}}</td>
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">IVA Percibido</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero($totales["ivaPerci1"] ?? 0.00 ?? 0)}}</td>
+                                <td colspan="4" width="160px" style="padding: 4px; font-size: 10px;">Impuestos al Valor Agregado 13%</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["tributos"][0]["valor"] ?? $totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0)}}</td>
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">IVA Retenido</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero($totales["ivaRete1"] ?? 0)}}</td>
+                                <td colspan="4" style="padding: 4px; font-size: 10px;">Sub-Total</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero(($totales["subTotal"] ?? 0)+($totales["tributos"][0]["valor"] ?? $totales["totalIva"] ?? $totales["ivaPerci1"] ?? 0))}}</td>
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">Monto Total de la operación</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero(($totales["montoTotalOperacion"] ?? 0))}}</td>
+                                <td colspan="4" style="padding: 4px; font-size: 10px;">IVA Percibido</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["ivaPerci1"] ?? 0)}}</td>
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">Total otros montos no afectos</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero($totales["totalNoGravado"] ?? 0)}}</td>
+                                <td colspan="4" style="padding: 4px; font-size: 10px;">Monto Total de la operación</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["montoTotalOperacion"] ?? 0)}}</td>
                             </tr>
                             <tr>
-                                <td colspan="3" style="padding: 2px;">Retencion Renta</td>
-                                <td align="right" class="cuadro-izq" style="padding: 2px;">{{FNumero($totales["reteRenta"] ?? 0)}}</td>
+                                <td colspan="4" style="padding: 4px; font-size: 10px;">Total otros montos no afectos</td>
+                                <td align="right" style="padding: 4px; border-left: 0.75px solid #666666; font-size: 10px;">{{FNumero($totales["totalNoGravado"] ?? 0)}}</td>
+
                             </tr>
-                            <tr style="background-color: #333333;">
-                                <td colspan="3" style="padding: 4px; color: #ffffff; font-size: 10px;"><strong>TOTAL A PAGAR</strong></td>
-                                <td align="right" class="cuadro-izq" style="padding: 4px; color: #ffffff; font-size: 10px; border-left: 1px solid #666666;"><strong>{{FNumero(($totales["totalPagar"] ?? 0) - ($totales["reteRenta"] ?? 0))}}</strong></td>
+                            <tr style="background-color: #333333; border-top: 2px solid #000000;">
+                                <td colspan="4" style="padding: 6px; font-size: 10px; color: #ffffff;"><strong>TOTAL A PAGAR</strong></td>
+                                <td align="right" style="padding: 6px; border-left: 1px solid #666666; font-size: 10px; color: #ffffff;"><strong>{{FNumero($totales["totalPagar"] ?? $totales["montoTotalOperacion"] ?? ($json["resumen"]["totalPagar"] ?? ($json["resumen"]["montoTotalOperacion"] ?? 0)))}}</strong></td>
                             </tr>
+
                         </table>
                         <!--- Fin Totales-->
                     </td>
                 </tr>
-                <tr class="cuadro">
-                    <td colspan="2" style="font-size: 7px; padding: 3px 0; text-align: center;">
+                <tr style="border-top: 1px solid #999;">
+                    <td colspan="2" style="font-size: 10px; padding: 6px; text-align: center; background-color: #f8f9fa; color: #666;">
                         Condiciones generales de los servicios prestados por {{$emisor[0]["nombre"] ?? ($emisor[0]["nombreComercial"] ?? '')}}
                     </td>
                 </tr>
@@ -425,18 +416,18 @@
 
     <script type="text/php">
         if (isset($pdf)) {
-            $x = 530;
-            $y = 10;
-            $text = "Página {PAGE_NUM} de {PAGE_COUNT}";
-            $font = null;
-            $size = 8;
-            $color = array(0,0,0);
-            $word_space = 0.0;  //  default
-            $char_space = 0.0;  //  default
-            $angle = 0.0;   //  default
-            $pdf->page_text($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle);
-        }
-    </script>
+                $x = 530;
+                $y = 10;
+                $text = "Página {PAGE_NUM} de {PAGE_COUNT}";
+                $font = null;
+                $size = 8;
+                $color = array(0,0,0);
+                $word_space = 0.0;  //  default
+                $char_space = 0.0;  //  default
+                $angle = 0.0;   //  default
+                $pdf->page_text($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle);
+            }
+        </script>
 </body>
 
 </html>

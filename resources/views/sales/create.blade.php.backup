@@ -80,10 +80,9 @@
             var fechaHasta = $('#search_fecha_hasta').val();
             var cliente = $('#search_cliente').val();
             var companyId = $('#company').val();
-            var clientId = $('#client').val(); // Cliente del CLQ (que es el proveedor/tercero de la factura original)
 
             console.log('Iniciando búsqueda con:', {
-                tipoDoc, numeroDoc, fechaDesde, fechaHasta, cliente, companyId, clientId
+                tipoDoc, numeroDoc, fechaDesde, fechaHasta, cliente, companyId
             });
 
             if (!companyId) {
@@ -91,15 +90,6 @@
                     icon: 'warning',
                     title: 'Atención',
                     text: 'Por favor, primero selecciona una empresa'
-                });
-                return;
-            }
-
-            if (!clientId || clientId === '0') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Atención',
-                    html: 'Por favor, primero selecciona un cliente en el paso anterior.<br><small>El cliente del CLQ debe ser el proveedor (tercero) de las facturas/CCF que deseas liquidar.</small>'
                 });
                 return;
             }
@@ -124,8 +114,7 @@
                     fecha_desde: fechaDesde,
                     fecha_hasta: fechaHasta,
                     cliente: cliente,
-                    company_id: companyId,
-                    client_id: clientId // El cliente del CLQ (proveedor/tercero de la factura)
+                    company_id: companyId
                 },
                 success: function(response) {
                     console.log('Respuesta del servidor:', response);
@@ -155,10 +144,7 @@
                                     <td><strong>${doc.id}</strong></td>
                                     <td><span class="badge bg-info">${doc.tipo_documento || 'N/A'}</span></td>
                                     <td>${new Date(doc.date).toLocaleDateString('es-SV')}</td>
-                                    <td>
-                                        <strong>Cliente:</strong> ${doc.cliente_nombre || 'N/A'}<br>
-                                        <small class="text-primary"><i class="ti ti-building-store"></i> <strong>Tercero:</strong> ${doc.proveedor_nombre || 'N/A'}</small>
-                                    </td>
+                                    <td>${doc.cliente_nombre || 'N/A'}</td>
                                     <td class="text-end"><strong>$${parseFloat(doc.totalamount || 0).toFixed(2)}</strong></td>
                                     <td>
                                         ${badgeGen}
@@ -707,6 +693,21 @@
                                     <option value="3">Tarjeta</option>
                                 </select>
                             </div>
+                            @if(request('typedocument') == '6' || request('typedocument') == '3')
+                            <div class="col-sm-8">
+                                <label class="form-label" for="provider">
+                                    <i class="ti ti-building-store me-1"></i>Venta a cuenta de (Proveedor)
+                                </label>
+                                <select class="select2provider form-select" id="provider" name="provider"
+                                    aria-label="Seleccionar proveedor">
+                                    <option value="">Sin proveedor</option>
+                                </select>
+                                <input type="hidden" name="provider_name" id="provider_name">
+                                <small class="text-muted">
+                                    <i class="ti ti-info-circle me-1"></i>Selecciona un proveedor si esta venta es a cuenta de tercero (opcional)
+                                </small>
+                            </div>
+                            @endif
                             <div class="col-sm-3" style="display: none;" id="isfcredito">
                                 <label class="form-label" for="datefcredito">Fecha</label>
                                 <input type="date" id="datefcredito" name="datefcredito" class="form-control"
@@ -730,7 +731,7 @@
                         </div>
                         @if(request('typedocument') != 2)
                         <div class="row g-3 col-12" style="margin-bottom: 3%">
-                            <div class="col-sm-7">
+                            <div class="col-sm-10">
                                 <label class="form-label" for="psearch">Buscar Producto</label>
                                 <select class="select2psearch" id="psearch" name="psearch" onchange="searchproduct(this.value)">
                                 </select>
@@ -749,20 +750,7 @@
                                 <input type="hidden" id="ventatotallhidden" value="0" name="ventatotallhidden">
 
                             </div>
-                            @if(request('typedocument') == '6' || request('typedocument') == '3')
-                            <div class="col-sm-3">
-                                <label class="form-label" for="line_provider">
-                                    <i class="ti ti-building-store me-1"></i>Proveedor (Tercero)
-                                </label>
-                                <select class="form-select" id="line_provider" name="line_provider">
-                                    <option value="">No aplica</option>
-                                </select>
-                                <small class="mt-1 text-muted d-block">
-                                    <i class="ti ti-info-circle me-1"></i>Selecciona si este producto es a cuenta de tercero
-                                </small>
-                            </div>
-                            @endif
-                            <div class="col-sm-{{ (request('typedocument') == '6' || request('typedocument') == '3') ? '2' : '3' }}">
+                            <div class="col-sm-1">
                                 <label class="form-label" for="cantidad">Cantidad</label>
                                 <input type="number" id="cantidad" name="cantidad" min="1" max="10" value="1" class="form-control" onchange="totalamount();">
                             </div>
@@ -858,24 +846,9 @@
                         @endif
 
                         @if(request('typedocument')==2)
-                        <!-- Botón Buscar Factura/CCF (solo CLQ) - arriba para autorellenar desde documento existente -->
-                        <div class="row g-3 col-12" style="margin-bottom: 1.5%; margin-top: 2%;">
-                            <div class="col-12">
-                                <div class="card border-primary">
-                                    <div class="py-2 card-body">
-                                        <button type="button" class="btn btn-primary btn-sm" id="btn-buscar-documento-clq" data-bs-toggle="modal" data-bs-target="#modalBuscarDocumento">
-                                            <i class="ti ti-search me-1"></i>Buscar Factura/CCF Existente
-                                        </button>
-                                        <small class="text-muted ms-2">
-                                            <i class="ti ti-info-circle me-1"></i>Haz clic para buscar y autorellenar los datos desde un documento ya emitido
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <!-- Campos para ingresar totales manualmente en CLQ -->
-                        <div class="row g-3 col-12" style="margin-bottom: 2%;">
-                            <div class="mb-2 col-12">
+                        <div class="row g-3 col-12" style="margin-bottom: 2%; margin-top: 2%;">
+                            <div class="col-12 mb-2">
                                 <h6 class="mb-2 fw-semibold text-info">
                                     <i class="ti ti-calculator me-2"></i>Totales por Tipo de Venta (CLQ)
                                 </h6>
@@ -909,10 +882,24 @@
 
                         @if(request('typedocument')==2)
                         <div class="row g-3 col-12" style="margin-bottom: 3%;" id="clq-additional-fields">
-                            <div class="mb-3 col-12">
+                            <div class="col-12 mb-3">
                                 <h6 class="mb-3 fw-bold text-primary">
                                     <i class="ti ti-file-invoice me-2"></i>Información Adicional del Comprobante de Liquidación
                                 </h6>
+                            </div>
+
+                            <!-- Botón de búsqueda -->
+                            <div class="col-12 mb-4">
+                                <div class="card border-primary">
+                                    <div class="card-body py-2">
+                                        <button type="button" class="btn btn-primary btn-sm" id="btn-buscar-documento-clq" data-bs-toggle="modal" data-bs-target="#modalBuscarDocumento">
+                                            <i class="ti ti-search me-1"></i>Buscar Factura/CCF Existente
+                                        </button>
+                                        <small class="text-muted ms-2">
+                                            <i class="ti ti-info-circle me-1"></i>Haz clic para buscar y autorellenar los datos desde un documento ya emitido
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Primera fila: Tipo Documento -->
@@ -939,10 +926,10 @@
                                 <label class="form-label fw-semibold" for="clq_tipo_generacion">
                                     <i class="ti ti-device-desktop me-1"></i>Tipo Generación
                                 </label>
-                                <select class="form-select" id="clq_tipo_generacion" name="clq_tipo_generacion">
+                                <select class="form-select" id="clq_tipo_generacion" name="clq_tipo_generacion" required>
                                     <option value="">Seleccione...</option>
                                     <option value="1">1 - Físico</option>
-                                    <option value="2" selected>2 - Electrónico</option>
+                                    <option value="2">2 - Electrónico</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
@@ -1206,16 +1193,8 @@
                             .invoice-header {
                                 background: linear-gradient(135deg, #7367f0 0%, #5e50ee 100%);
                                 color: white;
-                                padding: 20px 25px;
+                                padding: 30px 40px;
                                 border-bottom: 4px solid rgba(255, 255, 255, 0.2);
-                            }
-                            .invoice-header .row {
-                                margin-left: -10px;
-                                margin-right: -10px;
-                            }
-                            .invoice-header .row > [class*="col-"] {
-                                padding-left: 10px;
-                                padding-right: 10px;
                             }
                             .invoice-body {
                                 padding: 35px 40px;
@@ -1230,35 +1209,31 @@
                                 background: rgba(255, 255, 255, 0.15);
                                 backdrop-filter: blur(10px);
                                 border: 2px solid rgba(255, 255, 255, 0.3);
-                                border-radius: 8px;
-                                padding: 18px 12px;
+                                border-radius: 10px;
+                                padding: 25px 20px;
                                 text-align: center;
                                 color: white;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                height: 100%;
                             }
                             .invoice-doc-box .doc-title {
-                                font-size: 20px;
+                                font-size: 32px;
                                 font-weight: 700;
-                                letter-spacing: 1px;
-                                margin-bottom: 15px;
+                                letter-spacing: 2px;
+                                margin-bottom: 25px;
                                 text-shadow: 0 2px 4px rgba(0,0,0,0.2);
                             }
                             .invoice-doc-box .doc-field {
-                                padding: 0;
-                                border-bottom: none;
-                                margin-bottom: 0;
+                                padding: 12px 0;
+                                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                                margin-bottom: 12px;
                             }
                             .invoice-doc-box .doc-field:last-child {
                                 border-bottom: none;
                                 margin-bottom: 0;
                             }
                             .invoice-doc-box .doc-label {
-                                font-size: 9px;
+                                font-size: 11px;
                                 text-transform: uppercase;
-                                letter-spacing: 0.5px;
+                                letter-spacing: 1px;
                                 opacity: 0.85;
                                 margin-bottom: 6px;
                                 display: block;
@@ -1270,9 +1245,9 @@
                             #logodocfinal{
                                 display:block;
                                 width: 100%;
-                                max-width: 180px;
+                                max-width: 150px;
                                 height: auto;
-                                max-height: 140px;
+                                max-height: 120px;
                                 object-fit: contain;
                                 margin: 0 auto;
                                 filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
@@ -1281,8 +1256,8 @@
                                 background: rgba(255, 255, 255, 0.1);
                                 backdrop-filter: blur(10px);
                                 border: 2px solid rgba(255, 255, 255, 0.2);
-                                border-radius: 8px;
-                                padding: 20px 15px;
+                                border-radius: 10px;
+                                padding: 20px;
                                 text-align: center;
                                 height: 100%;
                                 display: flex;
@@ -1291,10 +1266,10 @@
                                 align-items: center;
                             }
                             .interlineado-nulo{
-                                line-height: 1.6;
-                                margin: 4px 0;
+                                line-height: 1.8;
+                                margin: 6px 0;
                                 color: rgba(255, 255, 255, 0.95);
-                                font-size: 0.85em;
+                                font-size: 0.95em;
                             }
                             .invoice-company-info {
                                 color: rgba(255, 255, 255, 0.95);
@@ -1302,8 +1277,8 @@
                             .invoice-company-info h4 {
                                 color: white;
                                 font-weight: 700;
-                                font-size: 0.95rem;
-                                margin-bottom: 10px;
+                                font-size: 1.15rem;
+                                margin-bottom: 15px;
                                 letter-spacing: 0.5px;
                             }
                             .porsi{
@@ -1319,7 +1294,7 @@
                             }
                             .invoice-info-grid {
                                 display: grid;
-                                grid-template-columns: 140px 1fr;
+                                grid-template-columns: 160px 1fr;
                                 gap: 0;
                                 border-bottom: 1px solid #e9ecef;
                                 align-items: center;
@@ -1328,19 +1303,19 @@
                                 border-bottom: none;
                             }
                             .camplantilla{
-                                padding: 8px 15px;
+                                padding: 12px 20px;
                                 font-weight: 600;
                                 color: #566a7f;
-                                font-size: 0.75em;
+                                font-size: 0.875em;
                                 vertical-align: middle;
                                 background: #f8f9fa;
                                 border-right: 2px solid #e0e3e7;
                                 white-space: nowrap;
                             }
                             .dataplantilla{
-                                padding: 8px 15px;
+                                padding: 12px 20px;
                                 color: #283144;
-                                font-size: 0.8em;
+                                font-size: 0.95em;
                                 vertical-align: middle;
                                 font-weight: 500;
                                 background: #ffffff;
@@ -1362,11 +1337,11 @@
                                 background: #ffffff;
                             }
                             .invoice-section-title {
-                                font-size: 0.875rem;
+                                font-size: 1rem;
                                 font-weight: 700;
                                 color: #566a7f;
-                                margin-bottom: 12px;
-                                padding-bottom: 8px;
+                                margin-bottom: 20px;
+                                padding-bottom: 10px;
                                 border-bottom: 2px solid #e9ecef;
                                 text-transform: uppercase;
                                 letter-spacing: 0.5px;
@@ -1515,31 +1490,21 @@
                             <!-- Header con fondo morado -->
                             <div class="invoice-header">
                                 <div class="row align-items-center g-4">
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="invoice-logo-section">
                                             <img id="logodocfinal" src="" alt="Logo">
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-5">
                                         <div class="invoice-company-info">
                                             <h4><i class="ti ti-building me-2"></i>INFORMACIÓN DE LA EMPRESA</h4>
                                             <p class="interlineado-nulo" id="addressdcfinal" style="font-weight: 500; margin-bottom: 8px;"></p>
                                             <p class="interlineado-nulo" id="phonedocfinal" style="margin-bottom: 8px;">
                                                 <i class="ti ti-phone me-2"></i>
                                             </p>
-                                            <p class="interlineado-nulo" id="emaildocfinal" style="margin-bottom: 8px;">
+                                            <p class="interlineado-nulo" id="emaildocfinal">
                                                 <i class="ti ti-mail me-2"></i>
                                             </p>
-                                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                                                <p class="interlineado-nulo" style="margin-bottom: 6px;">
-                                                    <span class="doc-label" style="display: inline-block; margin-right: 8px;">NCR:</span>
-                                                    <span id="NCR_details" style="font-weight: 600;">NCR: </span>
-                                                </p>
-                                                <p class="interlineado-nulo">
-                                                    <span class="doc-label" style="display: inline-block; margin-right: 8px;">NIT:</span>
-                                                    <span id="NIT_details" style="font-weight: 600;">NIT: </span>
-                                                </p>
-                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
@@ -1548,6 +1513,14 @@
                                             <div class="doc-field">
                                                 <span class="doc-label">Número</span>
                                                 <span class="doc-value" id="corr_details">1792067464001</span>
+                                            </div>
+                                            <div class="doc-field">
+                                                <span class="doc-label">NCR</span>
+                                                <span class="doc-value" id="NCR_details">NCR: </span>
+                                            </div>
+                                            <div class="doc-field">
+                                                <span class="doc-label">NIT</span>
+                                                <span class="doc-value" id="NIT_details">NIT: </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1558,15 +1531,15 @@
                             <div class="invoice-body">
 
                                 <!-- Información del Cliente -->
-                                <div class="mb-3 row">
-                                    <div class="mb-2 col-12">
+                                <div class="row mb-4">
+                                    <div class="col-12 mb-3">
                                         <h5 class="invoice-section-title">
                                             <i class="ti ti-user me-2" style="color: #7367f0;"></i>DATOS DEL CLIENTE
                                         </h5>
                                     </div>
-                                    <div class="mb-2 col-md-6">
+                                    <div class="col-md-6 mb-3">
                                         <div class="invoice-card">
-                                            <div style="padding: 12px;">
+                                            <div style="padding: 20px;">
                                                 <div class="invoice-info-grid">
                                                     <div class="camplantilla"><strong>Señor (es):</strong></div>
                                                     <div class="dataplantilla" id="name_client"></div>
@@ -1586,9 +1559,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="mb-2 col-md-6">
+                                    <div class="col-md-6 mb-3">
                                         <div class="invoice-card">
-                                            <div style="padding: 12px;">
+                                            <div style="padding: 20px;">
                                                 <div class="invoice-info-grid">
                                                     <div class="camplantilla"><strong>Fecha:</strong></div>
                                                     <div class="dataplantilla" id="date_doc"></div>
@@ -1620,7 +1593,7 @@
 
                                 <!-- Tabla de Productos -->
                                 <div class="row">
-                                    <div class="mb-3 col-12">
+                                    <div class="col-12 mb-3">
                                         <h5 class="invoice-section-title">
                                             <i class="ti ti-shopping-cart me-2" style="color: #7367f0;"></i>DETALLE DE PRODUCTOS
                                         </h5>
@@ -1657,42 +1630,6 @@
     <!-- /Default Icons Wizard -->
     </div>
 
-    <!-- Modal de Progreso para Emisión de DTEs -->
-    <div class="modal fade" id="modalProgressDTE" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="text-white modal-header bg-primary">
-                    <h5 class="modal-title">
-                        <i class="ti ti-refresh ti-spin me-2"></i>Emitiendo DTEs a Hacienda
-                    </h5>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-4 text-center">
-                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                            <span class="visually-hidden">Procesando...</span>
-                        </div>
-                        <p class="mt-3 fw-bold" id="progress-main-text">Iniciando emisión...</p>
-                    </div>
-
-                    <div id="progress-list" class="mt-4">
-                        <!-- Aquí se mostrarán los DTEs en progreso -->
-                    </div>
-
-                    <div class="mt-4 progress" style="height: 25px;">
-                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                             role="progressbar" style="width: 0%">
-                            <span id="progress-percent">0%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="display: none;" id="progress-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeProgressModal()">Cerrar</button>
-                    <a href="/sale/index" class="btn btn-primary">Ir a Listado de Ventas</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal para buscar documentos -->
     <div class="modal fade" id="modalBuscarDocumento" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
@@ -1702,7 +1639,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3 row">
+                    <div class="row mb-3">
                         <div class="col-md-2">
                             <label class="form-label">Tipo Documento</label>
                             <select class="form-select" id="search_tipo_documento">
@@ -1750,18 +1687,16 @@
                                     <th>ID</th>
                                     <th>Tipo</th>
                                     <th>Fecha</th>
-                                    <th>Cliente / Tercero</th>
+                                    <th>Cliente</th>
                                     <th>Total</th>
-                                    <th>Estado</th>
+                                    <th>Código Generación</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-documentos-busqueda">
                                 <tr>
                                     <td colspan="7" class="text-center text-muted">
-                                        <i class="ti ti-info-circle me-2"></i>
-                                        <strong>Busca documentos a terceros pendientes de liquidar</strong>
-                                        <br><small class="text-info">Solo se mostrarán facturas/CCF donde el tercero (proveedor) coincide con el cliente seleccionado en este CLQ</small>
+                                        <i class="ti ti-search me-1"></i>Utiliza los filtros y presiona "Buscar"
                                     </td>
                                 </tr>
                             </tbody>

@@ -76,19 +76,25 @@ $(function () {
           className: 'control',
           searchable: false,
           orderable: false,
-          responsivePriority: 0
+          responsivePriority: 0,
+          targets: 0
+        },
+        {
+          // Hacer todas las columnas buscables excepto acciones
+          targets: '_all',
+          searchable: true
         }
       ],
       responsive: false, // Desactivar responsividad automática
       autoWidth: false, // Desactivar ajuste automático de ancho
       scrollX: false, // Desactivar scroll horizontal para evitar problemas con dropdowns
-      order: [[1, 'desc']],
+      order: [[2, 'desc']], // Ordenar por fecha (columna 2, índice 2)
       dom:
-        '<"row me-2"' +
-        '<"col-md-2"<"me-3"l>>' +
-        '<"col-md-10"<"dt-action-buttons text-xl-end text-lg-start text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column mb-3 mb-md-0"fB>>' +
+        '<"row me-2 mb-3"' +
+        '<"col-md-3"<"me-3"l>>' +
+        '<"col-md-9"<"dt-action-buttons text-xl-end text-lg-start text-md-end text-start d-flex align-items-center justify-content-end flex-md-row flex-column mb-3 mb-md-0"fB>>' +
         '>t' +
-        '<"row mx-2"' +
+        '<"row mx-2 mt-3"' +
         '<"col-sm-12 col-md-6"i>' +
         '<"col-sm-12 col-md-6"p>' +
         '>',
@@ -132,19 +138,56 @@ $(function () {
         }
       ],
       language: {
-        lengthMenu: '_MENU_',
+        lengthMenu: 'Mostrar _MENU_ registros',
         search: '',
-        searchPlaceholder: 'Buscar ventas..',
+        searchPlaceholder: 'Buscar en todas las columnas...',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_ registros',
+        infoEmpty: 'No hay registros',
+        infoFiltered: '(filtrado de _MAX_ registros totales)',
+        zeroRecords: 'No se encontraron registros',
         paginate: {
           next: '<i class="ti ti-chevron-right ti-sm"></i>',
-          previous: '<i class="ti ti-chevron-left ti-sm"></i>'
+          previous: '<i class="ti ti-chevron-left ti-sm"></i>',
+          first: '<i class="ti ti-chevrons-left ti-sm"></i>',
+          last: '<i class="ti ti-chevrons-right ti-sm"></i>'
         }
       },
       displayLength: 25,
       lengthMenu: [10, 25, 50, 75, 100],
+      searchDelay: 400, // Delay para mejorar rendimiento en búsquedas
       initComplete: function () {
         // Agregar clase a los elementos de búsqueda
-        $('.dataTables_filter .form-control').addClass('form-control-sm');
+        var searchInput = $('.dataTables_filter input');
+        searchInput.addClass('form-control form-control-sm');
+        searchInput.attr('placeholder', 'Buscar en todas las columnas...');
+        searchInput.css({
+          'min-width': '300px',
+          'padding-left': '2.5rem'
+        });
+        
+        // Agregar icono de búsqueda
+        $('.dataTables_filter').prepend('<i class="ti ti-search position-absolute" style="left: 10px; top: 50%; transform: translateY(-50%); color: #6c757d; pointer-events: none;"></i>');
+        $('.dataTables_filter').css('position', 'relative');
+        
+        // Agregar botón para limpiar búsqueda
+        var clearBtn = $('<button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2" title="Limpiar búsqueda" style="display: none;"><i class="ti ti-x"></i></button>');
+        $('.dataTables_filter').append(clearBtn);
+        
+        // Funcionalidad del botón limpiar
+        clearBtn.on('click', function() {
+          searchInput.val('').trigger('keyup');
+          $(this).hide();
+        });
+        
+        // Mostrar/ocultar botón limpiar según contenido
+        searchInput.on('keyup', function() {
+          if ($(this).val().length > 0) {
+            clearBtn.show();
+          } else {
+            clearBtn.hide();
+          }
+        });
+        
         $('.dataTables_length .form-select').addClass('form-select-sm');
       }
     });

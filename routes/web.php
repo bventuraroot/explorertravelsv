@@ -175,6 +175,10 @@ Route::group(['prefix' => 'sale', 'as' => 'sale.'], function(){
         Route::post('send-n8n', [SaleController::class, 'sendToN8n'])->name('send-n8n');
         Route::get('destinos', [SaleController::class, 'destinos'])->name('destinos');
         Route::get('linea', [SaleController::class, 'linea'])->name('linea');
+        Route::post('search-documents-clq', [SaleController::class, 'searchDocumentsForCLQ'])->name('searchDocumentsForCLQ');
+        Route::get('get-sale-details-clq/{id}', [SaleController::class, 'getSaleDetailsForCLQ'])->name('getSaleDetailsForCLQ');
+        Route::get('get-child-sales/{parent_id}', [SaleController::class, 'getChildSales'])->name('getChildSales');
+        Route::get('reemit-child/{id}', [SaleController::class, 'reemitChild'])->name('reemitChild');
 
     });
 
@@ -246,6 +250,12 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::post('comprassearch', [ReportsController::class, 'comprassearch'])->name('comprassearch');
         Route::get('ivacontrol', [ReportsController::class, 'ivacontrol'])->name('ivacontrol');
         Route::post('ivacontrolsearch', [ReportsController::class, 'ivacontrolsearch'])->name('ivacontrolsearch');
+        Route::get('liquidacion', [ReportsController::class, 'liquidacion'])->name('liquidacion');
+        Route::get('ventas-terceros', [ReportsController::class, 'ventasTerceros'])->name('ventasTerceros');
+        Route::post('ventas-terceros-search', [ReportsController::class, 'ventasTercerosSearch'])->name('ventasTerceros.search');
+        Route::post('ventas-terceros-excel', [ReportsController::class, 'ventasTercerosExcel'])->name('ventasTerceros.excel');
+        Route::post('liquidacionsearch', [ReportsController::class, 'liquidacionsearch'])->name('liquidacionsearch');
+        Route::post('liquidacion-excel', [ReportsController::class, 'liquidacionExcel'])->name('liquidacion.excel');
     });
 
 Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
