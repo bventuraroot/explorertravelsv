@@ -77,7 +77,7 @@ if (!function_exists('detectarTipoDocumento')) {
         }
 
         $longitud = strlen($documento);
-
+        dd($cliente);
         // Si es extranjero, siempre es pasaporte (código 03)
         if ($cliente->extranjero == 1) {
             return "03"; // Pasaporte
