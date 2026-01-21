@@ -575,6 +575,7 @@ $configData = Helper::appClasses();
                     </span>
                     <span class="switch-label">¿Es Extranjero?</span>
                 </label>
+                <input type="hidden" id="extranjeroedit_hidden" name="extranjeroedit_hidden" value="0">
             </div>
             <div class="mb-3" id="dui_fields">
                 <label class="form-label" for="nitedit">DUI/NIT</label>

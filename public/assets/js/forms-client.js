@@ -662,12 +662,16 @@ function esextranjeroedit() {
         $("#dui_fields").css("display", "none");
         $("#pasaporte_fields_edit").show();
         $("#dui_fields").hide();
+        // Actualizar el campo oculto
+        $("#extranjeroedit_hidden").val("1");
         // No limpiar campos automáticamente para preservar los datos
     } else {
         $("#pasaporte_fields_edit").css("display", "none");
         $("#dui_fields").css("display", "block");
         $("#pasaporte_fields_edit").hide();
         $("#dui_fields").show();
+        // Actualizar el campo oculto
+        $("#extranjeroedit_hidden").val("0");
         // No limpiar campos automáticamente para preservar los datos
     }
 }
@@ -689,6 +693,9 @@ function editClient(id) {
 
     // Establecer el ID del cliente en el campo oculto para la validación
     $("#idedit").val(id);
+    
+    // Inicializar el campo oculto de extranjero con valor por defecto
+    $("#extranjeroedit_hidden").val("0");
 
     $.ajax({
         url: "/client/getClientid/" + btoa(id),
@@ -756,6 +763,7 @@ function editClient(id) {
 
                     if (value == "1") {
                         $("#extranjeroedit").prop("checked", true);
+                        $("#extranjeroedit_hidden").val("1");
                         $("#extranjerolabeledit").css("display", "block !important");
                         $("#extranjerolabeledit").show();
 
@@ -783,6 +791,7 @@ function editClient(id) {
                         $("#pasaporte_fields_edit").show();
                     } else if (value == "0") {
                         $("#extranjeroedit").prop("checked", false);
+                        $("#extranjeroedit_hidden").val("0");
                         $("#extranjerolabeledit").css("display", "block !important");
                         $("#extranjerolabeledit").show();
 
