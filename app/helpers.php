@@ -734,11 +734,11 @@ if (!function_exists('fac')) {
         }
         $docInfo = getClienteDocumentoConTipo($cliente[0]);
         $receptor = [
-            //"tipoDocumento"         => $docInfo['tipoDocumento'],
+            "tipoDocumento"         => $docInfo['tipoDocumento'],
             //"tipoDocumento"         => "36",
-            "tipoDocumento"         => $tipoDocumento,
-            //"numDocumento"          => $docInfo['documento'],
-            "numDocumento"          => getClienteDocumento($cliente[0]),
+            //"tipoDocumento"         => $tipoDocumento,
+            "numDocumento"          => $docInfo['documento'],
+            //"numDocumento"          => getClienteDocumento($cliente[0]),
             "nrc"                   => ($cliente[0]->ncr == 'N/A' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == '' or $cliente[0]->ncr == '0') ? null : str_replace("-","",$cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $codeActivity,
