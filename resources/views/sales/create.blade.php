@@ -150,8 +150,14 @@
                                 ? '<span class="badge bg-success">Electrónico</span>'
                                 : '<span class="badge bg-secondary">Físico</span>';
 
+                            // Verificar si está invalidado
+                            var esInvalidado = doc.es_invalidado == 1 || doc.es_invalidado === true || doc.state == 0;
+                            var badgeInvalidado = esInvalidado
+                                ? '<span class="badge bg-danger ms-1"><i class="ti ti-x"></i> Invalidado</span>'
+                                : '';
+
                             html += `
-                                <tr>
+                                <tr ${esInvalidado ? 'style="opacity: 0.7;"' : ''}>
                                     <td><strong>${doc.id}</strong></td>
                                     <td><span class="badge bg-info">${doc.tipo_documento || 'N/A'}</span></td>
                                     <td>${new Date(doc.date).toLocaleDateString('es-SV')}</td>
@@ -162,6 +168,7 @@
                                     <td class="text-end"><strong>$${parseFloat(doc.totalamount || 0).toFixed(2)}</strong></td>
                                     <td>
                                         ${badgeGen}
+                                        ${badgeInvalidado}
                                         <br><small class="text-muted">${codigoGeneracionDTE || 'Sin código DTE'}</small>
                                     </td>
                                     <td>

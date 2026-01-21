@@ -430,17 +430,23 @@ class SaleController extends Controller
             $saledetails->amountp = $cantidad;
 
             // IMPORTANTE: Para CLQ (typedocument_id == '2'), usar los totales directamente del documento original
-            if ($sale->typedocument_id == '2' && ($clq_total_gravadas > 0 || $clq_total_exentas > 0 || $clq_total_no_sujetas > 0)) {
-                // Para CLQ, usar los totales del documento original directamente
-                $saledetails->pricesale = round($clq_total_gravadas, 8);
-                $saledetails->exempt = round($clq_total_exentas, 8);
-                $saledetails->nosujeta = round($clq_total_no_sujetas, 8);
+            // NOTA: Los valores se guardan siempre como positivos en la BD. La conversión a negativos se hace en el helper clq() al generar el JSON
+            if ($sale->typedocument_id == '2' && (abs($clq_total_gravadas) > 0 || abs($clq_total_exentas) > 0 || abs($clq_total_no_sujetas) > 0)) {
+                // Usar valores absolutos para asegurar que siempre guardamos valores positivos
+                $clq_total_gravadas_abs = abs($clq_total_gravadas);
+                $clq_total_exentas_abs = abs($clq_total_exentas);
+                $clq_total_no_sujetas_abs = abs($clq_total_no_sujetas);
+
+                // Para CLQ, usar los totales del documento original directamente (siempre positivos en BD)
+                $saledetails->pricesale = round($clq_total_gravadas_abs, 8);
+                $saledetails->exempt = round($clq_total_exentas_abs, 8);
+                $saledetails->nosujeta = round($clq_total_no_sujetas_abs, 8);
 
                 // Calcular IVA solo de las gravadas (13% de gravadas)
-                $saledetails->detained13 = round($clq_total_gravadas * 0.13, 8);
+                $saledetails->detained13 = round($clq_total_gravadas_abs * 0.13, 8);
 
                 // Calcular priceunit como promedio (total / cantidad)
-                $total_sin_iva = $clq_total_gravadas + $clq_total_exentas + $clq_total_no_sujetas;
+                $total_sin_iva = $clq_total_gravadas_abs + $clq_total_exentas_abs + $clq_total_no_sujetas_abs;
                 if ($cantidad > 0) {
                     $saledetails->priceunit = round($total_sin_iva / $cantidad, 8);
                 } else {
@@ -1810,9 +1816,28 @@ class SaleController extends Controller
         try {
             \Log::info('Búsqueda CLQ iniciada', $request->all());
 
+            // Subconsulta para obtener el último DTE de emisión (no invalidación) por venta
+            $dteEmisionSub = DB::table('dte')
+                ->select(
+                    'dte.sale_id',
+                    'dte.codigoGeneracion',
+                    'dte.id_doc',
+                    'dte.codTransaction'
+                )
+                ->whereIn('dte.codTransaction', ['01','05','06'])
+                ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+            // Subconsulta para verificar si existe un DTE de invalidación
+            $dteInvalidacionSub = DB::table('dte')
+                ->select('dte.sale_id')
+                ->where('dte.codTransaction', '02')
+                ->whereRaw('dte.sale_id = sales.id');
+
             $query = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
                 ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-                ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+                ->leftJoinSub($dteEmisionSub, 'dte_emis', function ($join) {
+                    $join->on('dte_emis.sale_id', '=', 'sales.id');
+                })
                 ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
                 ->select(
                     'sales.id',
@@ -1823,19 +1848,36 @@ class SaleController extends Controller
                     'sales.provider_id',
                     'sales.parent_sale_id',
                     'sales.is_parent',
+                    'sales.state',
                     'providers.razonsocial as proveedor_nombre',
                     'typedocuments.description as tipo_documento',
                     'typedocuments.codemh as codigo_mh',
                     'typedocuments.type as tipo_doc_code',
-                    'dte.codigoGeneracion',
-                    'dte.id_doc as numero_control',
+                    'dte_emis.codigoGeneracion',
+                    'dte_emis.id_doc as numero_control',
                     DB::raw("CASE
                         WHEN clients.tpersona = 'J' THEN clients.comercial_name
                         WHEN clients.tpersona = 'N' THEN CONCAT_WS(' ', clients.firstname, clients.firstlastname)
                         ELSE 'Sin cliente'
-                    END AS cliente_nombre")
+                    END AS cliente_nombre"),
+                    DB::raw("EXISTS(SELECT 1 FROM dte WHERE dte.sale_id = sales.id AND dte.codTransaction = '02') as es_invalidado")
                 )
-                ->where('sales.state', 1) // Solo ventas confirmadas
+                // Incluir ventas confirmadas (state = 1) Y invalidadas (state = 0) de terceros
+                // Las invalidadas deben tener al menos un DTE de emisión para poder ser incluidas en CLQ
+                ->where(function($q) {
+                    $q->where('sales.state', 1) // Confirmadas
+                      ->orWhere(function($q2) {
+                          // Invalidadas pero que tengan DTE de emisión y sean de terceros
+                          $q2->where('sales.state', 0)
+                             ->whereExists(function($subquery) {
+                                 $subquery->select(DB::raw(1))
+                                     ->from('dte')
+                                     ->whereColumn('dte.sale_id', 'sales.id')
+                                     ->whereIn('dte.codTransaction', ['01', '05', '06']);
+                             })
+                             ->whereNotNull('sales.provider_id'); // Asegurar que es de terceros
+                      });
+                })
                 // Solo documentos con tercero (venta a cuenta de)
                 // IMPORTANTE: Solo ventas que tienen sales.provider_id
                 ->whereNotNull('sales.provider_id')
@@ -1887,15 +1929,16 @@ class SaleController extends Controller
 
             // NUEVO: Excluir documentos que ya tienen CLQ (liquidados)
             // Un documento está liquidado si existe un CLQ que lo referencia por codigoGeneracion
+            // IMPORTANTE: Los documentos invalidados también pueden estar liquidados, así que verificamos ambos
             $query->where(function($q) {
                 // Si no tiene codigoGeneracion, no puede estar liquidado (mostrarlo)
-                $q->whereNull('dte.codigoGeneracion')
+                $q->whereNull('dte_emis.codigoGeneracion')
                   // Si tiene codigoGeneracion, verificar que NO esté en ningún CLQ activo
                   ->orWhereNotExists(function($subquery) {
                       $subquery->select(DB::raw(1))
                           ->from('salesdetails as clq_sd')
                           ->join('sales as clq_sales', 'clq_sales.id', '=', 'clq_sd.sale_id')
-                          ->whereColumn('clq_sd.clq_numero_documento', 'dte.codigoGeneracion')
+                          ->whereColumn('clq_sd.clq_numero_documento', 'dte_emis.codigoGeneracion')
                           ->where('clq_sales.typedocument_id', '2') // Solo CLQ
                           ->where('clq_sales.state', '!=', 0); // Excluir CLQ anulados
                   });
@@ -1953,28 +1996,30 @@ class SaleController extends Controller
 
             // Si no hay resultados, hacer diagnóstico detallado
             if ($documentos->count() === 0 && $request->filled('company_id')) {
+                // Incluir tanto confirmadas como invalidadas en el diagnóstico
                 $totalVentas = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
+                    ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                     ->whereIn('sales.typedocument_id', [3, 6])
                     ->count();
 
                 // Ventas con tercero (provider_id) - incluir todas las ventas hijas
                 // IMPORTANTE: Solo buscar en ventas hijas (is_parent = 0) que tienen provider_id
                 // Las ventas padre no tienen provider_id, solo las hijas lo tienen
+                // Incluir tanto confirmadas como invalidadas
                 $ventasConTercero = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
+                    ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                     ->whereIn('sales.typedocument_id', [3, 6])
                     ->whereNotNull('sales.provider_id')
                     ->where('sales.typedocument_id', '!=', '2') // Excluir CLQ
                     ->count();
 
-                // Log detallado de ventas con tercero
+                // Log detallado de ventas con tercero (confirmadas e invalidadas)
                 $ventasConTerceroDetalle = Sale::where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
+                    ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                     ->whereIn('sales.typedocument_id', [3, 6])
                     ->whereNotNull('sales.provider_id')
                     ->where('sales.typedocument_id', '!=', '2')
-                    ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id')
+                    ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id', 'sales.state')
                     ->get();
 
                 \Log::info('Ventas con tercero encontradas', [
@@ -1984,10 +2029,11 @@ class SaleController extends Controller
 
                 // También verificar ventas que tienen line_provider_id en salesdetails pero no provider_id en sales
                 // Esto puede pasar si la venta aún no se ha separado en hijas
+                // Incluir tanto confirmadas como invalidadas
                 $ventasConLineProvider = DB::table('sales')
                     ->join('salesdetails', 'sales.id', '=', 'salesdetails.sale_id')
                     ->where('sales.company_id', $request->company_id)
-                    ->where('sales.state', 1)
+                    ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                     ->whereIn('sales.typedocument_id', [3, 6])
                     ->where('sales.typedocument_id', '!=', '2')
                     ->whereNotNull('salesdetails.line_provider_id')
@@ -2006,26 +2052,27 @@ class SaleController extends Controller
                     $clienteCLQ = \App\Models\Client::find($request->client_id);
                     if ($clienteCLQ && $clienteCLQ->nit) {
                         $nitCliente = str_replace('-', '', $clienteCLQ->nit);
+                        // Incluir tanto confirmadas como invalidadas
                         $ventasConTerceroEspecifico = DB::table('sales')
                             ->join('providers', 'sales.provider_id', '=', 'providers.id')
                             ->where('sales.company_id', $request->company_id)
-                            ->where('sales.state', 1)
+                            ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                             ->whereIn('sales.typedocument_id', [3, 6])
                             ->whereNotNull('sales.provider_id')
                             ->where('sales.typedocument_id', '!=', '2') // Excluir CLQ
                             ->whereRaw('REPLACE(providers.nit, "-", "") = ?', [$nitCliente])
                             ->count();
 
-                        // Obtener detalles de estas ventas
+                        // Obtener detalles de estas ventas (confirmadas e invalidadas)
                         $ventasConTerceroEspecificoDetalle = DB::table('sales')
                             ->join('providers', 'sales.provider_id', '=', 'providers.id')
                             ->where('sales.company_id', $request->company_id)
-                            ->where('sales.state', 1)
+                            ->whereIn('sales.state', [0, 1]) // Confirmadas e invalidadas
                             ->whereIn('sales.typedocument_id', [3, 6])
                             ->whereNotNull('sales.provider_id')
                             ->where('sales.typedocument_id', '!=', '2')
                             ->whereRaw('REPLACE(providers.nit, "-", "") = ?', [$nitCliente])
-                            ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id', 'providers.nit as provider_nit')
+                            ->select('sales.id', 'sales.provider_id', 'sales.typedocument_id', 'sales.date', 'sales.is_parent', 'sales.parent_sale_id', 'sales.state', 'providers.nit as provider_nit')
                             ->get();
 
                         \Log::info('Ventas con tercero específico (NIT)', [
@@ -2113,15 +2160,29 @@ class SaleController extends Controller
     public function getSaleDetailsForCLQ($id)
     {
         try {
+            // Incluir tanto ventas confirmadas (state = 1) como invalidadas (state = 0)
+            // Las invalidadas deben tener al menos un DTE de emisión para poder ser incluidas en CLQ
             $sale = Sale::with(['salesdetails'])
                 ->where('id', $id)
-                ->where('state', 1)
+                ->where(function($q) {
+                    $q->where('state', 1) // Confirmadas
+                      ->orWhere(function($q2) {
+                          // Invalidadas pero que tengan DTE de emisión
+                          $q2->where('state', 0)
+                             ->whereExists(function($subquery) {
+                                 $subquery->select(DB::raw(1))
+                                     ->from('dte')
+                                     ->whereColumn('dte.sale_id', 'sales.id')
+                                     ->whereIn('dte.codTransaction', ['01', '05', '06']);
+                             });
+                      });
+                })
                 ->first();
 
             if (!$sale) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Venta no encontrada',
+                    'message' => 'Venta no encontrada o no cumple los requisitos para CLQ',
                     'data' => []
                 ], 404);
             }

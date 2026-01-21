@@ -443,6 +443,7 @@ if (!function_exists('crf')) {
         $docInfo = getClienteDocumentoConTipo($cliente[0]);
         $receptor = [
             //"tipoDocumento"         => $docInfo['tipoDocumento'],
+            //"nit"                   => getClienteDocumento($cliente[0]),
             "nit"                   => $docInfo['documento'],
             "nrc"                   => str_replace("-", "", $cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
@@ -734,8 +735,10 @@ if (!function_exists('fac')) {
         $docInfo = getClienteDocumentoConTipo($cliente[0]);
         $receptor = [
             //"tipoDocumento"         => $docInfo['tipoDocumento'],
-            "tipoDocumento"         => "36",
-            "numDocumento"          => $docInfo['documento'],
+            //"tipoDocumento"         => "36",
+            "tipoDocumento"         => $tipoDocumento,
+            //"numDocumento"          => $docInfo['documento'],
+            "numDocumento"          => getClienteDocumento($cliente[0]),
             "nrc"                   => ($cliente[0]->ncr == 'N/A' or is_null($cliente[0]->ncr) or $cliente[0]->ncr == '' or $cliente[0]->ncr == '0') ? null : str_replace("-","",$cliente[0]->ncr),
             "nombre"                => $cliente[0]->nombre,
             "codActividad"          => ($cliente[0]->codActividad == '0' or is_null($cliente[0]->codActividad) or $cliente[0]->codActividad == 'N/A') ? null : $codeActivity,
@@ -1153,29 +1156,63 @@ if (!function_exists('clq')) {
             $i += 1;
             $tributos_properties_items_cuerpoDocumento = array();
 
-            // Calcular IVA basado en tipo de venta: si es gravada, lleva IVA (13% de gravadas)
-            $ivaItem = 0.00;
-            if ($item->gravadas > 0) {
-                $ivaItem = round((float)($item->gravadas * 0.13), 2);
+            // Verificar si el documento relacionado está invalidado
+            // Si está invalidado, SOLO el IVA debe enviarse en negativo en el JSON
+            $esInvalidado = false;
+            if (!empty($item->clq_numero_documento)) {
+                // Buscar el documento relacionado por código de generación
+                $documentoRelacionado = DB::table('dte')
+                    ->where('codigoGeneracion', $item->clq_numero_documento)
+                    ->whereIn('codTransaction', ['01', '05', '06']) // DTE de emisión
+                    ->first();
+
+                if ($documentoRelacionado) {
+                    // Verificar si existe un DTE de invalidación para este documento
+                    $dteInvalidacion = DB::table('dte')
+                        ->where('sale_id', $documentoRelacionado->sale_id)
+                        ->where('codTransaction', '02') // Invalidación
+                        ->exists();
+
+                    if ($dteInvalidacion) {
+                        $esInvalidado = true;
+                    }
+                }
             }
 
-            // Acumular tributos para el resumen
-            if ($ivaItem > 0 && count($codigos_tributos) == 0) {
+            // Multiplicador para IVA: -1 si está invalidado, 1 si no
+            // Los montos de venta siempre se mantienen positivos
+            $multiplicadorIva = $esInvalidado ? -1 : 1;
+
+            // Obtener valores absolutos de los montos (siempre se guardan positivos en BD)
+            // Los montos de venta se mantienen positivos
+            $ventaNoSujFinal = round((float)abs($item->no_sujetas ?? 0), 2);
+            $ventaExentaFinal = round((float)abs($item->exentas ?? 0), 2);
+            $ventaGravadaFinal = round((float)abs($item->gravadas ?? 0), 2);
+
+            // Calcular IVA basado en tipo de venta: si es gravada, lleva IVA (13% de gravadas)
+            // SOLO el IVA debe ser negativo si el documento está invalidado
+            $ivaItem = 0.00;
+            if ($ventaGravadaFinal > 0) {
+                $ivaItem = round((float)($ventaGravadaFinal * 0.13 * $multiplicadorIva), 2);
+            }
+
+            // Acumular tributos para el resumen (el IVA puede ser negativo si está invalidado)
+            if (abs($ivaItem) > 0 && count($codigos_tributos) == 0) {
                 $codigos_tributos = [
                     "codigo"        =>  "20",
                     "descripcion"   =>  "Impuesto al Valor Agregado 13%",
-                    "valor"         => round((float)$ivaItem, 2)
+                    "valor"         => round((float)$ivaItem, 2) // Puede ser negativo si está invalidado
                 ];
             } else {
-                if ($ivaItem > 0 && count($codigos_tributos) > 0) {
+                if (abs($ivaItem) > 0 && count($codigos_tributos) > 0) {
                     $iva = round((float)($codigos_tributos["valor"] + $ivaItem), 8);
-                    $codigos_tributos["valor"] = (float)$iva;
+                    $codigos_tributos["valor"] = (float)$iva; // Puede ser negativo si está invalidado
                 }
             }
 
             //$codigos_tributos = [];
 
-            $tributos_properties_items_cuerpoDocumento = ($ivaItem > 0) ? "20" : "C3";
+            $tributos_properties_items_cuerpoDocumento = (abs($ivaItem) > 0) ? "20" : "C3";
             $properties_items_cuerpoDocumento = array();
 
             $properties_items_cuerpoDocumento = [
@@ -1184,11 +1221,11 @@ if (!function_exists('clq')) {
                 "tipoGeneracion"    =>intval($item->clq_tipo_generacion),
                 "numeroDocumento"  => $item->clq_numero_documento,
                 "fechaGeneracion"   =>$item->clq_fecha_generacion,
-                "ventaNoSuj"        => round((float)($item->no_sujetas), 2),
-                "ventaExenta"       => round((float)($item->exentas), 2),
-                "ventaGravada"      => round((float)($item->gravadas), 2),
+                "ventaNoSuj"        => $ventaNoSujFinal,
+                "ventaExenta"       => $ventaExentaFinal,
+                "ventaGravada"      => $ventaGravadaFinal,
                 "exportaciones"     => (float)"0.00",
-                "tributos"          => ($item->gravadas > 0) ? ["20"] : null,
+                "tributos"          => (abs($ventaGravadaFinal) > 0) ? ["20"] : null,
                 //"tributos"          => null,
                 "ivaItem"           => $ivaItem,
                 "obsItem"          => $item->clq_observaciones,
@@ -1209,32 +1246,53 @@ if (!function_exists('clq')) {
             "properties"   => $properties_items_tributo_resumen
         ];
 
+        // Recalcular totales del resumen basándonos en los items procesados
+        // Los montos de venta se mantienen positivos, solo el IVA puede ser negativo
+        $totalNoSujRecalculado = 0;
+        $totalExentaRecalculado = 0;
+        $totalGravadaRecalculado = 0;
+        $totalIvaRecalculado = 0;
 
+        foreach ($items_cuerpoDocumento as $itemProcesado) {
+            $totalNoSujRecalculado += (float)($itemProcesado["ventaNoSuj"] ?? 0);
+            $totalExentaRecalculado += (float)($itemProcesado["ventaExenta"] ?? 0);
+            $totalGravadaRecalculado += (float)($itemProcesado["ventaGravada"] ?? 0);
+            $totalIvaRecalculado += (float)($itemProcesado["ivaItem"] ?? 0);
+        }
+
+        // Subtotal de ventas (suma de todos los tipos - siempre positivo)
+        $subTotalVentasRecalculado = $totalNoSujRecalculado + $totalExentaRecalculado + $totalGravadaRecalculado;
+
+        // Total a pagar (subtotal + IVA, donde IVA puede ser negativo si está invalidado)
+        $totalPagarRecalculado = $subTotalVentasRecalculado + $totalIvaRecalculado;
 
         // $codigos_tributos["valor"] = intval($codigos_tributos["valor"]/0.01);
         $tblResumen = $comprobante_procesar["totales"];
         //dd(empty($codigos_tributos));
         //dd($codigo_tributos)>0);
         //dd($tblResumen);
+
+        // Usar los totales recalculados: montos de venta siempre positivos, IVA puede ser negativo
         $resumen = [
-            "totalNoSuj"            => round((float)$tblResumen["totalNoSuj"], 2),
-            "totalExenta"           => round((float)$tblResumen["totalExenta"], 2),
-            "totalGravada"          => round((float)$tblResumen["totalGravada"], 2),
+            "totalNoSuj"            => round((float)$totalNoSujRecalculado, 2),
+            "totalExenta"           => round((float)$totalExentaRecalculado, 2),
+            "totalGravada"          => round((float)$totalGravadaRecalculado, 2),
             "totalExportacion"      => round((float)"0.00", 2),
             //"totalExportacion"      => round((float)$tblResumen["totalExportacion"], 2),
-            "subTotalVentas"        => round((float)$tblResumen["subTotalVentas"], 2),
+            "subTotalVentas"        => round((float)$subTotalVentasRecalculado, 2),
             "tributos"              => (empty($codigos_tributos))? null: [$codigos_tributos],
             //"tributos"              => $codigos_tributos,
-            "montoTotalOperacion"   => round((float)($tblResumen["totalPagar"]), 2), //(float)$tblResumen["montoTotalOperacion"],
+            "montoTotalOperacion"   => round((float)$totalPagarRecalculado, 2), //(float)$tblResumen["montoTotalOperacion"],
             //"ivaPerci"              => round((float)$tblResumen["ivaPerci"], 2),
             "ivaPerci"              => round((float)"0.00", 2),
-            "total"                 => round((float)$tblResumen["totalPagar"], 2),
-            "totalLetras"           => $tblResumen["totalLetras"],
-            "condicionOperacion"    => (float)$tblResumen["condicionOperacion"],
+            "total"                 => round((float)$totalPagarRecalculado, 2),
+            "totalLetras"           => $tblResumen["totalLetras"] ?? "",
+            "condicionOperacion"    => (float)($tblResumen["condicionOperacion"] ?? 1),
 
         ];
 
-        $es_mayor = ($tblResumen["totalPagar"] >= 11428.57);
+        // Usar el total recalculado para determinar si es mayor (usar valor absoluto del total)
+        $es_mayor = (abs($totalPagarRecalculado) >= 11428.57);
         //$tblExtension = $comprobante_procesar["extension"][0];
         //$tblExtension = $comprobante_procesar["extension"][0];
         //$extension = [
