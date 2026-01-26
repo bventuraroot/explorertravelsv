@@ -3342,7 +3342,7 @@ class SaleController extends Controller
             ->join('clients as cli', 'cli.id', '=', 'sales.client_id')
             ->join('addresses as add', 'add.id', '=', 'cli.address_id')
             ->join('countries as cou', 'cou.id', '=', 'add.country_id')
-            ->join('departments as dep', 'dep.id', '=', 'add.department_id')
+            ->leftJoin('departments as dep', 'dep.id', '=', 'add.department_id')
             ->leftJoin('municipalities as muni', 'muni.id', '=', 'add.municipality_id')
             ->join('typedocuments as typedoc', 'typedoc.id', '=', 'sales.typedocument_id')
             ->select(
