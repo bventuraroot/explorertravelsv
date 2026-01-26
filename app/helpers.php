@@ -947,7 +947,7 @@ if (!function_exists('fac')) {
         $comprobante["extension"]                = $extension;
         $comprobante["apendice"]                 = null;
         //$comprobante2 = [];
-        //dd($comprobante);
+        dd($comprobante);
         return ($comprobante);
     }
 }
