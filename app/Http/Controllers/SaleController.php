@@ -3361,7 +3361,6 @@ class SaleController extends Controller
             )
             ->where('sales.id', '=', $id)
             ->get();
-        dd($factura);
         $comprobante = json_decode($factura, true);
         // Tomar sales.json y priorizar json.json_enviado (con robustez si vienen strings anidados)
         $salesJsonRaw = $comprobante[0]["json"] ?? '{}';
