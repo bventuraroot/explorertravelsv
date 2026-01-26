@@ -164,21 +164,21 @@ $(function () {
           'min-width': '300px',
           'padding-left': '2.5rem'
         });
-        
+
         // Agregar icono de búsqueda
         $('.dataTables_filter').prepend('<i class="ti ti-search position-absolute" style="left: 10px; top: 50%; transform: translateY(-50%); color: #6c757d; pointer-events: none;"></i>');
         $('.dataTables_filter').css('position', 'relative');
-        
+
         // Agregar botón para limpiar búsqueda
         var clearBtn = $('<button type="button" class="btn btn-sm btn-link text-muted p-0 ms-2" title="Limpiar búsqueda" style="display: none;"><i class="ti ti-x"></i></button>');
         $('.dataTables_filter').append(clearBtn);
-        
+
         // Funcionalidad del botón limpiar
         clearBtn.on('click', function() {
           searchInput.val('').trigger('keyup');
           $(this).hide();
         });
-        
+
         // Mostrar/ocultar botón limpiar según contenido
         searchInput.on('keyup', function() {
           if ($(this).val().length > 0) {
@@ -187,7 +187,7 @@ $(function () {
             clearBtn.hide();
           }
         });
-        
+
         $('.dataTables_length .form-select').addClass('form-select-sm');
       }
     });
