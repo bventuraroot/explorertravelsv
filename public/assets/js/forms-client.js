@@ -693,7 +693,7 @@ function editClient(id) {
 
     // Establecer el ID del cliente en el campo oculto para la validación
     $("#idedit").val(id);
-    
+
     // Inicializar el campo oculto de extranjero con valor por defecto
     $("#extranjeroedit_hidden").val("0");
 

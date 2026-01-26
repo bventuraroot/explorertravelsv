@@ -375,7 +375,7 @@ class ClientController extends Controller
             $client->legal = $request->legaledit;
             $client->tpersona = $request->tpersonaedit;
             $client->contribuyente = $request->contribuyenteeditvalor;
-            
+
             // Usar el campo oculto como respaldo para extranjero
             $extranjero_value = $request->extranjeroedit == 'on' ? '1' : ($request->extranjeroedit_hidden == '1' ? '1' : '0');
             $client->extranjero = $extranjero_value;

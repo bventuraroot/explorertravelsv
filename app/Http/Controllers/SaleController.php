@@ -3555,6 +3555,7 @@ class SaleController extends Controller
         //print_r($data);
         //dd($data);
         //$tipo_comprobante = $data["documento"][0]["tipodocumento"];
+        dd($comprobante);
         $tipo_comprobante = $comprobante[0]['codemh'];
         //dd($tipo_comprobante);
         switch ($tipo_comprobante) {
