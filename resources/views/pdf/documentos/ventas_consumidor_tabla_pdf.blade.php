@@ -45,6 +45,7 @@
                 <th class="text-center">FECHA</th>
                 <th class="text-center">No. Doc.</th>
                 <th class="text-left">CLIENTE</th>
+                <th class="text-center">TIPO VENTA</th>
                 <th class="text-right">EXENTAS</th>
                 <th class="text-right">NO SUJETAS</th>
                 <th class="text-right">INTERNAS GRAVADAS</th>
@@ -86,12 +87,14 @@
                     <td class="text-center">ANULADO</td>
                     <td class="text-center">ANULADO</td>
                     <td class="text-center">ANULADO</td>
+                    <td class="text-center">ANULADO</td>
                 @else
                     <td class="text-right">{{ number_format($sale['exenta'], 2) }}</td>
                     <td class="text-right">{{ number_format($sale['nosujeta'], 2) }}</td>
                     <td class="text-right">{{ number_format($sale['gravada'], 2) }}</td>
                     <td class="text-right">{{ number_format($sale['iva'], 2) }}</td>
                     <td class="text-right">{{ number_format($sale['totalamount'], 2) }}</td>
+                    <td class="text-center">{{ $sale['tipo_venta'] ?? 'PROPIA' }}</td>
                     <?php
                         $tot_exentas += $sale['exenta'];
                         $tot_nosujetas += $sale['nosujeta'];

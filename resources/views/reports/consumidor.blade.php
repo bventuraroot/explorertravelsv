@@ -251,8 +251,13 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
             </div>
         </div>
     </div>
-    <div id="areaImprimir">
-        <div style="overflow-x: auto; max-width: 100%;">
+    <style>
+        .report-container {
+            max-height: 70vh;
+            overflow: auto;
+        }
+    </style>
+    <div id="areaImprimir" class="report-container">
         <table class="table" style="min-width: 1600px;">
             <thead>
                 <tr>
@@ -275,6 +280,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="width: 80px;">FECHA</td>
                     <td style="width: 60px;">No. Doc.</td>
                     <td style="text-align: left; width: 150px;">CLIENTE</td>
+                    <td style="text-align: center; width: 80px;">TIPO VENTA</td>
                     <td style="width: 80px;">EXENTAS</td>
                     <td style="text-align: right; width: 80px;">NO SUJETAS</td>
                     <td style="text-align: right; width: 100px;">INTERNAS GRAVADAS</td>
@@ -323,6 +329,13 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             @else
                                 {{$sale['nombre_completo'] ?? ''}}
                         @endif
+                        </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                            @if($sale['typesale']=='0')
+                                ANULADO
+                            @else
+                                {{ $sale['tipo_venta'] ?? 'PROPIA' }}
+                            @endif
                         </td>
                         <td class="text-uppercase" style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')

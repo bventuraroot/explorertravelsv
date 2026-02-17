@@ -156,6 +156,20 @@ class ReportsController extends Controller
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS ivafee")
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
+        // Excluir ventas padre del libro; solo mostrar ventas hijas o ventas sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', "=", "3")
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
@@ -311,6 +325,20 @@ class ReportsController extends Controller
         WHERE sd.sale_id = sales.id) AS ivafee")
         ->selectRaw("(SELECT SUM(sdret.detained) FROM salesdetails AS sdret WHERE sdret.sale_id=sales.id) AS iva_retenido")
         ->selectRaw("(SELECT SUM(sdper.detainedP) FROM salesdetails AS sdper WHERE sdper.sale_id=sales.id) AS iva_percibido")
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
+        // Excluir ventas padre del libro; solo mostrar ventas hijas o ventas sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', "=", "6")
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -520,6 +548,20 @@ class ReportsController extends Controller
         FROM salesdetails AS sd
         LEFT JOIN products AS p ON p.id = sd.product_id
         WHERE sd.sale_id = sales.id) AS ivafee")
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
+        // Excluir ventas padre del libro; solo mostrar ventas hijas o sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', "=", "3")
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
@@ -618,26 +660,54 @@ class ReportsController extends Controller
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
+                $esTercero = isset($sale['tipo_venta']) && $sale['tipo_venta'] === 'TERCEROS';
 
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'], 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
+                // Ventas propias
+                if ($esTercero) {
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                } else {
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'], 2, '.', '') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
+
+                    $total_ex += $sale['exenta'];
+                    $total_gv += $sale['gravada'];
+                    $total_iva += $sale['iva'];
+                }
+
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($fee, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($ivafee, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'], 2, '.', '') . '</td>';
-
-                $total_ex += $sale['exenta'];
-                $total_gv += $sale['gravada'];
-                $total_iva += $sale['iva'];
                 $tot_fee += $fee;
                 $tot_ivafee += $ivafee;
                 $total_ns += $sale['nosujeta'];
             }
 
-            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+            // Columnas de terceros
+            if ($sale['typesale']=='0') {
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+            } else {
+                $esTercero = isset($sale['tipo_venta']) && $sale['tipo_venta'] === 'TERCEROS';
+                if ($esTercero) {
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'], 2, '.', '') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva_percibido'] ?? 0, 2, '.', '') . '</td>';
+                    $total_gv2 += $sale['gravada'];
+                    $total_iva2 += $sale['iva'];
+                    $total_iva2P += ($sale['iva_percibido'] ?? 0);
+                } else {
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                }
+            }
 
             if($sale['typesale']=='0'){
                 $html .= '<td>ANULADO</td>';
@@ -988,6 +1058,20 @@ class ReportsController extends Controller
         ->selectRaw('(SELECT SUM(sdg.pricesale) FROM salesdetails AS sdg WHERE sdg.sale_id=sales.id) AS gravada')
         ->selectRaw('(SELECT SUM(sdn.nosujeta) FROM salesdetails AS sdn WHERE sdn.sale_id=sales.id) AS nosujeta')
         ->selectRaw('(SELECT SUM(sdi.detained13) FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva')
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
+        // Excluir ventas padre del libro; solo mostrar ventas hijas o ventas sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', '=', '6')
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -1032,6 +1116,11 @@ class ReportsController extends Controller
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo')
+        // Excluir ventas padre del merge; solo ventas hijas o sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', '=', '6')
         ->whereRaw('(clients.tpersona = "N" OR clients.tpersona = "J")' )
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -1105,6 +1194,11 @@ class ReportsController extends Controller
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo')
+        // Excluir ventas padre del merge; solo ventas hijas o sin relación
+        ->where(function($q) {
+            $q->whereNull('sales.is_parent')
+              ->orWhere('sales.is_parent', 0);
+        })
         ->where('sales.typedocument_id', '=', '3')
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])

@@ -220,8 +220,13 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
             </div>
         </div>
     </div>
-    <div id="areaImprimir" class="table-responsive">
-        <div style="overflow-x: auto; max-width: 100%;">
+    <style>
+        .report-container {
+            max-height: 70vh;
+            overflow: auto;
+        }
+    </style>
+    <div id="areaImprimir" class="report-container table-responsive">
         <table class="table" style="min-width: 1800px;">
             <thead style="font-size: 13px;">
                 <tr>
@@ -254,6 +259,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="font-size: 10px; text-align: left; width: 60px;"><b>No. Doc.</b></td>
                     <td style="font-size: 10px; width: 150px;"><b>Nombre del Cliente</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>NRC</b></td>
+                    <td style="font-size: 10px; text-align: center; width: 80px;"><b>Tipo<br>Venta</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Exentas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 100px;"><b>Internas <br>Gravadas</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>Debito<br>Fiscal</b></td>
@@ -274,9 +280,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                 <?php
                     $total_ex = 0;
                     $total_gv = 0;
-                    $total_gv2 =0;
+                    $total_gv2 = 0;
                     $total_iva = 0;
-                    $total_iva2 =0;
+                    $total_iva2 = 0;
                     $total_ns = 0;
                     $tot_final = 0;
                     $vto = 0;
@@ -312,38 +318,52 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         <?php echo $sale['ncrC']; ?>
                     </td>
+                    <td
+                        style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                        @if($sale['typesale']=='0')
+                            ANULADO
+                        @else
+                            {{ $sale['tipo_venta'] ?? 'PROPIA' }}
+                        @endif
+                    </td>
                     <td class="text-uppercase"
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format(0, 2) }}
                             @else
-                             {{ number_format($sale['exenta'], 2) }}
+                                {{ number_format($sale['exenta'], 2) }}
+                                <?php $total_ex += $sale['exenta']; ?>
+                            @endif
                         @endif
-                        <?php
-                            $total_ex = $total_ex + $sale['exenta'];
-                            ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format(0, 2) }}
                             @else
-                             {{ number_format($sale['gravada'], 2) }}
+                                {{ number_format($sale['gravada'], 2) }}
+                                <?php $total_gv += $sale['gravada']; ?>
+                            @endif
                         @endif
-                        <?php
-                        $total_gv = $total_gv + $sale['gravada'];
-                            ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format(0, 2) }}
                             @else
-                             {{ number_format($sale['iva'], 2) }}
+                                {{ number_format($sale['iva'], 2) }}
+                                <?php $total_iva += $sale['iva']; ?>
+                            @endif
                         @endif
-                        <?php
-                        $total_iva = $total_iva + $sale['iva'];
-                            ?>
 
                     </td>
                     <td
@@ -383,42 +403,54 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
-                        <?php //exentas a terceros  ?>$ 0.00
+                        @if($sale['typesale']=='0')
+                            ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format($sale['exenta'], 2) }}
+                            @else
+                                {{ number_format(0, 2) }}
+                            @endif
+                        @endif
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format($sale['gravada'], 2) }}
+                                <?php $total_gv2 += $sale['gravada']; ?>
                             @else
-                             $ 0.00
+                                {{ number_format(0, 2) }}
+                            @endif
                         @endif
-                        <?php
-                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
-                        $total_gv2 = $total_gv2 + 0;
-                            ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format($sale['iva'], 2) }}
+                                <?php $total_iva2 += $sale['iva']; ?>
                             @else
-                             $ 0.00
+                                {{ number_format(0, 2) }}
+                            @endif
                         @endif
-                        <?php
-                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
-                        $total_iva2 = $total_iva2 + 0;
-                            ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
                             ANULADO
+                        @else
+                            @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
+                                {{ number_format($sale['iva_percibido'] ?? 0, 2) }}
+                                <?php $total_iva2P += ($sale['iva_percibido'] ?? 0); ?>
                             @else
-                             $ 0.00
+                                {{ number_format(0, 2) }}
+                            @endif
                         @endif
-                        <?php
-                        // Las columnas "a cuenta de terceros" van en 0.00 cuando no se especifica tercero en el DTE
-                        $total_iva2P = $total_iva2P + 0; ?>
                     </td>
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
