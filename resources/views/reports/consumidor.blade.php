@@ -256,9 +256,19 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
             max-height: 70vh;
             overflow: auto;
         }
+        .report-container table {
+            font-size: 11px;
+        }
+        .report-container thead td,
+        .report-container thead th {
+            font-size: 11px;
+        }
+        .report-container tbody td {
+            font-size: 10px;
+        }
     </style>
     <div id="areaImprimir" class="report-container">
-        <table class="table" style="min-width: 1600px;">
+        <table class="table table-sm" style="min-width: 1600px;">
             <thead>
                 <tr>
                     <th class="text-center" colspan="17">

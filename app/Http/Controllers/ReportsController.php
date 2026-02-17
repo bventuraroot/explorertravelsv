@@ -7,6 +7,7 @@ use App\Models\Purchase;
 use App\Models\Report;
 use App\Models\Sale;
 use App\Models\Salesdetail;
+use App\Models\Dte;
 use Illuminate\Http\Request;
 
 class ReportsController extends Controller
@@ -1151,13 +1152,18 @@ class ReportsController extends Controller
                 continue;
             }
             $saleId = $sale['correlativo'];
-            // Se usa versión local del PDF para evitar dependencias remotas
+
             try {
-                if (method_exists($saleController, 'genera_pdflocal')) {
-                    $pdf = $saleController->genera_pdflocal($saleId);
-                } else {
+                // Usar misma lógica que SaleController::download
+                $dte = Dte::where('sale_id', $saleId)->first();
+                if ($dte && $dte->json) {
+                    // PDF oficial DTE (incluye diseños actualizados, terceros, etc.)
                     $pdf = $saleController->genera_pdf($saleId);
+                } else {
+                    // PDF local
+                    $pdf = $saleController->genera_pdflocal($saleId);
                 }
+
                 $merger->addRaw($pdf->output());
             } catch (\Throwable $e) {
                 // Si un documento falla, se omite y continúa con los demás
@@ -1223,11 +1229,14 @@ class ReportsController extends Controller
             }
             $saleId = $sale['correlativo'];
             try {
-                if (method_exists($saleController, 'genera_pdflocal')) {
-                    $pdf = $saleController->genera_pdflocal($saleId);
-                } else {
+                // Usar misma lógica que SaleController::download
+                $dte = Dte::where('sale_id', $saleId)->first();
+                if ($dte && $dte->json) {
                     $pdf = $saleController->genera_pdf($saleId);
+                } else {
+                    $pdf = $saleController->genera_pdflocal($saleId);
                 }
+
                 $merger->addRaw($pdf->output());
             } catch (\Throwable $e) {
                 continue;
