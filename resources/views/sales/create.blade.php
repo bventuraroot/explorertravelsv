@@ -406,6 +406,75 @@
                             return;
                         }
 
+                        var totales = response.data.totales;
+                        var tipoVenta = response.data.tipo_venta || 'gravada';
+
+                        console.log('Llenando campos de totales con datos:', totales);
+
+                        // PRIMERO: Llenar los campos de totales SIEMPRE que haya datos (independiente del producto)
+                        // Para CLQ: rellenar campos de totales manuales
+                        if ($('#clq_total_gravadas').length) {
+                            var gravada = parseFloat(totales.gravada || 0);
+                            $('#clq_total_gravadas').val(gravada.toFixed(2));
+                            console.log('Campo clq_total_gravadas llenado con:', gravada.toFixed(2));
+                        } else {
+                            console.warn('Campo #clq_total_gravadas no encontrado en el DOM');
+                        }
+
+                        if ($('#clq_total_exentas').length) {
+                            var exenta = parseFloat(totales.exenta || 0);
+                            $('#clq_total_exentas').val(exenta.toFixed(2));
+                            console.log('Campo clq_total_exentas llenado con:', exenta.toFixed(2));
+                        } else {
+                            console.warn('Campo #clq_total_exentas no encontrado en el DOM');
+                        }
+
+                        if ($('#clq_total_no_sujetas').length) {
+                            var nosujeta = parseFloat(totales.nosujeta || 0);
+                            $('#clq_total_no_sujetas').val(nosujeta.toFixed(2));
+                            console.log('Campo clq_total_no_sujetas llenado con:', nosujeta.toFixed(2));
+                        } else {
+                            console.warn('Campo #clq_total_no_sujetas no encontrado en el DOM');
+                        }
+
+                        // Llenar montos según tipo de venta (campos ocultos)
+                        if (tipoVenta === 'nosujeta') {
+                            if ($('#ventasnosujetas').length) {
+                                $('#ventasnosujetas').val(parseFloat(totales.nosujeta || 0).toFixed(2));
+                            }
+                        } else if (tipoVenta === 'exenta') {
+                            if ($('#ventasexentas').length) {
+                                $('#ventasexentas').val(parseFloat(totales.exenta || 0).toFixed(2));
+                            }
+                        } else {
+                            // Gravada
+                            if ($('#ventasgravadas').length) {
+                                $('#ventasgravadas').val(parseFloat(totales.gravada || 0).toFixed(2));
+                            }
+                        }
+
+                        // IVA total
+                        if ($('#ivarete13').length) {
+                            $('#ivarete13').val(parseFloat(totales.iva || 0).toFixed(8));
+                        }
+
+                        // Fee total si existe
+                        if (totales.fee && parseFloat(totales.fee) > 0 && $('#fee').length) {
+                            $('#fee').val(parseFloat(totales.fee || 0).toFixed(8));
+                        }
+
+                        // Recalcular totales usando la función updateCLQTotals
+                        if (typeof updateCLQTotals === 'function') {
+                            updateCLQTotals();
+                            console.log('Función updateCLQTotals() ejecutada');
+                        } else if (typeof totalamount === 'function') {
+                            totalamount();
+                            console.log('Función totalamount() ejecutada');
+                        } else {
+                            console.warn('No se encontró función updateCLQTotals ni totalamount');
+                        }
+
+                        // SEGUNDO: Buscar el producto para agregarlo a la línea del comprobante
                         // Función mejorada para buscar el producto "Liquidación venta terceros"
                         function buscarProductoLiquidacion(callback) {
                             var productoEncontrado = false;
@@ -519,20 +588,20 @@
                         // Buscar el producto usando la función mejorada reutilizable
                         buscarProductoLiquidacionMejorado(function(encontrado, id, nombre, descripcion) {
                             if (!encontrado || !id) {
-                                console.error('Producto no encontrado. El usuario debe seleccionarlo manualmente.');
+                                console.error('Producto no encontrado. Los totales ya fueron cargados, pero el usuario debe seleccionar el producto manualmente.');
                                 
-                                // Mostrar mensaje más informativo
+                                // Mostrar mensaje más informativo pero indicando que los totales ya están cargados
                                 Swal.fire({
                                     icon: 'warning',
                                     title: 'Producto no encontrado',
-                                    html: 'No se encontró el producto "Liquidación venta terceros".<br><br>' +
-                                          '<strong>Posibles soluciones:</strong><br>' +
-                                          '1. Verifica que el producto existe en el sistema<br>' +
-                                          '2. Asegúrate de que el nombre contenga "Liquidación", "venta" y "tercero(s)"<br>' +
-                                          '3. Selecciona el producto manualmente desde el selector de productos<br><br>' +
-                                          '<small class="text-muted">Revisa la consola del navegador (F12) para más detalles</small>',
+                                    html: 'Los totales del documento se cargaron correctamente.<br><br>' +
+                                          'Sin embargo, no se encontró el producto "Liquidación venta terceros".<br><br>' +
+                                          '<strong>Por favor:</strong><br>' +
+                                          '1. Selecciona el producto "Liquidación venta terceros" manualmente<br>' +
+                                          '2. O créalo si no existe en el sistema<br><br>' +
+                                          '<small class="text-muted">Los campos de totales ya están llenos con los valores del documento seleccionado.</small>',
                                     confirmButtonText: 'Entendido',
-                                    footer: '<small>Si el producto existe pero no se encuentra, contacta al administrador</small>'
+                                    footer: '<small>Revisa la consola del navegador (F12) para más detalles</small>'
                                 });
                                 
                                 Swal.close(); // Cerrar el loading
@@ -541,65 +610,20 @@
                             
                             console.log('Producto encontrado exitosamente:', id, nombre);
                             
-                            var productoLiquidacionId = id;
-                            var productoLiquidacionNombre = nombre;
-
                             // Seleccionar el producto "Liquidación venta terceros"
-                            $('#psearch').val(productoLiquidacionId).trigger('change');
-                            $('#productid').val(productoLiquidacionId);
+                            $('#psearch').val(id).trigger('change');
+                            $('#productid').val(id);
 
                             // Esperar a que se cargue el producto
                             setTimeout(function() {
-                                var totales = response.data.totales;
-                                var tipoVenta = response.data.tipo_venta || 'gravada';
-
-                            // Establecer cantidad (siempre 1 para liquidación)
-                            if ($('#cantidad').length) {
-                                $('#cantidad').val(1);
-                            }
-
-                            // Establecer tipo de venta
-                            if ($('#typesale').length) {
-                                $('#typesale').val(tipoVenta).trigger('change');
-                            }
-
-                            // Esperar un momento para que se procese el cambio de tipo de venta
-                            setTimeout(function() {
-                                // Para CLQ: rellenar campos de totales manuales
-                                if ($('#clq_total_gravadas').length) {
-                                    $('#clq_total_gravadas').val(parseFloat(totales.gravada || 0).toFixed(2));
-                                }
-                                if ($('#clq_total_exentas').length) {
-                                    $('#clq_total_exentas').val(parseFloat(totales.exenta || 0).toFixed(2));
-                                }
-                                if ($('#clq_total_no_sujetas').length) {
-                                    $('#clq_total_no_sujetas').val(parseFloat(totales.nosujeta || 0).toFixed(2));
+                                // Establecer cantidad (siempre 1 para liquidación)
+                                if ($('#cantidad').length) {
+                                    $('#cantidad').val(1);
                                 }
 
-                                // Llenar montos según tipo de venta (campos ocultos)
-                                if (tipoVenta === 'nosujeta') {
-                                    if ($('#ventasnosujetas').length) {
-                                        $('#ventasnosujetas').val(parseFloat(totales.nosujeta || 0).toFixed(2));
-                                    }
-                                } else if (tipoVenta === 'exenta') {
-                                    if ($('#ventasexentas').length) {
-                                        $('#ventasexentas').val(parseFloat(totales.exenta || 0).toFixed(2));
-                                    }
-                                } else {
-                                    // Gravada
-                                    if ($('#ventasgravadas').length) {
-                                        $('#ventasgravadas').val(parseFloat(totales.gravada || 0).toFixed(2));
-                                    }
-                                }
-
-                                // IVA total
-                                if ($('#ivarete13').length) {
-                                    $('#ivarete13').val(parseFloat(totales.iva || 0).toFixed(8));
-                                }
-
-                                // Fee total si existe
-                                if (totales.fee && parseFloat(totales.fee) > 0 && $('#fee').length) {
-                                    $('#fee').val(parseFloat(totales.fee || 0).toFixed(8));
+                                // Establecer tipo de venta
+                                if ($('#typesale').length) {
+                                    $('#typesale').val(tipoVenta).trigger('change');
                                 }
 
                                 // Precio unitario: calcular basado en el total gravado (sin IVA para CLQ)
@@ -609,18 +633,11 @@
                                     $('#precio').val(precioUnitario.toFixed(8));
                                 }
 
-                                // Recalcular totales usando la función updateCLQTotals
-                                if (typeof updateCLQTotals === 'function') {
-                                    updateCLQTotals();
-                                } else if (typeof totalamount === 'function') {
-                                    totalamount();
-                                }
-
                                 Swal.fire({
                                     icon: 'success',
                                     title: '¡Montos cargados!',
                                     html: `Se rellenaron los montos del ${tipoNombre}<br>
-                                           <small>Producto: <strong>${productoLiquidacionNombre}</strong><br>
+                                           <small>Producto: <strong>${nombre}</strong><br>
                                            Gravadas: $${parseFloat(totales.gravada || 0).toFixed(2)} |
                                            Exentas: $${parseFloat(totales.exenta || 0).toFixed(2)} |
                                            No Sujetas: $${parseFloat(totales.nosujeta || 0).toFixed(2)}<br>
@@ -630,7 +647,6 @@
                                     showConfirmButton: false
                                 });
                             }, 500);
-                        }, 1500);
                         }); // Cierre del callback de buscarProductoLiquidacionMejorado
                     } else {
                         Swal.fire({
