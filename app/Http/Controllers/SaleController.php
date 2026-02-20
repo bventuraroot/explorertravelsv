@@ -928,6 +928,7 @@ class SaleController extends Controller
                 "totales"   => $totales,
                 "cliente"   => $cliente
             ];
+            dd($comprobante);
             // Verificar si la emisión de DTE está habilitada para esta empresa
             if (Config::isDteEmissionEnabled($idempresa)) {
                 $contingencia = [];
