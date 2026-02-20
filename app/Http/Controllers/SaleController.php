@@ -724,6 +724,7 @@ class SaleController extends Controller
             SUM(detained13) iva')
                 )
                 ->get();
+            dd($detailsbd);
             //detalle de montos de la factura
             // El ivarete ya incluye el 1% de retención del agente si aplica
             $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - ($detailsbd[0]->rentarete + $detailsbd[0]->ivarete));
@@ -928,7 +929,6 @@ class SaleController extends Controller
                 "totales"   => $totales,
                 "cliente"   => $cliente
             ];
-            dd($comprobante);
             // Verificar si la emisión de DTE está habilitada para esta empresa
             if (Config::isDteEmissionEnabled($idempresa)) {
                 $contingencia = [];
