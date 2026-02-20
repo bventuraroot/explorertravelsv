@@ -305,6 +305,49 @@ var valcorrdoc = $("#valcorr").val();
 var valdraftdoc = $("#valdraft").val();
 if (valcorrdoc != "" && valdraftdoc == "true") {
     var draft = draftdocument(valcorrdoc, valdraftdoc);
+    
+    // Si se recargó con step=3 (después de eliminar producto), asegurar que el cliente se seleccione
+    var urlParams = new URLSearchParams(window.location.search);
+    var stepParam = urlParams.get('step');
+    if (stepParam == '3') {
+        // Esperar un poco más para asegurar que todo esté cargado
+        setTimeout(function() {
+            // Obtener el client_id del documento
+            $.ajax({
+                url: "getdatadocbycorr/" + btoa(valcorrdoc),
+                method: "GET",
+                async: false,
+                success: function (response) {
+                    if (response && response.length > 0 && response[0].client_id) {
+                        var clientId = response[0].client_id;
+                        if (clientId && clientId != '' && clientId != '0') {
+                            // Intentar seleccionar el cliente múltiples veces
+                            var intentos = 0;
+                            var maxIntentos = 15;
+                            
+                            var seleccionarClienteRecarga = function() {
+                                intentos++;
+                                if ($("#client option[value='" + clientId + "']").length > 0) {
+                                    $("#client").val(clientId).trigger('change.select2');
+                                    console.log("DEBUG RECARGA - Cliente seleccionado después de eliminar producto:", clientId);
+                                    return true;
+                                } else if (intentos < maxIntentos) {
+                                    setTimeout(seleccionarClienteRecarga, 200);
+                                    return false;
+                                } else {
+                                    console.warn("DEBUG RECARGA - No se pudo seleccionar cliente después de", maxIntentos, "intentos. ID:", clientId);
+                                    return false;
+                                }
+                            };
+                            
+                            // Iniciar selección después de un delay inicial
+                            setTimeout(seleccionarClienteRecarga, 500);
+                        }
+                    }
+                }
+            });
+        }, 1500);
+    }
 }
 
 
@@ -1802,17 +1845,23 @@ function draftdocument(corr, draft) {
 
                         if (draftClientId && draftClientId != '' && draftClientId != '0') {
                             // Forzar la selección del cliente con múltiples intentos
+                            // Aumentar timeout y número de intentos cuando se recarga con step=3
+                            var urlParams = new URLSearchParams(window.location.search);
+                            var stepParam = urlParams.get('step');
+                            var maxIntentos = (stepParam == '3') ? 15 : 5;
+                            var delayInicial = (stepParam == '3') ? 500 : 100;
+                            var delayEntreIntentos = (stepParam == '3') ? 200 : 200;
+                            
                             var intentos = 0;
-                            var maxIntentos = 5;
                             
                             var forzarSeleccionCliente = function() {
                                 intentos++;
                                 if ($("#client option[value='" + draftClientId + "']").length > 0) {
                                     $("#client").val(draftClientId).trigger('change.select2');
-                                    console.log("DEBUG - Cliente forzado correctamente:", draftClientId);
+                                    console.log("DEBUG - Cliente forzado correctamente:", draftClientId, "(intento", intentos + ")");
                                     return true;
                                 } else if (intentos < maxIntentos) {
-                                    setTimeout(forzarSeleccionCliente, 200);
+                                    setTimeout(forzarSeleccionCliente, delayEntreIntentos);
                                     return false;
                                 } else {
                                     console.warn("DEBUG - No se pudo seleccionar cliente después de", maxIntentos, "intentos. ID:", draftClientId);
@@ -1820,7 +1869,7 @@ function draftdocument(corr, draft) {
                                 }
                             };
                             
-                            setTimeout(forzarSeleccionCliente, 100);
+                            setTimeout(forzarSeleccionCliente, delayInicial);
                         }
                     }, 1000);
                     if(value.waytopay != null){
