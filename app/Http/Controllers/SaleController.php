@@ -671,13 +671,12 @@ class SaleController extends Controller
     {
         $saleId = base64_decode($corr);
         $sale = Sale::with('salesdetails')->find($saleId);
-        dd($sale);
         // Verificar si tiene múltiples proveedores Y NO es hijo (evitar recursión)
         // Si parent_sale_id es null, NO es hijo
         if (is_null($sale->parent_sale_id) && $this->hasMultipleProviders($sale)) {
             return $this->processMultiProviderSale($sale, $amount);
         }
-
+        dd($sale);
         // Flujo normal para venta simple O venta hija
         DB::beginTransaction();
         try {
