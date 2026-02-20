@@ -22,47 +22,130 @@
     @if(request('typedocument')==2)
     <script>
     $(document).ready(function() {
+        // Función mejorada para buscar el producto "Liquidación venta terceros" (reutilizable)
+        function buscarProductoLiquidacionMejorado(callback) {
+            var productoEncontrado = false;
+            var productoLiquidacionId = null;
+            var productoLiquidacionNombre = '';
+            var productoLiquidacionDesc = '';
+            
+            // Variaciones posibles del nombre del producto
+            var variaciones = [
+                'liquidacion venta tercero',
+                'liquidacion venta terceros',
+                'liquidación venta tercero',
+                'liquidación venta terceros',
+                'liquidacion venta de terceros',
+                'liquidación venta de terceros',
+                'venta terceros liquidacion',
+                'venta terceros liquidación'
+            ];
+
+            // Función auxiliar para normalizar texto (quitar acentos, espacios extra, etc.)
+            function normalizarTexto(texto) {
+                if (!texto) return '';
+                return texto.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+                    .replace(/\s+/g, ' ') // Normalizar espacios
+                    .trim();
+            }
+
+            // Función para verificar si un nombre coincide con alguna variación
+            function coincideConVariacion(nombre) {
+                var nombreNormalizado = normalizarTexto(nombre);
+                for (var i = 0; i < variaciones.length; i++) {
+                    if (nombreNormalizado.includes(variaciones[i]) || 
+                        nombreNormalizado === variaciones[i]) {
+                        return true;
+                    }
+                }
+                // También verificar si contiene las palabras clave principales
+                return nombreNormalizado.includes('liquidacion') && 
+                       nombreNormalizado.includes('venta') && 
+                       (nombreNormalizado.includes('tercero') || nombreNormalizado.includes('terceros'));
+            }
+
+            // Estrategia 1: Buscar en las opciones del select2
+            try {
+                $('#psearch option').each(function() {
+                    var texto = $(this).text();
+                    var textoNormalizado = normalizarTexto(texto);
+                    
+                    if (coincideConVariacion(textoNormalizado)) {
+                        productoLiquidacionId = $(this).val();
+                        var textoCompleto = texto.split('|')[0].trim();
+                        productoLiquidacionNombre = textoCompleto;
+                        productoLiquidacionDesc = textoCompleto;
+                        productoEncontrado = true;
+                        console.log('Producto encontrado en select2:', productoLiquidacionId, productoLiquidacionNombre);
+                        return false;
+                    }
+                });
+            } catch (e) {
+                console.warn('Error al buscar en select2:', e);
+            }
+
+            // Estrategia 2: Buscar por AJAX
+            if (!productoEncontrado) {
+                $.ajax({
+                    url: '/product/getproductall',
+                    method: 'GET',
+                    timeout: 10000,
+                    success: function(products) {
+                        if (products && products.length > 0) {
+                            $.each(products, function(index, product) {
+                                var nombre = product.name || '';
+                                var nombreNormalizado = normalizarTexto(nombre);
+                                
+                                if (coincideConVariacion(nombreNormalizado)) {
+                                    productoLiquidacionId = product.id;
+                                    productoLiquidacionNombre = nombre;
+                                    productoLiquidacionDesc = product.description || nombre;
+                                    productoEncontrado = true;
+                                    console.log('Producto encontrado por AJAX:', productoLiquidacionId, productoLiquidacionNombre);
+                                    return false;
+                                }
+                            });
+                        }
+                        
+                        // Ejecutar callback con el resultado
+                        if (callback) {
+                            callback(productoEncontrado, productoLiquidacionId, productoLiquidacionNombre, productoLiquidacionDesc);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error al buscar productos:', {status, error, response: xhr.responseText});
+                        if (callback) {
+                            callback(false, null, '', '');
+                        }
+                    }
+                });
+            } else {
+                // Si ya se encontró en select2, ejecutar callback inmediatamente
+                if (callback) {
+                    callback(productoEncontrado, productoLiquidacionId, productoLiquidacionNombre, productoLiquidacionDesc);
+                }
+            }
+        }
+
         // Cargar automáticamente el producto "Liquidación venta tercero" para CLQ
         function loadProductLiquidacion() {
             var typedoc = $('#typedocument').val();
             if (typedoc != '2') return; // Solo para CLQ
 
-            // Buscar el producto "Liquidación venta tercero"
-            $.ajax({
-                url: '/product/getproductall',
-                method: 'GET',
-                success: function(products) {
-                    var productoEncontrado = false;
-                    var productoLiquidacionId = null;
-                    var productoLiquidacionNombre = '';
-                    var productoLiquidacionDesc = '';
+            buscarProductoLiquidacionMejorado(function(encontrado, id, nombre, descripcion) {
+                if (encontrado && id) {
+                    // Establecer valores ocultos
+                    $('#productid').val(id);
+                    $('#productname').val(nombre);
+                    $('#productdescription').val(descripcion);
+                    $('#cantidad').val(1);
+                    $('#typesale').val('gravada');
 
-                    $.each(products, function(index, product) {
-                        var nombre = (product.name || '').toLowerCase();
-                        if (nombre.includes('liquidacion') && nombre.includes('venta') && (nombre.includes('tercero') || nombre.includes('terceros'))) {
-                            productoLiquidacionId = product.id;
-                            productoLiquidacionNombre = product.name;
-                            productoLiquidacionDesc = product.description || product.name;
-                            productoEncontrado = true;
-                            return false;
-                        }
-                    });
-
-                    if (productoLiquidacionId) {
-                        // Establecer valores ocultos
-                        $('#productid').val(productoLiquidacionId);
-                        $('#productname').val(productoLiquidacionNombre);
-                        $('#productdescription').val(productoLiquidacionDesc);
-                        $('#cantidad').val(1);
-                        $('#typesale').val('gravada');
-
-                        console.log('Producto "Liquidación venta tercero" cargado automáticamente:', productoLiquidacionId);
-                    } else {
-                        console.warn('No se encontró el producto "Liquidación venta tercero". Asegúrate de crearlo primero.');
-                    }
-                },
-                error: function() {
-                    console.error('Error al cargar productos');
+                    console.log('Producto "Liquidación venta tercero" cargado automáticamente:', id);
+                } else {
+                    console.warn('No se encontró el producto "Liquidación venta tercero". Asegúrate de crearlo primero.');
                 }
             });
         }
@@ -323,62 +406,152 @@
                             return;
                         }
 
-                        // Buscar el producto "Liquidación venta terceros"
-                        var productoEncontrado = false;
-                        var productoLiquidacionId = null;
-                        var productoLiquidacionNombre = '';
+                        // Función mejorada para buscar el producto "Liquidación venta terceros"
+                        function buscarProductoLiquidacion(callback) {
+                            var productoEncontrado = false;
+                            var productoLiquidacionId = null;
+                            var productoLiquidacionNombre = '';
+                            
+                            // Variaciones posibles del nombre del producto
+                            var variaciones = [
+                                'liquidacion venta tercero',
+                                'liquidacion venta terceros',
+                                'liquidación venta tercero',
+                                'liquidación venta terceros',
+                                'liquidacion venta de terceros',
+                                'liquidación venta de terceros',
+                                'venta terceros liquidacion',
+                                'venta terceros liquidación'
+                            ];
 
-                        // Buscar en las opciones del select2
-                        $('#psearch option').each(function() {
-                            var texto = $(this).text().toLowerCase();
-                            if (texto.includes('liquidacion') && texto.includes('venta') && texto.includes('tercero')) {
-                                productoLiquidacionId = $(this).val();
-                                productoLiquidacionNombre = $(this).text();
-                                productoEncontrado = true;
-                                return false; // Salir del loop
+                            // Función auxiliar para normalizar texto (quitar acentos, espacios extra, etc.)
+                            function normalizarTexto(texto) {
+                                if (!texto) return '';
+                                return texto.toLowerCase()
+                                    .normalize('NFD')
+                                    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+                                    .replace(/\s+/g, ' ') // Normalizar espacios
+                                    .trim();
                             }
-                        });
 
-                        // Si no se encuentra en el select2, buscar por AJAX
-                        if (!productoEncontrado) {
-                            $.ajax({
-                                url: '/product/getproductall',
-                                method: 'GET',
-                                async: false,
-                                success: function(products) {
-                                    $.each(products, function(index, product) {
-                                        var nombre = (product.name || '').toLowerCase();
-                                        if (nombre.includes('liquidacion') && nombre.includes('venta') && (nombre.includes('tercero') || nombre.includes('terceros'))) {
-                                            productoLiquidacionId = product.id;
-                                            productoLiquidacionNombre = product.name;
-                                            productoEncontrado = true;
-                                            return false;
-                                        }
-                                    });
+                            // Función para verificar si un nombre coincide con alguna variación
+                            function coincideConVariacion(nombre) {
+                                var nombreNormalizado = normalizarTexto(nombre);
+                                for (var i = 0; i < variaciones.length; i++) {
+                                    if (nombreNormalizado.includes(variaciones[i]) || 
+                                        nombreNormalizado === variaciones[i]) {
+                                        return true;
+                                    }
                                 }
-                            });
+                                // También verificar si contiene las palabras clave principales
+                                return nombreNormalizado.includes('liquidacion') && 
+                                       nombreNormalizado.includes('venta') && 
+                                       (nombreNormalizado.includes('tercero') || nombreNormalizado.includes('terceros'));
+                            }
+
+                            // Estrategia 1: Buscar en las opciones del select2
+                            try {
+                                $('#psearch option').each(function() {
+                                    var texto = $(this).text();
+                                    var textoNormalizado = normalizarTexto(texto);
+                                    
+                                    if (coincideConVariacion(textoNormalizado)) {
+                                        productoLiquidacionId = $(this).val();
+                                        productoLiquidacionNombre = texto.split('|')[0].trim(); // Solo el nombre, sin descripción
+                                        productoEncontrado = true;
+                                        console.log('Producto encontrado en select2:', productoLiquidacionId, productoLiquidacionNombre);
+                                        return false; // Salir del loop
+                                    }
+                                });
+                            } catch (e) {
+                                console.warn('Error al buscar en select2:', e);
+                            }
+
+                            // Estrategia 2: Si no se encuentra en el select2, buscar por AJAX
+                            if (!productoEncontrado) {
+                                console.log('Buscando producto por AJAX...');
+                                $.ajax({
+                                    url: '/product/getproductall',
+                                    method: 'GET',
+                                    async: false,
+                                    timeout: 10000, // 10 segundos de timeout
+                                    success: function(products) {
+                                        console.log('Productos recibidos:', products ? products.length : 0);
+                                        if (products && products.length > 0) {
+                                            $.each(products, function(index, product) {
+                                                var nombre = product.name || '';
+                                                var nombreNormalizado = normalizarTexto(nombre);
+                                                
+                                                if (coincideConVariacion(nombreNormalizado)) {
+                                                    productoLiquidacionId = product.id;
+                                                    productoLiquidacionNombre = nombre;
+                                                    productoEncontrado = true;
+                                                    console.log('Producto encontrado por AJAX:', productoLiquidacionId, productoLiquidacionNombre);
+                                                    return false;
+                                                }
+                                            });
+                                        } else {
+                                            console.warn('No se recibieron productos del servidor');
+                                        }
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('Error al buscar productos por AJAX:', {
+                                            status: status,
+                                            error: error,
+                                            response: xhr.responseText
+                                        });
+                                    }
+                                });
+                            }
+
+                            // Ejecutar callback con el resultado
+                            if (callback) {
+                                callback(productoEncontrado, productoLiquidacionId, productoLiquidacionNombre);
+                            }
+                            
+                            return {
+                                encontrado: productoEncontrado,
+                                id: productoLiquidacionId,
+                                nombre: productoLiquidacionNombre
+                            };
                         }
 
-                        if (!productoLiquidacionId) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Producto no encontrado',
-                                html: 'No se encontró el producto "Liquidación venta terceros".<br>Por favor, créalo primero o selecciónalo manualmente.',
-                                timer: 4000
-                            });
-                            return;
-                        }
+                        // Buscar el producto usando la función mejorada reutilizable
+                        buscarProductoLiquidacionMejorado(function(encontrado, id, nombre, descripcion) {
+                            if (!encontrado || !id) {
+                                console.error('Producto no encontrado. El usuario debe seleccionarlo manualmente.');
+                                
+                                // Mostrar mensaje más informativo
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Producto no encontrado',
+                                    html: 'No se encontró el producto "Liquidación venta terceros".<br><br>' +
+                                          '<strong>Posibles soluciones:</strong><br>' +
+                                          '1. Verifica que el producto existe en el sistema<br>' +
+                                          '2. Asegúrate de que el nombre contenga "Liquidación", "venta" y "tercero(s)"<br>' +
+                                          '3. Selecciona el producto manualmente desde el selector de productos<br><br>' +
+                                          '<small class="text-muted">Revisa la consola del navegador (F12) para más detalles</small>',
+                                    confirmButtonText: 'Entendido',
+                                    footer: '<small>Si el producto existe pero no se encuentra, contacta al administrador</small>'
+                                });
+                                
+                                Swal.close(); // Cerrar el loading
+                                return; // Salir de la función
+                            }
+                            
+                            console.log('Producto encontrado exitosamente:', id, nombre);
+                            
+                            var productoLiquidacionId = id;
+                            var productoLiquidacionNombre = nombre;
 
-                        console.log('Producto encontrado:', productoLiquidacionId, productoLiquidacionNombre);
+                            // Seleccionar el producto "Liquidación venta terceros"
+                            $('#psearch').val(productoLiquidacionId).trigger('change');
+                            $('#productid').val(productoLiquidacionId);
 
-                        // Seleccionar el producto "Liquidación venta terceros"
-                        $('#psearch').val(productoLiquidacionId).trigger('change');
-                        $('#productid').val(productoLiquidacionId);
-
-                        // Esperar a que se cargue el producto
-                        setTimeout(function() {
-                            var totales = response.data.totales;
-                            var tipoVenta = response.data.tipo_venta || 'gravada';
+                            // Esperar a que se cargue el producto
+                            setTimeout(function() {
+                                var totales = response.data.totales;
+                                var tipoVenta = response.data.tipo_venta || 'gravada';
 
                             // Establecer cantidad (siempre 1 para liquidación)
                             if ($('#cantidad').length) {
@@ -458,6 +631,7 @@
                                 });
                             }, 500);
                         }, 1500);
+                        }); // Cierre del callback de buscarProductoLiquidacionMejorado
                     } else {
                         Swal.fire({
                             icon: 'warning',
