@@ -940,6 +940,10 @@ function agregarp() {
                 );
                 $('#ventatotallhidden').val(ventatotall);
                 $("#ventatotal").val(ventatotall);
+
+                // Limpiar todos los campos después de agregar exitosamente
+                limpiarCamposProducto();
+                
             } else if (response == 0) {
                 // sin cambios
             } else if (response && response.error) {
@@ -970,12 +974,19 @@ function agregarp() {
         Swal.fire({ title: title, html: message, icon: 'error' });
         }
     });
+}
+
+// Función para limpiar todos los campos del formulario de producto
+function limpiarCamposProducto() {
+    // Limpiar campos básicos
     $('#precio').val(0.00);
     $('#fee').val(0.00);
     $('#ivarete13').val(0.00);
     $('#ivarete').val(0.00);
     $('#rentarete').val(0.00);
     $('#total').val(0.00);
+    $('#cantidad').val(1);
+    
     // Limpiar campos específicos de Crédito Fiscal si existen
     if($("#precioConIva").length) {
         $('#precioConIva').val(0.00);
@@ -983,14 +994,47 @@ function agregarp() {
     if($("#feeSinIva").length) {
         $('#feeSinIva').val(0.00);
     }
-    $('#reserva').val();
-    $('#ruta').val();
+    
+    // Limpiar campos de información adicional
+    $('#reserva').val('');
+    $('#ruta').val('');
     $('#destino').val(null).trigger('change');
     $('#linea').val(null).trigger('change');
     $('#canal').val(null).trigger('change');
+    
+    // Limpiar selector de producto
     $("#psearch").val("0").trigger("change.select2");
+    $("#productid").val('');
+    $("#productname").val('');
+    $("#productdescription").val('');
+    
     // Limpiar selector de proveedor por línea
     $("#line_provider").val("").trigger("change");
+    
+    // Limpiar tipo de venta (volver a gravada por defecto)
+    $("#typesale").val("gravada").trigger('change');
+    
+    // Limpiar campos ocultos de montos
+    $('#ventasnosujetas').val(0);
+    $('#ventasexentas').val(0);
+    $('#ventasgravadas').val(0);
+    $('#ventatotal').val(0);
+    
+    // Limpiar campos de CLQ si existen (solo los de entrada de producto, NO los totales consolidados)
+    // Los totales consolidados (clq_total_gravadas, clq_total_exentas, clq_total_no_sujetas) 
+    // NO se limpian porque son totales acumulados del documento completo
+    
+    // Limpiar descripción personalizada si existe
+    if($("#product-description-edit").length) {
+        $('#product-description-edit').val('');
+    }
+    
+    // Limpiar marca si existe
+    if($("#marca").length) {
+        $('#marca').val('');
+    }
+    
+    console.log('Campos limpiados después de agregar producto exitosamente');
 }
 
 function totalamount() {
