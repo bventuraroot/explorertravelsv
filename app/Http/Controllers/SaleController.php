@@ -676,7 +676,6 @@ class SaleController extends Controller
         if (is_null($sale->parent_sale_id) && $this->hasMultipleProviders($sale)) {
             return $this->processMultiProviderSale($sale, $amount);
         }
-        dd($sale);
         // Flujo normal para venta simple O venta hija
         DB::beginTransaction();
         try {
