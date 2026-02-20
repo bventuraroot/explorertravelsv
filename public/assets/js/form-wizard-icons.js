@@ -2235,6 +2235,29 @@ function agregarfacdetails(corr) {
                         var feeConIva = feeSinIva * 1.13;
                         //$("#fee").val(feeConIva.toFixed(2));
                     }
+
+                    // Cargar proveedor si existe en la línea
+                    if (value.line_provider_id && value.line_provider_id != '' && value.line_provider_id != '0') {
+                        // Esperar a que el select de proveedores esté cargado
+                        setTimeout(function() {
+                            // Verificar si la opción existe en el select
+                            if ($("#line_provider option[value='" + value.line_provider_id + "']").length > 0) {
+                                $("#line_provider").val(value.line_provider_id).trigger('change');
+                                console.log('Proveedor seleccionado automáticamente:', value.line_provider_id, value.provider_name);
+                            } else {
+                                console.warn('Proveedor no encontrado en opciones. ID:', value.line_provider_id);
+                                // Si no existe, intentar agregarlo
+                                if (value.provider_name) {
+                                    var providerNit = value.provider_nit ? ' - NIT: ' + value.provider_nit : '';
+                                    var optionHtml = '<option value="' + value.line_provider_id + '">' +
+                                        value.provider_name.toUpperCase() + providerNit + '</option>';
+                                    $("#line_provider").append(optionHtml);
+                                    $("#line_provider").val(value.line_provider_id).trigger('change');
+                                    console.log('Proveedor agregado y seleccionado:', value.line_provider_id);
+                                }
+                            }
+                        }, 500);
+                    }
                 }
 
                 // Determinar si el item es gravado, exento o no sujeto
