@@ -1481,17 +1481,29 @@ function loadClientsAndSelectDraft(idcompany, draftClientId) {
 
             // Después de cargar todos los clientes, seleccionar el cliente del borrador
             if (draftClientId != null && draftClientId != '' && draftClientId != '0') {
-                // Usar setTimeout para asegurar que el select2 esté completamente cargado
-                setTimeout(function() {
+                // Usar múltiples intentos para asegurar que el select2 esté completamente cargado
+                var intentos = 0;
+                var maxIntentos = 10;
+                
+                var seleccionarCliente = function() {
+                    intentos++;
                     // Verificar que la opción existe antes de seleccionarla
                     if ($("#client option[value='" + draftClientId + "']").length > 0) {
-                        $("#client").val(draftClientId);
-                        $("#client").trigger('change.select2');
+                        $("#client").val(draftClientId).trigger('change.select2');
                         console.log("DEBUG - Cliente seleccionado correctamente:", draftClientId);
+                        return true;
+                    } else if (intentos < maxIntentos) {
+                        // Intentar de nuevo después de un breve delay
+                        setTimeout(seleccionarCliente, 100);
+                        return false;
                     } else {
-                        console.log("DEBUG - Cliente no encontrado en opciones:", draftClientId);
+                        console.warn("DEBUG - Cliente no encontrado en opciones después de", maxIntentos, "intentos. ID:", draftClientId);
+                        return false;
                     }
-                }, 200);
+                };
+                
+                // Iniciar el primer intento después de un breve delay
+                setTimeout(seleccionarCliente, 300);
             }
         },
     });
@@ -1789,9 +1801,26 @@ function draftdocument(corr, draft) {
                         }
 
                         if (draftClientId && draftClientId != '' && draftClientId != '0') {
-                            // Forzar la selección del cliente
-                            $("#client").val(draftClientId);
-                            $("#client").trigger('change.select2');
+                            // Forzar la selección del cliente con múltiples intentos
+                            var intentos = 0;
+                            var maxIntentos = 5;
+                            
+                            var forzarSeleccionCliente = function() {
+                                intentos++;
+                                if ($("#client option[value='" + draftClientId + "']").length > 0) {
+                                    $("#client").val(draftClientId).trigger('change.select2');
+                                    console.log("DEBUG - Cliente forzado correctamente:", draftClientId);
+                                    return true;
+                                } else if (intentos < maxIntentos) {
+                                    setTimeout(forzarSeleccionCliente, 200);
+                                    return false;
+                                } else {
+                                    console.warn("DEBUG - No se pudo seleccionar cliente después de", maxIntentos, "intentos. ID:", draftClientId);
+                                    return false;
+                                }
+                            };
+                            
+                            setTimeout(forzarSeleccionCliente, 100);
                         }
                     }, 1000);
                     if(value.waytopay != null){
