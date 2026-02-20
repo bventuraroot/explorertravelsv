@@ -671,7 +671,7 @@ class SaleController extends Controller
     {
         $saleId = base64_decode($corr);
         $sale = Sale::with('salesdetails')->find($saleId);
-
+        dd($sale);
         // Verificar si tiene múltiples proveedores Y NO es hijo (evitar recursión)
         // Si parent_sale_id es null, NO es hijo
         if (is_null($sale->parent_sale_id) && $this->hasMultipleProviders($sale)) {
@@ -724,7 +724,6 @@ class SaleController extends Controller
             SUM(detained13) iva')
                 )
                 ->get();
-            dd($detailsbd);
             //detalle de montos de la factura
             // El ivarete ya incluye el 1% de retención del agente si aplica
             $totalPagar = ($detailsbd[0]->nosujeta + $detailsbd[0]->exentas + $detailsbd[0]->gravadas + $detailsbd[0]->iva - ($detailsbd[0]->rentarete + $detailsbd[0]->ivarete));
