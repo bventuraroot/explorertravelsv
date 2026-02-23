@@ -4483,10 +4483,11 @@ class SaleController extends Controller
                     ->latest()
                     ->first();
 
+                $fechaColumna = ($child->dte && $child->dte->fhRecibido) ? $child->dte->fhRecibido : $child->updated_at;
                 return [
                     'id' => $child->id,
-                    'date' => $child->date->format('d/m/Y'),
-                    'created_at' => $child->created_at ? $child->created_at->format('H:i') : null,
+                    'date' => $fechaColumna ? $fechaColumna->format('d/m/Y') : ($child->date ? $child->date->format('d/m/Y') : 'N/A'),
+                    'created_at' => $fechaColumna ? $fechaColumna->format('H:i') : ($child->created_at ? $child->created_at->format('H:i') : null),
                     'totalamount' => $child->totalamount,
                     'state' => $child->state,
                     'acuenta' => $child->acuenta,

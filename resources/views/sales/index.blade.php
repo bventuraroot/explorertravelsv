@@ -1082,11 +1082,12 @@
                                 </td>
 
                                 <td>
-                                    @if($sale->date)
-                                        {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}
-                                        @if($sale->created_at)
-                                            <br><small class="text-muted" style="font-size: 0.7rem;">{{ \Carbon\Carbon::parse($sale->created_at)->format('H:i') }}</small>
-                                        @endif
+                                    @php
+                                        $fechaColumna = $sale->fhRecibido ? \Carbon\Carbon::parse($sale->fhRecibido) : $sale->updated_at;
+                                    @endphp
+                                    @if($fechaColumna)
+                                        {{ $fechaColumna->format('d/m/Y') }}
+                                        <br><small class="text-muted" style="font-size: 0.7rem;">{{ $fechaColumna->format('H:i') }}</small>
                                     @else
                                         N/A
                                     @endif
