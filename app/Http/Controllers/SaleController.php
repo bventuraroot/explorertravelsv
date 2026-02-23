@@ -4505,6 +4505,7 @@ class SaleController extends Controller
                     'id' => $child->id,
                     'date' => $fechaColumna ? $fechaColumna->format('d/m/Y') : 'N/A',
                     'created_at' => $fechaColumna ? $fechaColumna->format('H:i') : null,
+                    'date_venta' => $child->date ? $child->date->format('d/m/Y') : 'N/A',
                     'totalamount' => $child->totalamount,
                     'state' => $child->state,
                     'acuenta' => $child->acuenta,

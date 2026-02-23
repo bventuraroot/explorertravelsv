@@ -59,7 +59,7 @@
             const parentRow = $(`tr[data-sale-id="${parentId}"]`);
             parentRow.after(`
                 <tr class="child-sale-row loading-row" data-parent-id="${parentId}">
-                    <td colspan="8" class="py-3 text-center">
+                    <td colspan="9" class="py-3 text-center">
                         <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                         Cargando DTEs hijos...
                     </td>
@@ -77,8 +77,8 @@
                     if (children.length === 0) {
                         parentRow.after(`
                             <tr class="child-sale-row" data-parent-id="${parentId}">
-                                <td colspan="8" class="py-2 text-center text-muted">
-                                    <i class="ti ti-info-circle me-1"></i>No hay DTEs hijos
+<td colspan="9" class="py-2 text-center text-muted">
+                                <i class="ti ti-info-circle me-1"></i>No hay DTEs hijos
                                 </td>
                             </tr>
                         `);
@@ -170,6 +170,9 @@
                                     ${child.created_at ? `<br><small class="text-muted" style="font-size: 0.7rem;">${child.created_at}</small>` : ''}
                                 </td>
                                 <td>
+                                    <small>${child.date_venta || 'N/A'}</small>
+                                </td>
+                                <td>
                                     <small>${docType}</small>
                                     <br><small class="badge bg-info" style="font-size: 0.65rem;">${provider}</small>
                                 </td>
@@ -201,7 +204,7 @@
                     $(`.loading-row[data-parent-id="${parentId}"]`).remove();
                     parentRow.after(`
                         <tr class="child-sale-row" data-parent-id="${parentId}">
-                            <td colspan="8" class="py-2 text-center text-danger">
+                            <td colspan="9" class="py-2 text-center text-danger">
                                 <i class="ti ti-alert-circle me-1"></i>Error al cargar DTEs hijos
                             </td>
                         </tr>
@@ -929,6 +932,7 @@
                         <th>Acciones</th>
                         <th>CORRELATIVO</th>
                         <th>FECHA</th>
+                        <th>FECHA VENTA</th>
                         <th>TIPO</th>
                         <th>ESTADO</th>
                         <th>CLIENTE</th>
@@ -1092,6 +1096,13 @@
                                         N/A
                                     @endif
                                 </td>
+                                <td>
+                                    @if($sale->date)
+                                        {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
                                 <td>{{ $sale->document_name ?? 'N/A' }}</td>
                                 <td>
                                     @if($sale->typesale == 2)
@@ -1170,7 +1181,7 @@
                             </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">No hay ventas registradas</td>
+                                    <td colspan="9" class="text-center text-muted">No hay ventas registradas</td>
                                 </tr>
                             @endforelse
                         @endisset
