@@ -120,7 +120,7 @@ class SaleController extends Controller
             $fechaFiltroDesde = date('Y-m-d', strtotime('-7 days'));
         }
         if ($fechaFiltroDesde !== null && $fechaFiltroHasta !== null) {
-            $sales->whereRaw('(COALESCE(DATE(dte_emis.fhRecibido), sales.date) >= ? AND COALESCE(DATE(dte_emis.fhRecibido), sales.date) <= ?)', [$fechaFiltroDesde, $fechaFiltroHasta]);
+            $sales->whereRaw('(COALESCE(DATE(dte_emis.fhRecibido), DATE(sales.updated_at)) >= ? AND COALESCE(DATE(dte_emis.fhRecibido), DATE(sales.updated_at)) <= ?)', [$fechaFiltroDesde, $fechaFiltroHasta]);
         }
 
         if ($request->filled('tipo_documento') && $request->tipo_documento != '') {
@@ -156,8 +156,8 @@ class SaleController extends Controller
             ->orderBy('id')
             ->first();
 
-        // Ordenar por fecha: fhRecibido cuando existe, sales.date como respaldo (todos los documentos)
-        $sales = $sales->orderByRaw('COALESCE(dte_emis.fhRecibido, sales.date) DESC')
+        // Ordenar por fecha: fhRecibido cuando existe DTE, updated_at como respaldo (todos los documentos)
+        $sales = $sales->orderByRaw('COALESCE(dte_emis.fhRecibido, sales.updated_at) DESC')
                        ->orderBy('sales.created_at', 'desc')
                        ->get();
 
