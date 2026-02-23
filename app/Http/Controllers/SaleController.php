@@ -4483,11 +4483,28 @@ class SaleController extends Controller
                     ->latest()
                     ->first();
 
-                $fechaColumna = ($child->dte && $child->dte->fhRecibido) ? $child->dte->fhRecibido : $child->updated_at;
+                // Para hijos: mostrar fecha de emisión del DTE (identificacion.fecEmi/horEmi en json), sino fhRecibido; sin DTE usar updated_at
+                $fechaColumna = null;
+                if ($child->dte) {
+                    $json = $child->dte->json;
+                    if (!empty($json['identificacion']['fecEmi'])) {
+                        $fecEmi = $json['identificacion']['fecEmi'];
+                        $horEmi = $json['identificacion']['horEmi'] ?? '00:00:00';
+                        try {
+                            $fechaColumna = \Carbon\Carbon::parse($fecEmi . ' ' . $horEmi);
+                        } catch (\Exception $e) {
+                            $fechaColumna = $child->dte->fhRecibido ?? $child->updated_at;
+                        }
+                    } else {
+                        $fechaColumna = $child->dte->fhRecibido ?? $child->updated_at;
+                    }
+                } else {
+                    $fechaColumna = $child->updated_at;
+                }
                 return [
                     'id' => $child->id,
-                    'date' => $fechaColumna ? $fechaColumna->format('d/m/Y') : ($child->date ? $child->date->format('d/m/Y') : 'N/A'),
-                    'created_at' => $fechaColumna ? $fechaColumna->format('H:i') : ($child->created_at ? $child->created_at->format('H:i') : null),
+                    'date' => $fechaColumna ? $fechaColumna->format('d/m/Y') : 'N/A',
+                    'created_at' => $fechaColumna ? $fechaColumna->format('H:i') : null,
                     'totalamount' => $child->totalamount,
                     'state' => $child->state,
                     'acuenta' => $child->acuenta,
