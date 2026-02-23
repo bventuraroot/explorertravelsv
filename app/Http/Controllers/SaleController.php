@@ -99,7 +99,7 @@ class SaleController extends Controller
             $sales->where('sales.user_id', $id_user);
         }
 
-        // Aplicar filtros de fecha con validación
+        // Aplicar filtros de fecha con validación (por fhRecibido del DTE, no por sales.date)
         if ($request->filled('fecha_desde') && $request->filled('fecha_hasta')) {
             // Validar formato de fechas
             $fechaDesde = $request->fecha_desde;
@@ -109,25 +109,25 @@ class SaleController extends Controller
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaDesde) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaHasta)) {
                 // Validar que fecha_desde no sea mayor que fecha_hasta
                 if ($fechaDesde <= $fechaHasta) {
-                    $sales->where('sales.date', '>=', $fechaDesde)
-                          ->where('sales.date', '<=', $fechaHasta);
+                    $sales->whereDate('dte_emis.fhRecibido', '>=', $fechaDesde)
+                          ->whereDate('dte_emis.fhRecibido', '<=', $fechaHasta);
                 }
             }
         } elseif ($request->filled('fecha_desde') && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->fecha_desde)) {
             // Si solo se proporciona fecha desde, mostrar desde esa fecha hasta hoy
-            $sales->where('sales.date', '>=', $request->fecha_desde)
-                  ->where('sales.date', '<=', date('Y-m-d'));
+            $sales->whereDate('dte_emis.fhRecibido', '>=', $request->fecha_desde)
+                  ->whereDate('dte_emis.fhRecibido', '<=', date('Y-m-d'));
         } elseif ($request->filled('fecha_hasta') && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->fecha_hasta)) {
             // Si solo se proporciona fecha hasta, mostrar los últimos 7 días hasta esa fecha
             $fechaDesde = date('Y-m-d', strtotime($request->fecha_hasta . ' -7 days'));
-            $sales->where('sales.date', '>=', $fechaDesde)
-                  ->where('sales.date', '<=', $request->fecha_hasta);
+            $sales->whereDate('dte_emis.fhRecibido', '>=', $fechaDesde)
+                  ->whereDate('dte_emis.fhRecibido', '<=', $request->fecha_hasta);
         } else {
             // Si no se proporcionan fechas, mostrar solo los últimos 7 días por defecto
             $fechaHasta = date('Y-m-d');
             $fechaDesde = date('Y-m-d', strtotime('-7 days'));
-            $sales->where('sales.date', '>=', $fechaDesde)
-                  ->where('sales.date', '<=', $fechaHasta);
+            $sales->whereDate('dte_emis.fhRecibido', '>=', $fechaDesde)
+                  ->whereDate('dte_emis.fhRecibido', '<=', $fechaHasta);
         }
 
         if ($request->filled('tipo_documento') && $request->tipo_documento != '') {
@@ -163,8 +163,8 @@ class SaleController extends Controller
             ->orderBy('id')
             ->first();
 
-        // Obtener las ventas filtradas ordenadas por fecha y hora de creación descendente
-        $sales = $sales->orderBy('sales.date', 'desc')
+        // Obtener las ventas filtradas ordenadas por fecha de recepción DTE (fhRecibido) y creación descendente
+        $sales = $sales->orderBy('dte_emis.fhRecibido', 'desc')
                        ->orderBy('sales.created_at', 'desc')
                        ->get();
 
@@ -1820,7 +1820,8 @@ class SaleController extends Controller
                     'dte.sale_id',
                     'dte.codigoGeneracion',
                     'dte.id_doc',
-                    'dte.codTransaction'
+                    'dte.codTransaction',
+                    'dte.fhRecibido'
                 )
                 ->whereIn('dte.codTransaction', ['01','05','06'])
                 ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
@@ -1955,13 +1956,13 @@ class SaleController extends Controller
                 $query->where('sales.id', 'LIKE', '%' . $request->numero_doc . '%');
             }
 
-            // Filtrar por rango de fechas
+            // Filtrar por rango de fechas (por fhRecibido del DTE, no por sales.date)
             if ($request->filled('fecha_desde')) {
-                $query->whereDate('sales.date', '>=', $request->fecha_desde);
+                $query->whereDate('dte_emis.fhRecibido', '>=', $request->fecha_desde);
             }
 
             if ($request->filled('fecha_hasta')) {
-                $query->whereDate('sales.date', '<=', $request->fecha_hasta);
+                $query->whereDate('dte_emis.fhRecibido', '<=', $request->fecha_hasta);
             }
 
             // Filtrar por cliente
@@ -1978,9 +1979,9 @@ class SaleController extends Controller
             $bindings = $query->getBindings();
             \Log::info('Query SQL CLQ:', ['sql' => $sql, 'bindings' => $bindings]);
 
-            // Ordenar por fecha descendente (más recientes primero)
+            // Ordenar por fecha de recepción DTE (fhRecibido) descendente (más recientes primero)
             // Aumentar límite a 1000 para mostrar más resultados
-            $documentos = $query->orderBy('sales.date', 'desc')
+            $documentos = $query->orderBy('dte_emis.fhRecibido', 'desc')
                 ->orderBy('sales.id', 'desc')
                 ->limit(1000)
                 ->get();
