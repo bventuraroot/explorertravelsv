@@ -9,6 +9,7 @@ use App\Models\Sale;
 use App\Models\Salesdetail;
 use App\Models\Dte;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReportsController extends Controller
 {
@@ -1335,18 +1336,26 @@ class ReportsController extends Controller
      */
     public function liquidacionsearch(Request $request){
         $Company = Company::find($request['company']);
+        // Subconsulta: un solo DTE de emisión por venta (evita duplicados cuando existe DTE de anulación)
+        $dteEmisionSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -1407,10 +1416,10 @@ class ReportsController extends Controller
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
-        // Solo incluir DTE que fueron enviados exitosamente o ventas sin DTE
+        // Solo incluir ventas con DTE de emisión enviado o sin DTE (no filtrar por dte para no duplicar)
         ->where(function($query) {
-            $query->whereNull('dte.codEstado')
-                  ->orWhere('dte.codEstado', '=', '02');
+            $query->whereNull('dte_emis.codEstado')
+                  ->orWhere('dte_emis.codEstado', '=', '02');
         })
         ->orderBy('sales.id')
         ->get();
@@ -1430,18 +1439,25 @@ class ReportsController extends Controller
      */
     public function liquidacionExcel(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSubExcel = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSubExcel, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -1503,8 +1519,8 @@ class ReportsController extends Controller
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
         ->where(function($query) {
-            $query->whereNull('dte.codEstado')
-                  ->orWhere('dte.codEstado', '=', '02');
+            $query->whereNull('dte_emis.codEstado')
+                  ->orWhere('dte_emis.codEstado', '=', '02');
         })
         ->orderBy('sales.id')
         ->get();
@@ -1528,8 +1544,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="18" style="text-align:center; font-weight:bold;">LIBRO DE COMPROBANTES DE LIQUIDACIÓN</th></tr>';
-        $html .= '<tr><td colspan="18" style="text-align:center;">';
+        $html .= '<tr><th colspan="21" style="text-align:center; font-weight:bold;">LIBRO DE COMPROBANTES DE LIQUIDACIÓN</th></tr>';
+        $html .= '<tr><td colspan="21" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>NIT:</b> ' . $Company['nit'] . ' ';
@@ -1556,6 +1572,9 @@ class ReportsController extends Controller
         $html .= '<th>NÚMERO CONTROL DTE</th>';
         $html .= '<th>CÓDIGO GENERACIÓN</th>';
         $html .= '<th>SELLO RECEPCIÓN</th>';
+        $html .= '<th>Nº CONTROL ANULACIÓN</th>';
+        $html .= '<th>CÓD. GEN. ANULACIÓN</th>';
+        $html .= '<th>SELLO ANULACIÓN</th>';
         $html .= '</tr>';
 
         // Datos
@@ -1620,6 +1639,9 @@ class ReportsController extends Controller
             $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '</tr>';
             $i++;
         }
@@ -1635,7 +1657,7 @@ class ReportsController extends Controller
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_retenido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_percibido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_final, 2, '.', '') . '</td>';
-        $html .= '<td>-</td><td>-</td><td>-</td>';
+        $html .= '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>';
         $html .= '</tr>';
 
         $html .= '</table>';
@@ -1660,8 +1682,12 @@ class ReportsController extends Controller
      */
     public function liquidacionMergePdf(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSubMerge = DB::table('dte')
+            ->select('dte.sale_id', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSubMerge, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo')
         ->where('sales.typedocument_id', '=', '2')
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
@@ -1669,8 +1695,8 @@ class ReportsController extends Controller
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
         ->where(function($query) {
-            $query->whereNull('dte.codEstado')
-                  ->orWhere('dte.codEstado', '=', '02');
+            $query->whereNull('dte_emis.codEstado')
+                  ->orWhere('dte_emis.codEstado', '=', '02');
         })
         ->orderBy('sales.id')
         ->get();

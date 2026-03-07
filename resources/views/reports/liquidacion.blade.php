@@ -211,12 +211,12 @@ $(document).ready(function() {
                 <table class="table table-sm table-bordered" style="min-width: 1700px;">
                     <thead style="font-size: 13px;">
                         <tr>
-                            <th class="text-center" colspan="17">
+                            <th class="text-center" colspan="20">
                                 <b>LIBRO DE COMPROBANTES DE LIQUIDACIÓN</b>
                             </th>
                         </tr>
                         <tr>
-                            <td class="text-center" colspan="17" style="font-size: 13px;">
+                            <td class="text-center" colspan="20" style="font-size: 13px;">
                                 <b>Nombre del Contribuyente:</b> {{ $heading->name }} &nbsp;&nbsp;
                                 <b>N.R.C.:</b> {{ $heading->nrc }} &nbsp;&nbsp; <b>NIT:</b> {{ $heading->nit }} &nbsp;&nbsp;
                                 <b>MES:</b> {{ strtoupper($meses[(int)$period-1]) }} &nbsp;&nbsp; <b>AÑO:</b> {{ $yearB }}
@@ -241,6 +241,9 @@ $(document).ready(function() {
                             <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>NÚMERO CONTROL DTE</b></td>
                             <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓDIGO GENERACIÓN</b></td>
                             <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO RECEPCIÓN</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>Nº CONTROL ANULACIÓN</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓD. GEN. ANULACIÓN</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO ANULACIÓN</b></td>
                         </tr>
                     </thead>
                     <tbody>
@@ -298,6 +301,9 @@ $(document).ready(function() {
                             <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->numeroControl ?? '-' }}</td>
                             <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->codigoGeneracion ?? '-' }}</td>
                             <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->selloRecibido ?? '-' }}</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">@if($sale->typesale=='0'){{ $sale->numeroControl_anulacion ?? '-' }}@else - @endif</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">@if($sale->typesale=='0'){{ $sale->codigoGeneracion_anulacion ?? '-' }}@else - @endif</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">@if($sale->typesale=='0'){{ $sale->selloRecibido_anulacion ?? '-' }}@else - @endif</td>
                         </tr>
                         @php $i++; @endphp
                         @endforeach
@@ -315,6 +321,9 @@ $(document).ready(function() {
                             <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_iva_retenido, 2) }}</td>
                             <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_iva_percibido, 2) }}</td>
                             <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_final, 2) }}</td>
+                            <td style="text-align: center;">-</td>
+                            <td style="text-align: center;">-</td>
+                            <td style="text-align: center;">-</td>
                             <td style="text-align: center;">-</td>
                             <td style="text-align: center;">-</td>
                             <td style="text-align: center;">-</td>
