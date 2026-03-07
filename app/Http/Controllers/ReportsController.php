@@ -667,20 +667,20 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td>-</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
 
-            $html .= '<td>' . $sale['ncrC'] . '</td>';
+            $html .= '<td>' . preg_replace('/[^0-9]/', '', $sale['ncrC'] ?? '') . '</td>';
 
             if($sale['typesale']=='0'){
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
@@ -734,15 +734,15 @@ class ReportsController extends Controller
             }
 
             if($sale['typesale']=='0'){
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
             } else {
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'], 2, '.', '') . '</td>';
                 $tot_final += $sale['totalamount'];
             }
 
-            $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
-            $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
-            $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['numeroControl'] ?? '-')) . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['codigoGeneracion'] ?? '-')) . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['selloRecibido'] ?? '-')) . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
@@ -959,21 +959,21 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td>-</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
 
             if($sale['typesale']=='0'){
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
-                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
@@ -1001,9 +1001,9 @@ class ReportsController extends Controller
                 $tot_final += $sale['totalamount'];
             }
 
-            $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
-            $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
-            $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['numeroControl'] ?? '-')) . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['codigoGeneracion'] ?? '-')) . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['selloRecibido'] ?? '-')) . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';

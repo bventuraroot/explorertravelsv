@@ -339,35 +339,31 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         </td>
                         <td class="text-uppercase" style="text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            -
                             @else
                                 {{$sale['nombre_completo'] ?? ''}}
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                                <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                                -
                             @else
                                 {{ $sale['tipo_venta'] ?? 'PROPIA' }}
                             @endif
                         </td>
                         <td class="text-uppercase" style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
-                            <?php
-                            // No sumar a totales si está anulado
-                            ?>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['exenta'], 2) }}
                             <?php
                             $tot_exentas += $sale['exenta'];
-                            $dfe = $sale['exenta'];
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['nosujeta'], 2) }}
                             <?php
@@ -377,98 +373,91 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         </td>
                         <td style="text-align: center;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['gravada'], 2) }}
                             <?php
-                            $df = ($sale['gravada']);
-                            $tot_int_grav += $df;
+                            $tot_int_grav += $sale['gravada'];
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['iva'], 2) }}
                             <?php
-                            $deb_Fiscal = $sale['iva'];
-                            $tot_debfiscal += $deb_Fiscal;
+                            $tot_debfiscal += $sale['iva'];
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['fee'] ?? 0, 2) }}
                             <?php
-                            $fee = $sale['fee'] ?? 0;
-                            $tot_fee += $fee;
+                            $tot_fee += $sale['fee'] ?? 0;
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['ivafee'] ?? 0, 2) }}
                             <?php
-                            $ivafee = $sale['ivafee'] ?? 0;
-                            $tot_ivafee += $ivafee;
+                            $tot_ivafee += $sale['ivafee'] ?? 0;
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['iva_retenido'] ?? 0, 2) }}
                             <?php
-                            $iva_retenido = $sale['iva_retenido'] ?? 0;
-                            $tot_iva_retenido += $iva_retenido;
+                            $tot_iva_retenido += $sale['iva_retenido'] ?? 0;
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['iva_percibido'] ?? 0, 2) }}
                             <?php
-                            $iva_percibido = $sale['iva_percibido'] ?? 0;
-                            $tot_iva_percibido_view += $iva_percibido;
+                            $tot_iva_percibido_view += $sale['iva_percibido'] ?? 0;
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            {{ number_format(0, 2) }}
                             @else
                              {{ number_format($sale['totalamount'], 2) }}
                             <?php
-                            $tot = $sale['totalamount'];
-                            $tot_final = $tot_final + $tot;
+                            $tot_final = $tot_final + $sale['totalamount'];
                             ?>
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            -
                             @else
                             {{ $sale['numeroControl'] ?? '-' }}
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            -
                             @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
                             @if($sale['typesale']=='0')
-                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
+                            -
                             @else
                             {{ $sale['selloRecibido'] ?? '-' }}
                         @endif
