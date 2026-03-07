@@ -667,7 +667,7 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
@@ -675,12 +675,12 @@ class ReportsController extends Controller
             $html .= '<td>' . $sale['ncrC'] . '</td>';
 
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
@@ -734,7 +734,7 @@ class ReportsController extends Controller
             }
 
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'], 2, '.', '') . '</td>';
                 $tot_final += $sale['totalamount'];
@@ -959,21 +959,21 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
 
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $fee = $sale['fee'] ?? 0;
                 $ivafee = $sale['ivafee'] ?? 0;
@@ -1633,7 +1633,7 @@ class ReportsController extends Controller
             $html .= '<td>' . ($sale['correlativo'] ?? '-') . '</td>';
 
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
@@ -1642,15 +1642,14 @@ class ReportsController extends Controller
 
             if($sale['typesale']=='0'){
                 $html .= '<td>-</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exportacion'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva_retenido'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva_percibido'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'] ?? 0, 2, '.', '') . '</td>';
             } else {
                 $html .= '<td>' . ($sale['tipo_venta'] ?? 'PROPIA') . '</td>';
                 $iva_retenido = $sale['iva_retenido'] ?? 0;

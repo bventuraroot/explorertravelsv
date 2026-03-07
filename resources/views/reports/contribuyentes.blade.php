@@ -311,7 +311,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td class="text-uppercase"
                         style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                                 {{$sale['nombre_completo'] ?? ''}}
                         @endif
@@ -324,7 +324,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             {{ $sale['tipo_venta'] ?? 'PROPIA' }}
                         @endif
@@ -332,7 +332,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td class="text-uppercase"
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format(0, 2) }}
@@ -345,7 +345,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format(0, 2) }}
@@ -358,7 +358,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format(0, 2) }}
@@ -372,7 +372,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                              {{ number_format($sale['fee'] ?? 0, 2) }}
                         @endif
@@ -384,7 +384,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                              {{ number_format($sale['ivafee'] ?? 0, 2) }}
                         @endif
@@ -396,7 +396,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                              {{ number_format($sale['nosujeta'], 2) }}
                         @endif
@@ -407,7 +407,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format($sale['exenta'], 2) }}
@@ -419,7 +419,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format($sale['gravada'], 2) }}
@@ -432,7 +432,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format($sale['iva'], 2) }}
@@ -445,7 +445,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                         @else
                             @if(($sale['tipo_venta'] ?? 'PROPIA') === 'TERCEROS')
                                 {{ number_format($sale['iva_percibido'] ?? 0, 2) }}
@@ -458,7 +458,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: right; font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                              {{ number_format($sale['totalamount'], 2) }}
                         @endif
@@ -470,7 +470,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                             {{ $sale['numeroControl'] ?? '-' }}
                         @endif
@@ -478,7 +478,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
                         @endif
@@ -486,7 +486,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
                         @if($sale['typesale']=='0')
-                            ANULADO
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                             {{ $sale['selloRecibido'] ?? '-' }}
                         @endif
