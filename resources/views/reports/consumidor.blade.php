@@ -199,6 +199,7 @@ $(document).ready(function() {
                 <div class="col-4">
                     <div class="row g-3">
                         <select class="form-control" name="period" id="period">
+                            <?php if(empty($period)){ $period = (date('n') == 1) ? '12' : sprintf('%02d', date('n') - 1); } ?>
                             <option value="01" <?php echo (@$period == '01') ? "selected" : "" ?>>Enero</option>
                             <option value="02" <?php echo (@$period == '02') ? "selected" : "" ?>>Febrero</option>
                             <option value="03" <?php echo (@$period == '03') ? "selected" : "" ?>>Marzo</option>
@@ -271,12 +272,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table table-sm" style="min-width: 1600px;">
             <thead>
                 <tr>
-                    <th class="text-center" colspan="17">
+                    <th class="text-center" colspan="20">
                         <b>LIBRO DE VENTAS CONSUMIDOR</b>
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="17">
+                    <td class="text-center" colspan="20">
                         <b>Nombre del Contribuyente: </b> <?php echo $heading['name']; ?>
                         <b>N.R.C.: </b> <?php echo $heading['ncr']; ?> <b>MES: </b><?php echo $mesesDelAnoMayuscula[(int)$period-1] ?>
                         <b>Año: </b> <?php echo $yearB; ?><p>(Valores expresados en Dolares Estadounidenses)</p>
@@ -303,6 +304,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="text-align: center; min-width: 200px;">NÚMERO CONTROL DTE</td>
                     <td style="text-align: center; min-width: 200px;">CÓDIGO GENERACIÓN</td>
                     <td style="text-align: center; min-width: 200px;">SELLO RECEPCIÓN</td>
+                    <td style="text-align: center; min-width: 200px;">Nº CONTROL ANULACIÓN</td>
+                    <td style="text-align: center; min-width: 200px;">CÓD. GEN. ANULACIÓN</td>
+                    <td style="text-align: center; min-width: 200px;">SELLO ANULACIÓN</td>
                 </tr>
                         <?php
                         $i = 1;
@@ -469,6 +473,27 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             {{ $sale['selloRecibido'] ?? '-' }}
                         @endif
                         </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
+                            @if($sale['typesale']=='0')
+                            {{ $sale['numeroControl_anulacion'] ?? '-' }}
+                            @else
+                            -
+                            @endif
+                        </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
+                            @if($sale['typesale']=='0')
+                            {{ $sale['codigoGeneracion_anulacion'] ?? '-' }}
+                            @else
+                            -
+                            @endif
+                        </td>
+                        <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
+                            @if($sale['typesale']=='0')
+                            {{ $sale['selloRecibido_anulacion'] ?? '-' }}
+                            @else
+                            -
+                            @endif
+                        </td>
                     </tr><?php
                     ++$i;
                 ?>
@@ -531,9 +556,18 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td class="text-center">
                         -
                     </td>
+                    <td class="text-center">
+                        -
+                    </td>
+                    <td class="text-center">
+                        -
+                    </td>
+                    <td class="text-center">
+                        -
+                    </td>
                 </tr>
                 <tr>
-                    <td colspan="17" style="text-align: center;">
+                    <td colspan="20" style="text-align: center;">
                         <br><br><b>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</b>
                     </td>
                 </tr>

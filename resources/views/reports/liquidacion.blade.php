@@ -138,9 +138,10 @@ $(document).ready(function() {
                     <div class="mb-3 col-md-3">
                         <label for="company" class="form-label">Empresa</label>
                         <select class="form-control select2" data-allow-clear="true" id="company" name="company" required>
-                            <option value="" disabled selected>Seleccionar...</option>
-                            @foreach (DB::table('companies')->get() as $company)
-                                <option value="{{ $company->id }}" {{ isset($heading) && $heading->id == $company->id ? 'selected' : '' }}>
+                            <option value="" disabled>Seleccionar...</option>
+                            @php $companiesList = DB::table('companies')->get(); @endphp
+                            @foreach ($companiesList as $company)
+                                <option value="{{ $company->id }}" {{ (isset($heading) && $heading->id == $company->id) || (!isset($heading) && $loop->first) ? 'selected' : '' }}>
                                     {{ $company->name }}
                                 </option>
                             @endforeach
@@ -156,7 +157,7 @@ $(document).ready(function() {
                         <select class="form-control" id="period" name="period" required>
                             @php
                                 $meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                                $mesActual = isset($period) ? $period : date('n');
+                                $mesActual = isset($period) ? (int)$period : (date('n') == 1 ? 12 : date('n') - 1);
                             @endphp
                             @foreach ($meses as $index => $mes)
                                 <option value="{{ $index + 1 }}" {{ $mesActual == ($index + 1) ? 'selected' : '' }}>

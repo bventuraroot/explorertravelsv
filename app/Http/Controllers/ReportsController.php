@@ -79,18 +79,25 @@ class ReportsController extends Controller
      */
     public function contribusearch(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -177,8 +184,7 @@ class ReportsController extends Controller
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
-        // Solo incluir DTE que fueron enviados exitosamente (estado "Enviado")
-        ->where('dte.codEstado', '=', '02')
+        ->where('dte_emis.codEstado', '=', '02')
         ->orderBy('sales.id')
         ->get();
         return view('reports.contribuyentes', array(
@@ -246,18 +252,25 @@ class ReportsController extends Controller
      */
     public function consumidorsearch(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSubCons = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSubCons, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -347,10 +360,9 @@ class ReportsController extends Controller
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
-        // Solo incluir DTE que fueron enviados exitosamente o ventas sin DTE
         ->where(function($query) {
-            $query->whereNull('dte.codEstado')
-                  ->orWhere('dte.codEstado', '=', '02');
+            $query->whereNull('dte_emis.codEstado')
+                  ->orWhere('dte_emis.codEstado', '=', '02');
         })
         ->orderBy('sales.id')
         ->get();
@@ -471,18 +483,25 @@ class ReportsController extends Controller
      */
     public function contribuyentesExcel(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSubExc = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSubExc, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -569,7 +588,7 @@ class ReportsController extends Controller
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
-        ->where('dte.codEstado', '=', '02')
+        ->where('dte_emis.codEstado', '=', '02')
         ->orderBy('sales.id')
         ->get();
 
@@ -592,8 +611,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="19" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONTRIBUYENTES (Valores expresados en USD)</th></tr>';
-        $html .= '<tr><td colspan="19" style="text-align:center;">';
+        $html .= '<tr><th colspan="22" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONTRIBUYENTES (Valores expresados en USD)</th></tr>';
+        $html .= '<tr><td colspan="22" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>NIT:</b> ' . $Company['nit'] . ' ';
@@ -622,6 +641,9 @@ class ReportsController extends Controller
         $html .= '<th>NÚMERO CONTROL DTE</th>';
         $html .= '<th>CÓDIGO GENERACIÓN</th>';
         $html .= '<th>SELLO RECEPCIÓN</th>';
+        $html .= '<th>Nº CONTROL ANULACIÓN</th>';
+        $html .= '<th>CÓD. GEN. ANULACIÓN</th>';
+        $html .= '<th>SELLO ANULACIÓN</th>';
         $html .= '</tr>';
 
         // Datos
@@ -721,6 +743,9 @@ class ReportsController extends Controller
             $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '</tr>';
             $i++;
         }
@@ -739,7 +764,7 @@ class ReportsController extends Controller
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_final, 2, '.', '') . '</td>';
-        $html .= '<td>-</td><td>-</td><td>-</td>';
+        $html .= '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>';
         $html .= '</tr>';
 
         $html .= '</table>';
@@ -763,18 +788,25 @@ class ReportsController extends Controller
      */
     public function consumidorExcel(Request $request){
         $Company = Company::find($request['company']);
+        $dteEmisionSubExcCons = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
-        ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+        ->leftJoinSub($dteEmisionSubExcCons, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
         'clients.ncr AS ncrC',
-        'dte.id_doc AS numeroControl',
-        'dte.codigoGeneracion AS codigoGeneracion',
-        'dte.selloRecibido AS selloRecibido')
+        'dte_emis.id_doc AS numeroControl',
+        'dte_emis.codigoGeneracion AS codigoGeneracion',
+        'dte_emis.selloRecibido AS selloRecibido')
+        ->selectRaw("(SELECT dte_anul.id_doc FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS numeroControl_anulacion")
+        ->selectRaw("(SELECT dte_anul.codigoGeneracion FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS codigoGeneracion_anulacion")
+        ->selectRaw("(SELECT dte_anul.selloRecibido FROM dte dte_anul WHERE dte_anul.sale_id = sales.id AND dte_anul.codTransaction = '02' LIMIT 1) AS selloRecibido_anulacion")
         ->selectRaw("CASE
-            WHEN dte.fhRecibido IS NOT NULL
-            THEN DATE_FORMAT(dte.fhRecibido, '%d/%m/%Y')
-            WHEN dte.json IS NOT NULL AND JSON_EXTRACT(dte.json, '$.identificacion.fecEmi') IS NOT NULL
-            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+            WHEN dte_emis.fhRecibido IS NOT NULL
+            THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+            WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+            THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
             ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
         END AS dateF ")
         ->selectRaw("CASE
@@ -851,8 +883,8 @@ class ReportsController extends Controller
         ->WhereRaw('DAY(sales.date) BETWEEN "01" AND "31"')
         ->where('sales.company_id', '=', $request['company'])
         ->where(function($query) {
-            $query->whereNull('dte.codEstado')
-                  ->orWhere('dte.codEstado', '=', '02');
+            $query->whereNull('dte_emis.codEstado')
+                  ->orWhere('dte_emis.codEstado', '=', '02');
         })
         ->orderBy('sales.id')
         ->get();
@@ -876,8 +908,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="16" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
-        $html .= '<tr><td colspan="16" style="text-align:center;">';
+        $html .= '<tr><th colspan="19" style="text-align:center; font-weight:bold;">LIBRO DE VENTAS CONSUMIDOR</th></tr>';
+        $html .= '<tr><td colspan="19" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>MES:</b> ' . $mesesDelAnoMayuscula[(int)$request['period']-1] . ' ';
@@ -902,6 +934,9 @@ class ReportsController extends Controller
         $html .= '<th>NÚMERO CONTROL DTE</th>';
         $html .= '<th>CÓDIGO GENERACIÓN</th>';
         $html .= '<th>SELLO RECEPCIÓN</th>';
+        $html .= '<th>Nº CONTROL ANULACIÓN</th>';
+        $html .= '<th>CÓD. GEN. ANULACIÓN</th>';
+        $html .= '<th>SELLO ANULACIÓN</th>';
         $html .= '</tr>';
 
         // Datos
@@ -969,6 +1004,9 @@ class ReportsController extends Controller
             $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
             $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
+            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '</tr>';
             $i++;
         }
@@ -985,16 +1023,16 @@ class ReportsController extends Controller
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_retenido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_percibido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_final, 2, '.', '') . '</td>';
-        $html .= '<td>-</td><td>-</td><td>-</td>';
+        $html .= '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>';
         $html .= '</tr>';
 
         // Liquidación del débito fiscal
-        $html .= '<tr><td colspan="16" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
+        $html .= '<tr><td colspan="19" style="text-align:center; font-weight:bold;"><br>LIQUIDACION DEL DEBITO FISCAL EN VENTAS DIRECTAS</td></tr>';
 
         $html .= '<tr>';
         $html .= '<td colspan="6" style="text-align:right; font-weight:bold;">GRAVADAS, NO SUJETAS, EXENTAS, SIN IVA</td>';
         $html .= '<td colspan="2" style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_exentas + $tot_nosujetas, 2, '.', '') . '</td>';
-        $html .= '<td colspan="8"></td>';
+        $html .= '<td colspan="11"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -1002,7 +1040,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_exentas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">13 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="10"></td>';
+        $html .= '<td colspan="12"></td>';
         $html .= '</tr>';
 
         $html .= '<tr>';
@@ -1010,7 +1048,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_nosujetas, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">0 %</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
-        $html .= '<td colspan="10"></td>';
+        $html .= '<td colspan="12"></td>';
         $html .= '</tr>';
 
         $html .= '<tr style="font-weight:bold;">';
@@ -1018,7 +1056,7 @@ class ReportsController extends Controller
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav, 2, '.', '') . '</td>';
         $html .= '<td style="text-align:right;">TOTAL</td>';
         $html .= '<td style="text-align:right; mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_int_grav + $tot_debfiscal, 2, '.', '') . '</td>';
-        $html .= '<td colspan="10"></td>';
+        $html .= '<td colspan="12"></td>';
         $html .= '</tr>';
 
         $html .= '</table>';

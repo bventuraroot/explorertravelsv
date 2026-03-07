@@ -352,8 +352,9 @@ $(document).ready(function() {
                     <label for="company" class="form-label">Empresa <span class="text-danger">*</span></label>
                     <select class="form-control select2" id="company" name="company" required>
                         <option value="">Seleccionar...</option>
-                        @foreach (DB::table('companies')->get() as $company)
-                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        @php $companiesVt = DB::table('companies')->get(); @endphp
+                        @foreach ($companiesVt as $company)
+                            <option value="{{ $company->id }}" {{ $loop->first ? 'selected' : '' }}>{{ $company->name }}</option>
                         @endforeach
                     </select>
                 </div>

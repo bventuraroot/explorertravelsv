@@ -75,18 +75,19 @@ $configData = Helper::appClasses();
             <div class="col-4">
                 <div class="row g-3">
                     <select class="form-control" name="period" id="period">
-                        <option value="01">Enero</option>
-                        <option value="02">Febrero</option>
-                        <option value="03">Marzo</option>
-                        <option value="04">Abril</option>
-                        <option value="05">Mayo</option>
-                        <option value="06">Junio</option>
-                        <option value="07">Julio</option>
-                        <option value="08">Agosto</option>
-                        <option value="09">Septiembre</option>
-                        <option value="10">Octubre</option>
-                        <option value="11">Noviembre</option>
-                        <option value="12">Diciembre</option>
+                        <?php if(empty($period)){ $period = (date('n') == 1) ? '12' : sprintf('%02d', date('n') - 1); } ?>
+                        <option value="01" <?php echo (@$period == '01') ? "selected" : "" ?>>Enero</option>
+                        <option value="02" <?php echo (@$period == '02') ? "selected" : "" ?>>Febrero</option>
+                        <option value="03" <?php echo (@$period == '03') ? "selected" : "" ?>>Marzo</option>
+                        <option value="04" <?php echo (@$period == '04') ? "selected" : "" ?>>Abril</option>
+                        <option value="05" <?php echo (@$period == '05') ? "selected" : "" ?>>Mayo</option>
+                        <option value="06" <?php echo (@$period == '06') ? "selected" : "" ?>>Junio</option>
+                        <option value="07" <?php echo (@$period == '07') ? "selected" : "" ?>>Julio</option>
+                        <option value="08" <?php echo (@$period == '08') ? "selected" : "" ?>>Agosto</option>
+                        <option value="09" <?php echo (@$period == '09') ? "selected" : "" ?>>Septiembre</option>
+                        <option value="10" <?php echo (@$period == '10') ? "selected" : "" ?>>Octubre</option>
+                        <option value="11" <?php echo (@$period == '11') ? "selected" : "" ?>>Noviembre</option>
+                        <option value="12" <?php echo (@$period == '12') ? "selected" : "" ?>>Diciembre</option>
                     </select>
                 </div>
             </div>

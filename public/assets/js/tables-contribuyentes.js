@@ -22,6 +22,9 @@ $.ajax({
                     "</option>"
             );
         });
+        if (response && response.length > 0) {
+            $("#company").val(response[0].id);
+        }
     },
 });
 

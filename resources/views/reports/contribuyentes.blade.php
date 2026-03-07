@@ -170,7 +170,7 @@ $(document).ready(function() {
                     <div class="row g-3">
                         <select class="form-control" name="period" id="period">
                             <?php if(empty($period)){
-                                $period = date('m')-1;
+                                $period = (date('n') == 1) ? '12' : sprintf('%02d', date('n') - 1);
                             } ?>
                             <option value="01" <?php echo (@$period == '01') ? "selected" : "" ?>>Enero</option>
                             <option value="02" <?php echo (@$period == '02') ? "selected" : "" ?>>Febrero</option>
@@ -230,12 +230,12 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
         <table class="table" style="min-width: 1800px;">
             <thead style="font-size: 13px;">
                 <tr>
-                    <th class="text-center" colspan="19">
+                    <th class="text-center" colspan="22">
                         LIBRO DE VENTAS CONTRIBUYENTES (Valores expresados en USD)
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="19" style="font-size: 13px;">
+                    <td class="text-center" colspan="22" style="font-size: 13px;">
                         <b>Nombre del Contribuyente:</b>
                         <?php echo $heading['name']; ?> &nbsp;&nbsp;<b>N.R.C.:</b>
                         <?php echo $heading['nrc']; ?> &nbsp;&nbsp;<b>NIT:</b>&nbsp;
@@ -249,7 +249,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td colspan="4" class="text-right" style="font-size: 11px;">
                         <b>VENTAS PROPIAS</b>
                     </td>
-                    <td colspan="3" class="text-left" style="font-size: 11px;">
+                    <td colspan="6" class="text-left" style="font-size: 11px;">
                         <b>A CUENTA DE TERCEROS</b>
                     </td>
                 </tr>
@@ -274,6 +274,9 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>NÚMERO CONTROL DTE</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓDIGO GENERACIÓN</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO<br>RECEPCIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>Nº CONTROL<br>ANULACIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓD. GEN.<br>ANULACIÓN</b></td>
+                    <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO<br>ANULACIÓN</b></td>
                 </tr>
             </thead>
             <tbody>
@@ -488,6 +491,30 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                             {{ $sale['selloRecibido'] ?? '-' }}
                         @endif
                     </td>
+                    <td
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
+                        @if($sale['typesale']=='0')
+                            {{ $sale['numeroControl_anulacion'] ?? '-' }}
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
+                        @if($sale['typesale']=='0')
+                            {{ $sale['codigoGeneracion_anulacion'] ?? '-' }}
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td
+                        style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
+                        @if($sale['typesale']=='0')
+                            {{ $sale['selloRecibido_anulacion'] ?? '-' }}
+                        @else
+                            -
+                        @endif
+                    </td>
                 </tr>
                 <?php
                     ++$i;
@@ -568,6 +595,15 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                                 echo number_format($vto,2);
                             ?>
                         </b>
+                    </td>
+                    <td style="font-size: 10px; text-align: center;">
+                        <b>-</b>
+                    </td>
+                    <td style="font-size: 10px; text-align: center;">
+                        <b>-</b>
+                    </td>
+                    <td style="font-size: 10px; text-align: center;">
+                        <b>-</b>
                     </td>
                     <td style="font-size: 10px; text-align: center;">
                         <b>-</b>

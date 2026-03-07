@@ -302,6 +302,12 @@
                 <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaExenta"] ?? $d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
                 <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaGravada"] ?? $d["gravadas"] ?? $d["ventaGravada"] ?? 0)}}</td>
             </tr>
+            @if (($loop->index+1) % 10 == 0)
+            <tr style='page-break-after: always;'>
+                <td align="right" colspan="9">Pasan ......</td>
+            </tr>
+
+            @endif
             @endforeach
         </tbody>
 
