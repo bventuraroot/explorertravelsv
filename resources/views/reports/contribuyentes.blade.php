@@ -311,7 +311,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     <td class="text-uppercase"
                         style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                         @if($sale['typesale']=='0')
-                            -
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                                 {{$sale['nombre_completo'] ?? ''}}
                         @endif
@@ -477,27 +477,15 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                     </td>
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
-                        @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['numeroControl'] ?? '-' }}
-                        @endif
                     </td>
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
-                        @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
-                        @endif
                     </td>
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">
-                        @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['selloRecibido'] ?? '-' }}
-                        @endif
                     </td>
                     <td
                         style="text-align: center; font-size: 8px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">

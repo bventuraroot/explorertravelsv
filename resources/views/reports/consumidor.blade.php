@@ -339,7 +339,7 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         </td>
                         <td class="text-uppercase" style="text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                             @if($sale['typesale']=='0')
-                            -
+                            <span style="color: #c00; font-weight: bold;">ANULADO</span>
                             @else
                                 {{$sale['nombre_completo'] ?? ''}}
                         @endif
@@ -442,25 +442,13 @@ $mesesDelAnoMayuscula = array_map('strtoupper', $mesesDelAno);
                         @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
-                            @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['numeroControl'] ?? '-' }}
-                        @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
-                            @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['codigoGeneracion'] ?? '-' }}
-                        @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
-                            @if($sale['typesale']=='0')
-                            -
-                            @else
                             {{ $sale['selloRecibido'] ?? '-' }}
-                        @endif
                         </td>
                         <td style="text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; font-size: 8px; white-space: nowrap; min-width: 200px;">
                             @if($sale['typesale']=='0')

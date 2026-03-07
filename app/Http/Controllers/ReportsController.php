@@ -667,7 +667,7 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td>-</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
@@ -740,9 +740,9 @@ class ReportsController extends Controller
                 $tot_final += $sale['totalamount'];
             }
 
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['numeroControl'] ?? '-')) . '</td>';
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['codigoGeneracion'] ?? '-')) . '</td>';
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['selloRecibido'] ?? '-')) . '</td>';
+            $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
+            $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
+            $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
@@ -959,7 +959,7 @@ class ReportsController extends Controller
 
             // Nombre del cliente completo
             if($sale['typesale']=='0'){
-                $html .= '<td>-</td>';
+                $html .= '<td style="color: red; font-weight: bold;">ANULADO</td>';
             } else {
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
@@ -1001,9 +1001,9 @@ class ReportsController extends Controller
                 $tot_final += $sale['totalamount'];
             }
 
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['numeroControl'] ?? '-')) . '</td>';
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['codigoGeneracion'] ?? '-')) . '</td>';
-            $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? '-' : ($sale['selloRecibido'] ?? '-')) . '</td>';
+            $html .= '<td>' . ($sale['numeroControl'] ?? '-') . '</td>';
+            $html .= '<td>' . ($sale['codigoGeneracion'] ?? '-') . '</td>';
+            $html .= '<td>' . ($sale['selloRecibido'] ?? '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['numeroControl_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['codigoGeneracion_anulacion'] ?? '-') : '-') . '</td>';
             $html .= '<td>' . (($sale['typesale'] ?? '') == '0' ? ($sale['selloRecibido_anulacion'] ?? '-') : '-') . '</td>';
