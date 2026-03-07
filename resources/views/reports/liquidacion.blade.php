@@ -89,6 +89,36 @@ $(document).ready(function() {
         form.remove();
     });
 
+    // Unir PDFs de comprobantes de liquidación
+    $('#btn-merge-pdf').on('click', function() {
+        var company = $('#company').val();
+        var year = $('#year').val();
+        var period = $('#period').val();
+
+        if (!company) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor, primero realiza una búsqueda para generar el reporte.'
+            });
+            return;
+        }
+
+        var form = $('<form>', {
+            'method': 'POST',
+            'action': '{{ route("report.liquidacion.merge-pdf") }}'
+        });
+
+        form.append($('<input>', { 'type': 'hidden', 'name': '_token', 'value': '{{ csrf_token() }}' }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'company', 'value': company }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'year', 'value': year }));
+        form.append($('<input>', { 'type': 'hidden', 'name': 'period', 'value': period }));
+
+        $('body').append(form);
+        form.submit();
+        form.remove();
+    });
+
     $('.select2').select2();
 });
 </script>
@@ -148,9 +178,12 @@ $(document).ready(function() {
         <div class="container mb-3">
             <div class="row">
                 <div class="col-md-12">
-                    <div class="btn-group w-100" role="group">
+                    <div class="btn-group" role="group">
                         <button type="button" id="btn-export-excel" class="btn btn-success">
                             <i class="ti ti-file-spreadsheet me-1"></i>Exportar a Excel
+                        </button>
+                        <button type="button" id="btn-merge-pdf" class="btn btn-warning">
+                            <i class="ti ti-file-plus me-1"></i>Unir PDFs de documentos
                         </button>
                     </div>
                 </div>
@@ -158,40 +191,56 @@ $(document).ready(function() {
         </div>
 
         <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <h5 class="text-center mb-3">
-                        <b>LIBRO DE COMPROBANTES DE LIQUIDACIÓN</b>
-                    </h5>
-                    <p class="text-center">
-                        <b>Nombre del Contribuyente:</b> {{ $heading->name }}<br>
-                        <b>N.R.C.:</b> {{ $heading->nrc }} &nbsp;&nbsp; <b>NIT:</b> {{ $heading->nit }}<br>
-                        <b>MES:</b> {{ strtoupper($meses[(int)$period-1]) }} &nbsp;&nbsp; <b>AÑO:</b> {{ $yearB }}
-                    </p>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-bordered table-sm">
-                    <thead class="table-light">
+            <style>
+                .report-container {
+                    max-height: 70vh;
+                    overflow: auto;
+                }
+                .report-container table {
+                    font-size: 11px;
+                }
+                .report-container thead td,
+                .report-container thead th {
+                    font-size: 11px;
+                }
+                .report-container tbody td {
+                    font-size: 10px;
+                }
+            </style>
+            <div id="areaImprimir" class="report-container table-responsive">
+                <table class="table table-sm table-bordered" style="min-width: 1700px;">
+                    <thead style="font-size: 13px;">
                         <tr>
-                            <th>Corr.</th>
-                            <th>FECHA</th>
-                            <th>No. Doc.</th>
-                            <th>CLIENTE</th>
-                            <th>NRC</th>
-                            <th>TIPO VENTA</th>
-                            <th>EXENTAS</th>
-                            <th>NO SUJETAS</th>
-                            <th>GRAVADAS</th>
-                            <th>EXPORTACIÓN</th>
-                            <th>IVA</th>
-                            <th>IVA RET.</th>
-                            <th>IVA PERC.</th>
-                            <th>TOTAL</th>
-                            <th>NÚMERO CONTROL</th>
-                            <th>CÓDIGO GEN.</th>
-                            <th>SELLO</th>
+                            <th class="text-center" colspan="17">
+                                <b>LIBRO DE COMPROBANTES DE LIQUIDACIÓN</b>
+                            </th>
+                        </tr>
+                        <tr>
+                            <td class="text-center" colspan="17" style="font-size: 13px;">
+                                <b>Nombre del Contribuyente:</b> {{ $heading->name }} &nbsp;&nbsp;
+                                <b>N.R.C.:</b> {{ $heading->nrc }} &nbsp;&nbsp; <b>NIT:</b> {{ $heading->nit }} &nbsp;&nbsp;
+                                <b>MES:</b> {{ strtoupper($meses[(int)$period-1]) }} &nbsp;&nbsp; <b>AÑO:</b> {{ $yearB }}
+                                <p>(Valores expresados en Dólares Estadounidenses)</p>
+                            </td>
+                        </tr>
+                        <tr style="text-transform: uppercase;">
+                            <td style="font-size: 10px; text-align: center; width: 40px;"><b>Corr.</b></td>
+                            <td style="font-size: 10px; text-align: left; width: 80px;"><b>FECHA</b></td>
+                            <td style="font-size: 10px; text-align: left; width: 60px;"><b>No. Doc.</b></td>
+                            <td style="font-size: 10px; width: 150px;"><b>CLIENTE</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>NRC</b></td>
+                            <td style="font-size: 10px; text-align: center; width: 80px;"><b>TIPO VENTA</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>EXENTAS</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>NO SUJETAS</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>GRAVADAS</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>EXPORTACIÓN</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA RET.</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA PERC.</b></td>
+                            <td style="font-size: 10px; text-align: right; width: 80px;"><b>TOTAL</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>NÚMERO CONTROL DTE</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>CÓDIGO GENERACIÓN</b></td>
+                            <td style="font-size: 10px; text-align: center; min-width: 200px;"><b>SELLO RECEPCIÓN</b></td>
                         </tr>
                     </thead>
                     <tbody>
@@ -208,33 +257,33 @@ $(document).ready(function() {
                         @endphp
                         @foreach ($sales as $sale)
                         <tr>
-                            <td>{{ $i }}</td>
-                            <td>{{ $sale->dateF }}</td>
-                            <td>{{ $sale->correlativo }}</td>
-                            <td>
+                            <td style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $i }}</td>
+                            <td style="font-size: 10px; text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->dateF }}</td>
+                            <td style="font-size: 9px; text-align: left; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->correlativo }}</td>
+                            <td class="text-uppercase" style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
                                 @if($sale->typesale=='0')
                                     ANULADO
                                 @else
-                                    {{ strtoupper($sale->nombre_completo ?? '') }}
+                                    {{ $sale->nombre_completo ?? '' }}
                                 @endif
                             </td>
-                            <td>{{ $sale->ncrC }}</td>
-                            <td>{{ $sale->typesale=='0' ? 'ANULADO' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
+                            <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->ncrC }}</td>
+                            <td style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->typesale=='0' ? 'ANULADO' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
                             @if($sale->typesale=='0')
-                                <td colspan="8" class="text-center">ANULADO</td>
+                                <td colspan="8" class="text-center" style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">ANULADO</td>
                             @else
                                 @php
                                     $iva_retenido = $sale->iva_retenido ?? 0;
                                     $iva_percibido = $sale->iva_percibido ?? 0;
                                 @endphp
-                                <td class="text-end">{{ number_format($sale->exenta, 2) }}</td>
-                                <td class="text-end">{{ number_format($sale->nosujeta, 2) }}</td>
-                                <td class="text-end">{{ number_format($sale->gravada, 2) }}</td>
-                                <td class="text-end">{{ number_format($sale->exportacion ?? 0, 2) }}</td>
-                                <td class="text-end">{{ number_format($sale->iva, 2) }}</td>
-                                <td class="text-end">{{ number_format($iva_retenido, 2) }}</td>
-                                <td class="text-end">{{ number_format($iva_percibido, 2) }}</td>
-                                <td class="text-end">{{ number_format($sale->totalamount, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->exenta, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->nosujeta, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->gravada, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->exportacion ?? 0, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->iva, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($iva_retenido, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($iva_percibido, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->totalamount, 2) }}</td>
                                 @php
                                     $tot_exentas += $sale->exenta;
                                     $tot_nosujetas += $sale->nosujeta;
@@ -246,25 +295,29 @@ $(document).ready(function() {
                                     $tot_final += $sale->totalamount;
                                 @endphp
                             @endif
-                            <td>{{ $sale->numeroControl ?? '-' }}</td>
-                            <td style="font-size: 0.75rem;">{{ $sale->codigoGeneracion ?? '-' }}</td>
-                            <td style="font-size: 0.75rem;">{{ $sale->selloRecibido ?? '-' }}</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->numeroControl ?? '-' }}</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->codigoGeneracion ?? '-' }}</td>
+                            <td style="font-size: 8px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px; white-space: nowrap; min-width: 200px;">{{ $sale->selloRecibido ?? '-' }}</td>
                         </tr>
                         @php $i++; @endphp
                         @endforeach
                     </tbody>
-                    <tfoot class="table-dark">
-                        <tr>
-                            <th colspan="6" class="text-end">TOTALES DEL MES</th>
-                            <th class="text-end">{{ number_format($tot_exentas, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_nosujetas, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_int_grav, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_exportacion, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_debfiscal, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_iva_retenido, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_iva_percibido, 2) }}</th>
-                            <th class="text-end">{{ number_format($tot_final, 2) }}</th>
-                            <th colspan="3">-</th>
+                    <tfoot>
+                        <tr class="text-right" style="font-size: 10px; font-weight: bold;">
+                            <td colspan="6" style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">
+                                TOTALES DEL MES
+                            </td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_exentas, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_nosujetas, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_int_grav, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_exportacion, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_debfiscal, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_iva_retenido, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_iva_percibido, 2) }}</td>
+                            <td style="text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($tot_final, 2) }}</td>
+                            <td style="text-align: center;">-</td>
+                            <td style="text-align: center;">-</td>
+                            <td style="text-align: center;">-</td>
                         </tr>
                     </tfoot>
                 </table>
