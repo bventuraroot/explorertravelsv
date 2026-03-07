@@ -163,6 +163,11 @@ class PermissionController extends Controller
                         "slug" => "report.consumidor"
                     ],
                     [
+                        "url" => "/report/liquidacion",
+                        "name" => "Comprobantes de Liquidación",
+                        "slug" => "report.liquidacion"
+                    ],
+                    [
                         "url" => "/report/purchases",
                         "name" => "Compras",
                         "slug" => "report.purchases"

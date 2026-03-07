@@ -1390,6 +1390,18 @@ class ReportsController extends Controller
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT SUM(sdret.detained) FROM salesdetails AS sdret WHERE sdret.sale_id=sales.id) AS iva_retenido")
         ->selectRaw("(SELECT SUM(sdper.detainedP) FROM salesdetails AS sdper WHERE sdper.sale_id=sales.id) AS iva_percibido")
+        // Exportación: suma de items donde clq_tipo_documento='11' (FEX - Factura Exportación)
+        ->selectRaw("COALESCE((SELECT SUM(COALESCE(sdex.pricesale,0) + COALESCE(sdex.nosujeta,0) + COALESCE(sdex.exempt,0))
+            FROM salesdetails AS sdex WHERE sdex.sale_id=sales.id AND sdex.clq_tipo_documento='11'), 0) AS exportacion")
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
         ->where('sales.typedocument_id', "=", "2")
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
@@ -1473,6 +1485,18 @@ class ReportsController extends Controller
         FROM salesdetails AS sdi WHERE sdi.sale_id=sales.id) AS iva")
         ->selectRaw("(SELECT SUM(sdret.detained) FROM salesdetails AS sdret WHERE sdret.sale_id=sales.id) AS iva_retenido")
         ->selectRaw("(SELECT SUM(sdper.detainedP) FROM salesdetails AS sdper WHERE sdper.sale_id=sales.id) AS iva_percibido")
+        // Exportación: suma de items donde clq_tipo_documento='11' (FEX - Factura Exportación)
+        ->selectRaw("COALESCE((SELECT SUM(COALESCE(sdex.pricesale,0) + COALESCE(sdex.nosujeta,0) + COALESCE(sdex.exempt,0))
+            FROM salesdetails AS sdex WHERE sdex.sale_id=sales.id AND sdex.clq_tipo_documento='11'), 0) AS exportacion")
+        // Marcar si la venta es propia o a terceros
+        ->selectRaw("CASE
+            WHEN sales.provider_id IS NOT NULL OR EXISTS (
+                SELECT 1 FROM salesdetails sdter
+                WHERE sdter.sale_id = sales.id
+                  AND sdter.line_provider_id IS NOT NULL
+            ) THEN 'TERCEROS'
+            ELSE 'PROPIA'
+        END AS tipo_venta")
         ->where('sales.typedocument_id', "=", "2")
         ->whereRaw('YEAR(sales.date)=?', $request['year'])
         ->whereRaw('MONTH(sales.date)=?', $request['period'])
@@ -1504,8 +1528,8 @@ class ReportsController extends Controller
         $html .= '<table border="1">';
 
         // Encabezado
-        $html .= '<tr><th colspan="16" style="text-align:center; font-weight:bold;">LIBRO DE COMPROBANTES DE LIQUIDACIÓN</th></tr>';
-        $html .= '<tr><td colspan="16" style="text-align:center;">';
+        $html .= '<tr><th colspan="18" style="text-align:center; font-weight:bold;">LIBRO DE COMPROBANTES DE LIQUIDACIÓN</th></tr>';
+        $html .= '<tr><td colspan="18" style="text-align:center;">';
         $html .= '<b>Nombre del Contribuyente:</b> ' . $Company['name'] . ' ';
         $html .= '<b>N.R.C.:</b> ' . $Company['nrc'] . ' ';
         $html .= '<b>NIT:</b> ' . $Company['nit'] . ' ';
@@ -1520,9 +1544,11 @@ class ReportsController extends Controller
         $html .= '<th>No. Doc.</th>';
         $html .= '<th>Nombre del Cliente</th>';
         $html .= '<th>NRC</th>';
+        $html .= '<th>TIPO VENTA</th>';
         $html .= '<th>Exentas</th>';
         $html .= '<th>No Sujetas</th>';
         $html .= '<th>Internas Gravadas</th>';
+        $html .= '<th>Exportación</th>';
         $html .= '<th>Debito Fiscal</th>';
         $html .= '<th>IVA Retenido</th>';
         $html .= '<th>IVA Percibido</th>';
@@ -1537,6 +1563,7 @@ class ReportsController extends Controller
         $total_gv = 0;
         $total_iva = 0;
         $total_ns = 0;
+        $tot_exportacion = 0;
         $tot_final = 0;
         $tot_iva_retenido = 0;
         $tot_iva_percibido = 0;
@@ -1564,13 +1591,17 @@ class ReportsController extends Controller
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
                 $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
+                $html .= '<td>ANULADO</td>';
             } else {
+                $html .= '<td>' . ($sale['tipo_venta'] ?? 'PROPIA') . '</td>';
                 $iva_retenido = $sale['iva_retenido'] ?? 0;
                 $iva_percibido = $sale['iva_percibido'] ?? 0;
 
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'], 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exportacion'] ?? 0, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'], 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($iva_retenido, 2, '.', '') . '</td>';
                 $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($iva_percibido, 2, '.', '') . '</td>';
@@ -1579,6 +1610,7 @@ class ReportsController extends Controller
                 $total_ex += $sale['exenta'];
                 $total_ns += $sale['nosujeta'];
                 $total_gv += $sale['gravada'];
+                $tot_exportacion += $sale['exportacion'] ?? 0;
                 $total_iva += $sale['iva'];
                 $tot_iva_retenido += $iva_retenido;
                 $tot_iva_percibido += $iva_percibido;
@@ -1594,10 +1626,11 @@ class ReportsController extends Controller
 
         // Totales
         $html .= '<tr style="font-weight:bold;">';
-        $html .= '<td colspan="5" style="text-align:right;">TOTALES DEL MES</td>';
+        $html .= '<td colspan="6" style="text-align:right;">TOTALES DEL MES</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($total_ex, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($total_ns, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($total_gv, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_exportacion, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($total_iva, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_retenido, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva_percibido, 2, '.', '') . '</td>';

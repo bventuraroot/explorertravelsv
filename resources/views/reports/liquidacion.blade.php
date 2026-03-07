@@ -180,14 +180,16 @@ $(document).ready(function() {
                             <th>No. Doc.</th>
                             <th>CLIENTE</th>
                             <th>NRC</th>
+                            <th>TIPO VENTA</th>
                             <th>EXENTAS</th>
                             <th>NO SUJETAS</th>
                             <th>GRAVADAS</th>
+                            <th>EXPORTACIÓN</th>
                             <th>IVA</th>
                             <th>IVA RET.</th>
                             <th>IVA PERC.</th>
                             <th>TOTAL</th>
-                            <th>NÚME RO CONTROL</th>
+                            <th>NÚMERO CONTROL</th>
                             <th>CÓDIGO GEN.</th>
                             <th>SELLO</th>
                         </tr>
@@ -198,6 +200,7 @@ $(document).ready(function() {
                             $tot_int_grav = 0;
                             $tot_debfiscal = 0;
                             $tot_nosujetas = 0;
+                            $tot_exportacion = 0;
                             $tot_final = 0;
                             $tot_iva_retenido = 0;
                             $tot_iva_percibido = 0;
@@ -216,8 +219,9 @@ $(document).ready(function() {
                                 @endif
                             </td>
                             <td>{{ $sale->ncrC }}</td>
+                            <td>{{ $sale->typesale=='0' ? 'ANULADO' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
                             @if($sale->typesale=='0')
-                                <td colspan="7" class="text-center">ANULADO</td>
+                                <td colspan="8" class="text-center">ANULADO</td>
                             @else
                                 @php
                                     $iva_retenido = $sale->iva_retenido ?? 0;
@@ -226,6 +230,7 @@ $(document).ready(function() {
                                 <td class="text-end">{{ number_format($sale->exenta, 2) }}</td>
                                 <td class="text-end">{{ number_format($sale->nosujeta, 2) }}</td>
                                 <td class="text-end">{{ number_format($sale->gravada, 2) }}</td>
+                                <td class="text-end">{{ number_format($sale->exportacion ?? 0, 2) }}</td>
                                 <td class="text-end">{{ number_format($sale->iva, 2) }}</td>
                                 <td class="text-end">{{ number_format($iva_retenido, 2) }}</td>
                                 <td class="text-end">{{ number_format($iva_percibido, 2) }}</td>
@@ -234,6 +239,7 @@ $(document).ready(function() {
                                     $tot_exentas += $sale->exenta;
                                     $tot_nosujetas += $sale->nosujeta;
                                     $tot_int_grav += $sale->gravada;
+                                    $tot_exportacion += $sale->exportacion ?? 0;
                                     $tot_debfiscal += $sale->iva;
                                     $tot_iva_retenido += $iva_retenido;
                                     $tot_iva_percibido += $iva_percibido;
@@ -249,10 +255,11 @@ $(document).ready(function() {
                     </tbody>
                     <tfoot class="table-dark">
                         <tr>
-                            <th colspan="5" class="text-end">TOTALES DEL MES</th>
+                            <th colspan="6" class="text-end">TOTALES DEL MES</th>
                             <th class="text-end">{{ number_format($tot_exentas, 2) }}</th>
                             <th class="text-end">{{ number_format($tot_nosujetas, 2) }}</th>
                             <th class="text-end">{{ number_format($tot_int_grav, 2) }}</th>
+                            <th class="text-end">{{ number_format($tot_exportacion, 2) }}</th>
                             <th class="text-end">{{ number_format($tot_debfiscal, 2) }}</th>
                             <th class="text-end">{{ number_format($tot_iva_retenido, 2) }}</th>
                             <th class="text-end">{{ number_format($tot_iva_percibido, 2) }}</th>
