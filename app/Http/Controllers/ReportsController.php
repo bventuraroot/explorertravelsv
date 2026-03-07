@@ -1638,18 +1638,19 @@ class ReportsController extends Controller
                 $html .= '<td>' . strtoupper($sale['nombre_completo'] ?? '') . '</td>';
             }
 
-            $html .= '<td>' . $sale['ncrC'] . '</td>';
+            $html .= '<td>' . preg_replace('/[^0-9]/', '', $sale['ncrC'] ?? '') . '</td>';
 
             if($sale['typesale']=='0'){
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
-                $html .= '<td>ANULADO</td>';
+                $html .= '<td>-</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
             } else {
                 $html .= '<td>' . ($sale['tipo_venta'] ?? 'PROPIA') . '</td>';
                 $iva_retenido = $sale['iva_retenido'] ?? 0;

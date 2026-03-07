@@ -271,10 +271,17 @@ $(document).ready(function() {
                                     {{ $sale->nombre_completo ?? '' }}
                                 @endif
                             </td>
-                            <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->ncrC }}</td>
-                            <td style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->typesale=='0' ? 'ANULADO' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
+                            <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ preg_replace('/[^0-9]/', '', $sale->ncrC ?? '') }}</td>
+                            <td style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->typesale=='0' ? '-' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
                             @if($sale->typesale=='0')
-                                <td colspan="8" class="text-center" style="font-size: 10px; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">ANULADO</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
                             @else
                                 @php
                                     $iva_retenido = $sale->iva_retenido ?? 0;
