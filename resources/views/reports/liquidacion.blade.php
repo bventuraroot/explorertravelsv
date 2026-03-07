@@ -274,18 +274,14 @@ $(document).ready(function() {
                             <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ preg_replace('/[^0-9]/', '', $sale->ncrC ?? '') }}</td>
                             <td style="font-size: 10px; text-align: center; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ $sale->typesale=='0' ? '-' : ($sale->tipo_venta ?? 'PROPIA') }}</td>
                             @if($sale->typesale=='0')
-                                @php
-                                    $iva_ret_anul = $sale->iva_retenido ?? 0;
-                                    $iva_perc_anul = $sale->iva_percibido ?? 0;
-                                @endphp
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->exenta ?? 0, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->nosujeta ?? 0, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->gravada ?? 0, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->exportacion ?? 0, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->iva ?? 0, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($iva_ret_anul, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($iva_perc_anul, 2) }}</td>
-                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">{{ number_format($sale->totalamount ?? 0, 2) }}</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
+                                <td style="font-size: 10px; text-align: right; padding-top: 0px; margin-top: 0px; padding-bottom: 0px; margin-bottom: 0px;">0.00</td>
                             @else
                                 @php
                                     $iva_retenido = $sale->iva_retenido ?? 0;

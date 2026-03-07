@@ -1642,14 +1642,15 @@ class ReportsController extends Controller
 
             if($sale['typesale']=='0'){
                 $html .= '<td>-</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exenta'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['nosujeta'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['gravada'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['exportacion'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva_retenido'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['iva_percibido'] ?? 0, 2, '.', '') . '</td>';
-                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale['totalamount'] ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">0.00</td>';
             } else {
                 $html .= '<td>' . ($sale['tipo_venta'] ?? 'PROPIA') . '</td>';
                 $iva_retenido = $sale['iva_retenido'] ?? 0;
