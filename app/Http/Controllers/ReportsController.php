@@ -2185,6 +2185,12 @@ class ReportsController extends Controller
                 $q->where('dte.codEstado', '=', '02')
                   ->orWhere('sales.typesale', '=', '0');
             })
+            // Excluir filas donde el CLQ existe pero su DTE tiene error (no confirmado y no anulado)
+            ->where(function ($q) {
+                $q->whereNull('clq.id')                          // Sin CLQ (Pendiente)
+                  ->orWhere('clq.typesale', '=', '0')            // CLQ anulado
+                  ->orWhere('dte_clq.codEstado', '=', '02');     // CLQ con DTE confirmado
+            })
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
             ->get();
@@ -2256,6 +2262,12 @@ class ReportsController extends Controller
             ->where(function ($q) {
                 $q->where('dte.codEstado', '=', '02')
                   ->orWhere('sales.typesale', '=', '0');
+            })
+            // Excluir filas donde el CLQ existe pero su DTE tiene error (no confirmado y no anulado)
+            ->where(function ($q) {
+                $q->whereNull('clq.id')                          // Sin CLQ (Pendiente)
+                  ->orWhere('clq.typesale', '=', '0')            // CLQ anulado
+                  ->orWhere('dte_clq.codEstado', '=', '02');     // CLQ con DTE confirmado
             })
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
