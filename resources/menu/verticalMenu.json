@@ -144,6 +144,11 @@
                     "slug": "report.liquidacion"
                 },
                 {
+                    "url": "/report/clq-detalle",
+                    "name": "Detalle Facturas por CLQ",
+                    "slug": "report.clqDetalle"
+                },
+                {
                     "url": "/report/purchases",
                     "name": "Compras",
                     "slug": "report.purchases"

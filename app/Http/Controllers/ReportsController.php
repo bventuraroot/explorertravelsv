@@ -2111,4 +2111,316 @@ class ReportsController extends Controller
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // REPORTE: DETALLE DE FACTURAS POR COMPROBANTE DE LIQUIDACIÓN (CLQ)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Mostrar la vista del reporte de detalle CLQ
+     */
+    public function clqDetalle()
+    {
+        return view('reports.clq-detalle');
+    }
+
+    /**
+     * Procesar búsqueda y devolver la vista con los datos
+     */
+    public function clqDetalleSearch(Request $request)
+    {
+        $Company = Company::find($request['company']);
+
+        $mesesDelAno = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+        // Subconsulta: un solo DTE de emisión por venta
+        $dteEmisionSub = DB::table('dte')
+            ->select('dte.sale_id','dte.id_doc','dte.codigoGeneracion','dte.selloRecibido','dte.fhRecibido','dte.json','dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01','05','06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
+            ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
+            ->select(
+                'sales.id AS correlativo',
+                'sales.typesale',
+                'sales.totalamount',
+                'clients.ncr AS ncrC',
+                'dte_emis.id_doc AS numeroControl',
+                'dte_emis.codigoGeneracion AS codigoGeneracion',
+                'dte_emis.selloRecibido AS selloRecibido'
+            )
+            ->selectRaw("CASE
+                WHEN dte_emis.fhRecibido IS NOT NULL
+                THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+                WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+                THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+                ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
+            END AS dateF")
+            ->selectRaw("CASE
+                WHEN clients.tpersona = 'J' THEN clients.comercial_name
+                WHEN clients.tpersona = 'N' THEN CONCAT_WS(' ', clients.firstname, clients.secondname, clients.firstlastname, clients.secondlastname)
+                ELSE ''
+            END AS nombre_completo")
+            ->where('sales.typedocument_id', '=', '2')
+            ->where(function ($q) {
+                $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
+            })
+            ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
+            ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
+            ->where('sales.company_id', '=', $request['company'])
+            ->orderBy('sales.id')
+            ->get();
+
+        // Para cada CLQ, cargar sus facturas relacionadas (salesdetails con clq_numero_documento)
+        foreach ($sales as $sale) {
+            $sale->facturas = DB::table('salesdetails')
+                ->leftJoin('providers', 'salesdetails.line_provider_id', '=', 'providers.id')
+                ->where('salesdetails.sale_id', $sale->correlativo)
+                ->whereNotNull('salesdetails.clq_numero_documento')
+                ->select(
+                    'salesdetails.clq_tipo_documento',
+                    'salesdetails.clq_tipo_generacion',
+                    'salesdetails.clq_numero_documento',
+                    'salesdetails.clq_fecha_generacion',
+                    'salesdetails.clq_observaciones',
+                    'salesdetails.pricesale',
+                    'salesdetails.exempt',
+                    'salesdetails.nosujeta',
+                    'salesdetails.detained13',
+                    'providers.razonsocial AS provider_name',
+                    'providers.nit AS provider_nit'
+                )
+                ->get();
+        }
+
+        $yearB   = $request['year'];
+        $period  = $request['period'];
+        $heading = $Company;
+
+        return view('reports.clq-detalle', compact('sales','heading','yearB','period','mesesDelAno'));
+    }
+
+    /**
+     * Exportar el reporte de detalle CLQ a Excel
+     */
+    public function clqDetalleExcel(Request $request)
+    {
+        $Company = Company::find($request['company']);
+
+        $mesesDelAno = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        $mesesMayus  = array_map('strtoupper', $mesesDelAno);
+
+        $tiposDoc = [
+            '01' => 'FCF', '03' => 'CCF', '04' => 'Nota Remisión',
+            '05' => 'Nota Crédito', '06' => 'Nota Débito',
+            '11' => 'FEX', '14' => 'FSE',
+        ];
+
+        $dteEmisionSub = DB::table('dte')
+            ->select('dte.sale_id','dte.id_doc','dte.codigoGeneracion','dte.selloRecibido','dte.fhRecibido','dte.json','dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01','05','06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
+            ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
+            ->select(
+                'sales.id AS correlativo',
+                'sales.typesale',
+                'sales.totalamount',
+                'clients.ncr AS ncrC',
+                'dte_emis.id_doc AS numeroControl',
+                'dte_emis.codigoGeneracion AS codigoGeneracion',
+                'dte_emis.selloRecibido AS selloRecibido'
+            )
+            ->selectRaw("CASE
+                WHEN dte_emis.fhRecibido IS NOT NULL
+                THEN DATE_FORMAT(dte_emis.fhRecibido, '%d/%m/%Y')
+                WHEN dte_emis.json IS NOT NULL AND JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi') IS NOT NULL
+                THEN DATE_FORMAT(STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(dte_emis.json, '$.identificacion.fecEmi')), '%Y-%m-%d'), '%d/%m/%Y')
+                ELSE DATE_FORMAT(sales.date, '%d/%m/%Y')
+            END AS dateF")
+            ->selectRaw("CASE
+                WHEN clients.tpersona = 'J' THEN clients.comercial_name
+                WHEN clients.tpersona = 'N' THEN CONCAT_WS(' ', clients.firstname, clients.secondname, clients.firstlastname, clients.secondlastname)
+                ELSE ''
+            END AS nombre_completo")
+            ->where('sales.typedocument_id', '=', '2')
+            ->where(function ($q) {
+                $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
+            })
+            ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
+            ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
+            ->where('sales.company_id', '=', $request['company'])
+            ->orderBy('sales.id')
+            ->get();
+
+        foreach ($sales as $sale) {
+            $sale->facturas = DB::table('salesdetails')
+                ->leftJoin('providers', 'salesdetails.line_provider_id', '=', 'providers.id')
+                ->where('salesdetails.sale_id', $sale->correlativo)
+                ->whereNotNull('salesdetails.clq_numero_documento')
+                ->select(
+                    'salesdetails.clq_tipo_documento',
+                    'salesdetails.clq_tipo_generacion',
+                    'salesdetails.clq_numero_documento',
+                    'salesdetails.clq_fecha_generacion',
+                    'salesdetails.clq_observaciones',
+                    'salesdetails.pricesale',
+                    'salesdetails.exempt',
+                    'salesdetails.nosujeta',
+                    'salesdetails.detained13',
+                    'providers.razonsocial AS provider_name',
+                    'providers.nit AS provider_nit'
+                )
+                ->get();
+        }
+
+        // ── Construir HTML para Excel ──────────────────────────────────────────
+        $html  = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        $html .= '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+        $html .= '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+        $html .= '<x:Name>Detalle CLQ</x:Name>';
+        $html .= '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
+        $html .= '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+        $html .= '<body><table border="1">';
+
+        // Encabezado general
+        $html .= '<tr><th colspan="19" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">DETALLE DE FACTURAS POR COMPROBANTE DE LIQUIDACIÓN</th></tr>';
+        $html .= '<tr><td colspan="19" style="text-align:center;">';
+        $html .= '<b>Empresa:</b> ' . $Company['name'] . ' &nbsp; <b>NRC:</b> ' . $Company['nrc'];
+        $html .= ' &nbsp; <b>MES:</b> ' . $mesesMayus[(int)$request['period'] - 1];
+        $html .= ' &nbsp; <b>AÑO:</b> ' . $request['year'];
+        $html .= '</td></tr>';
+
+        // Cabecera de columnas
+        $html .= '<tr style="background:#c9daf8; font-weight:bold; text-align:center;">';
+        // Columnas del CLQ
+        $html .= '<th>N°</th>';
+        $html .= '<th>FECHA CLQ</th>';
+        $html .= '<th>CLIENTE</th>';
+        $html .= '<th>NRC</th>';
+        $html .= '<th>ESTADO</th>';
+        $html .= '<th>Nº CONTROL DTE</th>';
+        $html .= '<th>CÓD. GENERACIÓN</th>';
+        $html .= '<th>SELLO RECEPCIÓN</th>';
+        $html .= '<th>TOTAL CLQ</th>';
+        // Columnas de la factura relacionada
+        $html .= '<th>TIPO DOC</th>';
+        $html .= '<th>TIPO GEN.</th>';
+        $html .= '<th>Nº DOCUMENTO RELACIONADO</th>';
+        $html .= '<th>FECHA FACTURA</th>';
+        $html .= '<th>OBSERVACIONES</th>';
+        $html .= '<th>GRAVADAS</th>';
+        $html .= '<th>EXENTAS</th>';
+        $html .= '<th>NO SUJETAS</th>';
+        $html .= '<th>IVA</th>';
+        $html .= '<th>PROVEEDOR</th>';
+        $html .= '</tr>';
+
+        $i = 1;
+        $tot_clq = 0;
+        $tot_gravadas = 0;
+        $tot_exentas = 0;
+        $tot_nosujetas = 0;
+        $tot_iva = 0;
+
+        foreach ($sales as $sale) {
+            $estado   = $sale->typesale == '0' ? 'ANULADO' : 'ACTIVO';
+            $colorFil = $sale->typesale == '0' ? 'color:red;font-weight:bold;' : '';
+            $nrcLimpio = preg_replace('/[^0-9]/', '', $sale->ncrC ?? '');
+
+            if ($sale->facturas->isEmpty()) {
+                // CLQ sin facturas relacionadas
+                $html .= '<tr>';
+                $html .= '<td>' . $i . '</td>';
+                $html .= '<td>' . ($sale->dateF ?? '-') . '</td>';
+                $html .= '<td style="' . $colorFil . '">' . ($sale->typesale == '0' ? 'ANULADO' : strtoupper($sale->nombre_completo ?? '')) . '</td>';
+                $html .= '<td>' . $nrcLimpio . '</td>';
+                $html .= '<td style="' . $colorFil . '">' . $estado . '</td>';
+                $html .= '<td>' . ($sale->numeroControl ?? '-') . '</td>';
+                $html .= '<td>' . ($sale->codigoGeneracion ?? '-') . '</td>';
+                $html .= '<td>' . ($sale->selloRecibido ?? '-') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale->totalamount ?? 0, 2, '.', '') . '</td>';
+                $html .= '<td colspan="10">-</td>';
+                $html .= '</tr>';
+                if ($sale->typesale != '0') $tot_clq += $sale->totalamount ?? 0;
+                $i++;
+                continue;
+            }
+
+            $firstFac = true;
+            foreach ($sale->facturas as $fac) {
+                $tipoCod  = $fac->clq_tipo_documento ?? '';
+                $tipoDesc = ($tiposDoc[$tipoCod] ?? $tipoCod);
+                $tipoGen  = $fac->clq_tipo_generacion == '1' ? 'Físico' : ($fac->clq_tipo_generacion == '2' ? 'Electrónico' : ($fac->clq_tipo_generacion ?? '-'));
+                $gravada  = floatval($fac->pricesale ?? 0);
+                $exenta   = floatval($fac->exempt ?? 0);
+                $nosujeta = floatval($fac->nosujeta ?? 0);
+                $iva      = floatval($fac->detained13 ?? 0);
+
+                $html .= '<tr>';
+
+                if ($firstFac) {
+                    $html .= '<td>' . $i . '</td>';
+                    $html .= '<td>' . ($sale->dateF ?? '-') . '</td>';
+                    $html .= '<td style="' . $colorFil . '">' . ($sale->typesale == '0' ? 'ANULADO' : strtoupper($sale->nombre_completo ?? '')) . '</td>';
+                    $html .= '<td>' . $nrcLimpio . '</td>';
+                    $html .= '<td style="' . $colorFil . '">' . $estado . '</td>';
+                    $html .= '<td>' . ($sale->numeroControl ?? '-') . '</td>';
+                    $html .= '<td>' . ($sale->codigoGeneracion ?? '-') . '</td>';
+                    $html .= '<td>' . ($sale->selloRecibido ?? '-') . '</td>';
+                    $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($sale->totalamount ?? 0, 2, '.', '') . '</td>';
+                    if ($sale->typesale != '0') $tot_clq += $sale->totalamount ?? 0;
+                    $firstFac = false;
+                } else {
+                    $html .= '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';
+                }
+
+                $html .= '<td>' . htmlspecialchars($tipoDesc) . '</td>';
+                $html .= '<td>' . htmlspecialchars($tipoGen) . '</td>';
+                $html .= '<td>' . htmlspecialchars($fac->clq_numero_documento ?? '-') . '</td>';
+                $html .= '<td>' . ($fac->clq_fecha_generacion ? date('d/m/Y', strtotime($fac->clq_fecha_generacion)) : '-') . '</td>';
+                $html .= '<td>' . htmlspecialchars($fac->clq_observaciones ?? '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($gravada, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($exenta, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($nosujeta, 2, '.', '') . '</td>';
+                $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($iva, 2, '.', '') . '</td>';
+                $html .= '<td>' . htmlspecialchars($fac->provider_name ?? '-') . '</td>';
+                $html .= '</tr>';
+
+                if ($sale->typesale != '0') {
+                    $tot_gravadas += $gravada;
+                    $tot_exentas  += $exenta;
+                    $tot_nosujetas += $nosujeta;
+                    $tot_iva      += $iva;
+                }
+            }
+            $i++;
+        }
+
+        // Fila de totales
+        $html .= '<tr style="font-weight:bold; background:#c9daf8;">';
+        $html .= '<td colspan="8" style="text-align:right;">TOTALES DEL MES</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_clq, 2, '.', '') . '</td>';
+        $html .= '<td colspan="5"></td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_gravadas, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_exentas, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_nosujetas, 2, '.', '') . '</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva, 2, '.', '') . '</td>';
+        $html .= '<td></td>';
+        $html .= '</tr>';
+
+        $html .= '</table></body></html>';
+
+        $filename = 'Detalle_CLQ_' . $mesesDelAno[(int)$request['period'] - 1] . '_' . $request['year'] . '.xls';
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
 }

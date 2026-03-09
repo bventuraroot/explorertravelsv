@@ -257,6 +257,9 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::post('liquidacionsearch', [ReportsController::class, 'liquidacionsearch'])->name('liquidacionsearch');
         Route::post('liquidacion-excel', [ReportsController::class, 'liquidacionExcel'])->name('liquidacion.excel');
         Route::post('liquidacion-merge-pdf', [ReportsController::class, 'liquidacionMergePdf'])->name('liquidacion.merge-pdf');
+        Route::get('clq-detalle', [ReportsController::class, 'clqDetalle'])->name('clqDetalle');
+        Route::post('clq-detalle-search', [ReportsController::class, 'clqDetalleSearch'])->name('clqDetalle.search');
+        Route::post('clq-detalle-excel', [ReportsController::class, 'clqDetalleExcel'])->name('clqDetalle.excel');
     });
 
 Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){
