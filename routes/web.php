@@ -260,6 +260,9 @@ Route::group(['prefix' => 'report', 'as' => 'report.'], function(){
         Route::get('clq-detalle', [ReportsController::class, 'clqDetalle'])->name('clqDetalle');
         Route::post('clq-detalle-search', [ReportsController::class, 'clqDetalleSearch'])->name('clqDetalle.search');
         Route::post('clq-detalle-excel', [ReportsController::class, 'clqDetalleExcel'])->name('clqDetalle.excel');
+        Route::get('facturas-terceros', [ReportsController::class, 'facturasTerceros'])->name('facturasTerceros');
+        Route::post('facturas-terceros-search', [ReportsController::class, 'facturasTercerosSearch'])->name('facturasTerceros.search');
+        Route::post('facturas-terceros-excel', [ReportsController::class, 'facturasTercerosExcel'])->name('facturasTerceros.excel');
     });
 
 Route::group(['prefix' => 'factmh', 'as' => 'factmh.'], function(){

@@ -191,6 +191,16 @@ class PermissionController extends Controller
                         "url" => "/report/ventas-terceros",
                         "name" => "Ventas a Terceros",
                         "slug" => "report.ventasTerceros"
+                    ],
+                    [
+                        "url" => "/report/clq-detalle",
+                        "name" => "Detalle Facturas por CLQ",
+                        "slug" => "report.clqDetalle"
+                    ],
+                    [
+                        "url" => "/report/facturas-terceros",
+                        "name" => "Facturas Terceros (Mandante)",
+                        "slug" => "report.facturasTerceros"
                     ]
                 ]
             ],

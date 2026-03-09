@@ -149,6 +149,11 @@
                     "slug": "report.clqDetalle"
                 },
                 {
+                    "url": "/report/facturas-terceros",
+                    "name": "Facturas Terceros (Mandante)",
+                    "slug": "report.facturasTerceros"
+                },
+                {
                     "url": "/report/purchases",
                     "name": "Compras",
                     "slug": "report.purchases"

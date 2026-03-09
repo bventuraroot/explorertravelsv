@@ -2113,6 +2113,218 @@ class ReportsController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // REPORTE: FACTURAS TERCEROS (MANDANTE) CON CLQ RELACIONADO
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Vista del reporte Facturas Terceros (Mandante)
+     */
+    public function facturasTerceros()
+    {
+        return view('reports.facturas-terceros');
+    }
+
+    /**
+     * Buscar y mostrar el reporte Facturas Terceros (Mandante)
+     */
+    public function facturasTercerosSearch(Request $request)
+    {
+        $Company  = Company::find($request['company']);
+        $mesesDelAno = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+        $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
+            ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
+            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
+            // JOIN para encontrar el CLQ que liquida esta venta
+            ->leftJoin('salesdetails as sd_clq', function ($join) {
+                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
+                     ->whereNotNull('sd_clq.clq_numero_documento');
+            })
+            ->leftJoin('sales as clq', function ($join) {
+                $join->on('sd_clq.sale_id', '=', 'clq.id')
+                     ->where('clq.typedocument_id', '=', 2);
+            })
+            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            ->select(
+                'sales.id AS sale_id',
+                'sales.totalamount',
+                'providers.razonsocial AS mandante_nombre',
+                'providers.nit AS mandante_nit',
+                'providers.ncr AS mandante_ncr',
+                'typedocuments.description AS tipo_documento_desc',
+                'typedocuments.codemh AS tipo_documento_cod',
+                'dte.id_doc AS numero_control',
+                'dte.codigoGeneracion AS codigo_generacion',
+                'dte.selloRecibido AS sello_recibido',
+                'dte_clq.id_doc AS clq_numero_control',
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+            )
+            ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
+            ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
+            ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
+            ->selectRaw("CASE WHEN clq.id IS NOT NULL THEN 'Liquidado' ELSE 'Pendiente' END AS estado_liquidacion")
+            ->where('sales.company_id', '=', $request['company'])
+            ->whereNotNull('sales.provider_id')
+            ->where('sales.state', '=', 1)
+            ->where('sales.typedocument_id', '!=', 2)
+            ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
+            ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
+            ->where(function ($q) {
+                $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
+            })
+            ->orderBy('sales.date', 'asc')
+            ->orderBy('sales.id', 'asc')
+            ->get();
+
+        $yearB   = $request['year'];
+        $period  = $request['period'];
+        $heading = $Company;
+
+        return view('reports.facturas-terceros', compact('sales','heading','yearB','period','mesesDelAno'));
+    }
+
+    /**
+     * Exportar reporte Facturas Terceros (Mandante) a Excel
+     */
+    public function facturasTercerosExcel(Request $request)
+    {
+        $Company = Company::find($request['company']);
+        $mesesDelAno = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        $mesesMayus  = array_map('strtoupper', $mesesDelAno);
+
+        $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
+            ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
+            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
+            ->leftJoin('salesdetails as sd_clq', function ($join) {
+                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
+                     ->whereNotNull('sd_clq.clq_numero_documento');
+            })
+            ->leftJoin('sales as clq', function ($join) {
+                $join->on('sd_clq.sale_id', '=', 'clq.id')
+                     ->where('clq.typedocument_id', '=', 2);
+            })
+            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            ->select(
+                'sales.id AS sale_id',
+                'sales.totalamount',
+                'providers.razonsocial AS mandante_nombre',
+                'providers.nit AS mandante_nit',
+                'providers.ncr AS mandante_ncr',
+                'typedocuments.description AS tipo_documento_desc',
+                'typedocuments.codemh AS tipo_documento_cod',
+                'dte.id_doc AS numero_control',
+                'dte.codigoGeneracion AS codigo_generacion',
+                'dte.selloRecibido AS sello_recibido',
+                'dte_clq.id_doc AS clq_numero_control',
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+            )
+            ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
+            ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
+            ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
+            ->selectRaw("CASE WHEN clq.id IS NOT NULL THEN 'Liquidado' ELSE 'Pendiente' END AS estado_liquidacion")
+            ->where('sales.company_id', '=', $request['company'])
+            ->whereNotNull('sales.provider_id')
+            ->where('sales.state', '=', 1)
+            ->where('sales.typedocument_id', '!=', 2)
+            ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
+            ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
+            ->where(function ($q) {
+                $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
+            })
+            ->orderBy('sales.date', 'asc')
+            ->orderBy('sales.id', 'asc')
+            ->get();
+
+        // Construir HTML para Excel
+        $html  = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        $html .= '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+        $html .= '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+        $html .= '<x:Name>Facturas Terceros</x:Name>';
+        $html .= '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
+        $html .= '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+        $html .= '<body><table border="1">';
+
+        // Encabezado del reporte
+        $html .= '<tr><th colspan="14" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">FACTURAS TERCEROS - MANDANTE/MANDATARIO</th></tr>';
+        $html .= '<tr><td colspan="14" style="text-align:center;">';
+        $html .= '<b>Empresa (Mandatario):</b> ' . ($Company['name'] ?? '') . '&nbsp;&nbsp;';
+        $html .= '<b>NIT:</b> ' . ($Company['nit'] ?? '') . '&nbsp;&nbsp;';
+        $html .= '<b>MES:</b> ' . $mesesMayus[(int)$request['period'] - 1] . '&nbsp;&nbsp;';
+        $html .= '<b>AÑO:</b> ' . $request['year'];
+        $html .= '</td></tr>';
+
+        // Fila de agrupación de encabezados
+        $html .= '<tr style="background:#c9daf8; font-weight:bold; text-align:center;">';
+        $html .= '<th rowspan="2">N°</th>';
+        $html .= '<th rowspan="2">NIT MANDANTE</th>';
+        $html .= '<th rowspan="2">NRC MANDANTE</th>';
+        $html .= '<th rowspan="2">NOMBRE / RAZÓN SOCIAL MANDANTE</th>';
+        $html .= '<th rowspan="2">FECHA EMISIÓN</th>';
+        $html .= '<th rowspan="2">TIPO DOC.</th>';
+        $html .= '<th rowspan="2">SERIE</th>';
+        $html .= '<th rowspan="2">Nº RESOLUCIÓN (CONTROL DTE)</th>';
+        $html .= '<th rowspan="2">Nº DOCUMENTO (CÓD. GENERACIÓN)</th>';
+        $html .= '<th rowspan="2">IVA DE LA OPERACIÓN</th>';
+        $html .= '<th colspan="3" style="background:#a4c2f4;">COMPROBANTE DE LIQUIDACIÓN</th>';
+        $html .= '<th rowspan="2">ESTADO</th>';
+        $html .= '</tr>';
+        $html .= '<tr style="background:#a4c2f4; font-weight:bold; text-align:center;">';
+        $html .= '<th>RESOLUCIÓN CLQ (CONTROL)</th>';
+        $html .= '<th>Nº COMPROBANTE (CÓD. GEN.)</th>';
+        $html .= '<th>FECHA CLQ</th>';
+        $html .= '</tr>';
+
+        $i = 1;
+        $tot_iva = 0;
+
+        foreach ($sales as $sale) {
+            $nrcLimpio = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
+            $tipoCod   = $sale->tipo_documento_cod ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '') : ($sale->tipo_documento_desc ?? '-');
+
+            $html .= '<tr>';
+            $html .= '<td>' . $i . '</td>';
+            $html .= '<td>' . ($sale->mandante_nit ?? '-') . '</td>';
+            $html .= '<td>' . $nrcLimpio . '</td>';
+            $html .= '<td>' . ($sale->mandante_nombre ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->fecha_emision ?? '-') . '</td>';
+            $html .= '<td>' . $tipoCod . '</td>';
+            $html .= '<td>-</td>'; // Serie (N/A electrónico)
+            $html .= '<td>' . ($sale->numero_control ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->codigo_generacion ?? '-') . '</td>';
+            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->iva_operacion ?? 0), 2, '.', '') . '</td>';
+            $html .= '<td>' . ($sale->clq_numero_control ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->clq_codigo_generacion ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->clq_fecha ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->estado_liquidacion ?? '-') . '</td>';
+            $html .= '</tr>';
+
+            $tot_iva += floatval($sale->iva_operacion ?? 0);
+            $i++;
+        }
+
+        // Totales
+        $html .= '<tr style="font-weight:bold; background:#c9daf8;">';
+        $html .= '<td colspan="9" style="text-align:right;">TOTALES DEL MES</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva, 2, '.', '') . '</td>';
+        $html .= '<td colspan="4"></td>';
+        $html .= '</tr>';
+
+        $html .= '</table></body></html>';
+
+        $filename = 'Facturas_Terceros_' . $mesesDelAno[(int)$request['period'] - 1] . '_' . $request['year'] . '.xls';
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // REPORTE: DETALLE DE FACTURAS POR COMPROBANTE DE LIQUIDACIÓN (CLQ)
     // ─────────────────────────────────────────────────────────────────────────
 
