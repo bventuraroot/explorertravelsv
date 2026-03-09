@@ -237,8 +237,6 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">
                         @if($sale->estado_liquidacion === 'Liquidado')
                             <span class="badge bg-success">Liquidado</span>
-                        @elseif($sale->estado_liquidacion === 'CLQ Anulado')
-                            <span class="badge bg-danger">CLQ Anulado</span>
                         @else
                             <span class="badge bg-warning text-dark">Pendiente</span>
                         @endif

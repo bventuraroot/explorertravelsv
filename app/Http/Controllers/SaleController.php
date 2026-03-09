@@ -130,8 +130,25 @@ class SaleController extends Controller
         if ($request->filled('correlativo') && trim($request->correlativo) != '') {
             $correlativo = trim($request->correlativo);
             $sales->where(function($query) use ($correlativo) {
+                // Buscar en el padre directamente
                 $query->where('sales.id', 'LIKE', "%{$correlativo}%")
-                      ->orWhere('dte_emis.id_doc', 'LIKE', "%{$correlativo}%");
+                      ->orWhere('dte_emis.id_doc', 'LIKE', "%{$correlativo}%")
+                      // Si algún hijo coincide por su ID, mostrar el padre
+                      ->orWhereExists(function($sub) use ($correlativo) {
+                          $sub->select(DB::raw(1))
+                              ->from('sales as children_corr')
+                              ->whereColumn('children_corr.parent_sale_id', 'sales.id')
+                              ->where('children_corr.id', 'LIKE', "%{$correlativo}%");
+                      })
+                      // Si algún hijo coincide por su correlativo DTE, mostrar el padre
+                      ->orWhereExists(function($sub) use ($correlativo) {
+                          $sub->select(DB::raw(1))
+                              ->from('sales as children_corr')
+                              ->join('dte as dte_children_corr', 'dte_children_corr.sale_id', '=', 'children_corr.id')
+                              ->whereColumn('children_corr.parent_sale_id', 'sales.id')
+                              ->whereIn('dte_children_corr.codTransaction', ['01', '05', '06'])
+                              ->where('dte_children_corr.id_doc', 'LIKE', "%{$correlativo}%");
+                      });
             });
         }
 

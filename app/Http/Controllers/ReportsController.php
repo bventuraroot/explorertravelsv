@@ -1816,23 +1816,38 @@ class ReportsController extends Controller
     {
         $Company = Company::find($request['company']);
 
+        // Subconsulta DTE de emisión de la factura (evita duplicados por reenvíos)
+        $dteFacSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.estadoHacienda', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta DTE del CLQ (evita duplicados)
+        $dteClqFacSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: por cada factura, obtener el CLQ ACTIVO (no anulado) más reciente que la liquida
+        // Esto evita duplicados cuando un CLQ se anula y se crea uno nuevo para las mismas facturas
+        $sdClqActivoSub = DB::table('salesdetails as sd_inner')
+            ->select('sd_inner.clq_numero_documento', DB::raw('MAX(sd_inner.sale_id) AS clq_sale_id'))
+            ->join('sales as s_inner', 's_inner.id', '=', 'sd_inner.sale_id')
+            ->where('s_inner.typedocument_id', '=', 2)
+            ->where('s_inner.state', '!=', 0)
+            ->where('s_inner.typesale', '!=', '0') // Solo CLQs activos (excluye anulados)
+            ->whereNotNull('sd_inner.clq_numero_documento')
+            ->groupBy('sd_inner.clq_numero_documento');
+
         // Query base: ventas con provider_id (ventas a terceros)
         $query = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
-            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoinSub($dteFacSub, 'dte', 'dte.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            // LEFT JOIN para encontrar el CLQ que liquida esta venta
-            // La relación es: dte.codigoGeneracion = salesdetails.clq_numero_documento
-            ->leftJoin('salesdetails as sd_clq', function($join) {
-                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
-                     ->whereNotNull('sd_clq.clq_numero_documento');
-            })
-            ->leftJoin('sales as clq', function($join) {
-                $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2) // CLQ
-                     ->where('clq.state', '!=', 0); // No anulado
-            })
-            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            // Subconsulta: un único CLQ activo por factura (resuelve duplicados al anular y recrear CLQ)
+            ->leftJoinSub($sdClqActivoSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+            ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
+            ->leftJoinSub($dteClqFacSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
                 'sales.id AS sale_id',
                 'sales.date',
@@ -1854,9 +1869,9 @@ class ReportsController extends Controller
                 ELSE 'N/A'
             END AS cliente_nombre")
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_formato")
-            // Estado de liquidación
+            // Estado de liquidación: solo "Liquidado" si el CLQ activo tiene DTE confirmado
             ->selectRaw("CASE
-                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
             END AS estado_liquidacion")
             ->selectRaw("clq.id AS clq_id")
@@ -2133,21 +2148,35 @@ class ReportsController extends Controller
         $mesesDelAno = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+        // Subconsulta: un único DTE de emisión por factura (evita duplicados por reenvíos)
+        $dteFacturaSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
+        $dteCLQSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
+        $sdClqSub = DB::table('salesdetails as sd_inner')
+            ->select('sd_inner.clq_numero_documento', DB::raw('MAX(sd_inner.sale_id) AS clq_sale_id'))
+            ->join('sales as s_inner', 's_inner.id', '=', 'sd_inner.sale_id')
+            ->where('s_inner.typedocument_id', '=', 2)
+            ->where('s_inner.state', '!=', 0)
+            ->where('s_inner.typesale', '!=', '0') // Solo CLQs activos (excluye anulados)
+            ->whereNotNull('sd_inner.clq_numero_documento')
+            ->groupBy('sd_inner.clq_numero_documento');
+
         $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
-            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoinSub($dteFacturaSub, 'dte_fact', 'dte_fact.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            // JOIN para encontrar el CLQ que liquida esta venta (excluir CLQs con error: state=0)
-            ->leftJoin('salesdetails as sd_clq', function ($join) {
-                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
-                     ->whereNotNull('sd_clq.clq_numero_documento');
-            })
-            ->leftJoin('sales as clq', function ($join) {
-                $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2)
-                     ->where('clq.state', '!=', 0); // Excluir CLQs con error
-            })
-            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            ->leftJoinSub($sdClqSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+            ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
+            ->leftJoinSub($dteCLQSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
                 'sales.id AS sale_id',
                 'sales.totalamount',
@@ -2156,41 +2185,30 @@ class ReportsController extends Controller
                 'providers.ncr AS mandante_ncr',
                 'typedocuments.description AS tipo_documento_desc',
                 'typedocuments.codemh AS tipo_documento_cod',
-                'dte.id_doc AS numero_control',
-                'dte.codigoGeneracion AS codigo_generacion',
-                'dte.selloRecibido AS sello_recibido',
+                'dte_fact.id_doc AS numero_control',
+                'dte_fact.codigoGeneracion AS codigo_generacion',
+                'dte_fact.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
-                'clq.typesale AS clq_typesale'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
             ->selectRaw("CASE
-                WHEN clq.id IS NOT NULL AND clq.typesale = '0' THEN 'CLQ Anulado'
-                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
             END AS estado_liquidacion")
             ->where('sales.company_id', '=', $request['company'])
             ->whereNotNull('sales.provider_id')
             ->where('sales.state', '=', 1)
+            ->where('sales.typesale', '!=', '0')  // Solo facturas activas (no anuladas)
             ->where('sales.typedocument_id', '!=', 2)
             ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
             ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
             ->where(function ($q) {
                 $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
             })
-            // Solo confirmados (DTE aceptado) o anulados; excluir errores
-            ->where(function ($q) {
-                $q->where('dte.codEstado', '=', '02')
-                  ->orWhere('sales.typesale', '=', '0');
-            })
-            // Excluir filas donde el CLQ existe pero su DTE tiene error (no confirmado y no anulado)
-            ->where(function ($q) {
-                $q->whereNull('clq.id')                          // Sin CLQ (Pendiente)
-                  ->orWhere('clq.typesale', '=', '0')            // CLQ anulado
-                  ->orWhere('dte_clq.codEstado', '=', '02');     // CLQ con DTE confirmado
-            })
+            ->where('dte_fact.codEstado', '=', '02') // Solo DTE confirmado
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
             ->get();
@@ -2212,20 +2230,35 @@ class ReportsController extends Controller
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
         $mesesMayus  = array_map('strtoupper', $mesesDelAno);
 
+        // Subconsulta: un único DTE de emisión por factura (evita duplicados por reenvíos)
+        $dteFacturaSubExc = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
+        $dteCLQSubExc = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
+        $sdClqSubExc = DB::table('salesdetails as sd_inner')
+            ->select('sd_inner.clq_numero_documento', DB::raw('MAX(sd_inner.sale_id) AS clq_sale_id'))
+            ->join('sales as s_inner', 's_inner.id', '=', 'sd_inner.sale_id')
+            ->where('s_inner.typedocument_id', '=', 2)
+            ->where('s_inner.state', '!=', 0)
+            ->where('s_inner.typesale', '!=', '0') // Solo CLQs activos (excluye anulados)
+            ->whereNotNull('sd_inner.clq_numero_documento')
+            ->groupBy('sd_inner.clq_numero_documento');
+
         $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
-            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoinSub($dteFacturaSubExc, 'dte_fact', 'dte_fact.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            ->leftJoin('salesdetails as sd_clq', function ($join) {
-                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
-                     ->whereNotNull('sd_clq.clq_numero_documento');
-            })
-            ->leftJoin('sales as clq', function ($join) {
-                $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2)
-                     ->where('clq.state', '!=', 0); // Excluir CLQs con error
-            })
-            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            ->leftJoinSub($sdClqSubExc, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+            ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
+            ->leftJoinSub($dteCLQSubExc, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
                 'sales.id AS sale_id',
                 'sales.totalamount',
@@ -2234,41 +2267,30 @@ class ReportsController extends Controller
                 'providers.ncr AS mandante_ncr',
                 'typedocuments.description AS tipo_documento_desc',
                 'typedocuments.codemh AS tipo_documento_cod',
-                'dte.id_doc AS numero_control',
-                'dte.codigoGeneracion AS codigo_generacion',
-                'dte.selloRecibido AS sello_recibido',
+                'dte_fact.id_doc AS numero_control',
+                'dte_fact.codigoGeneracion AS codigo_generacion',
+                'dte_fact.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
-                'clq.typesale AS clq_typesale'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
             ->selectRaw("CASE
-                WHEN clq.id IS NOT NULL AND clq.typesale = '0' THEN 'CLQ Anulado'
-                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
             END AS estado_liquidacion")
             ->where('sales.company_id', '=', $request['company'])
             ->whereNotNull('sales.provider_id')
             ->where('sales.state', '=', 1)
+            ->where('sales.typesale', '!=', '0')  // Solo facturas activas (no anuladas)
             ->where('sales.typedocument_id', '!=', 2)
             ->whereRaw('YEAR(sales.date) = ?', [$request['year']])
             ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
             ->where(function ($q) {
                 $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
             })
-            // Solo confirmados (DTE aceptado) o anulados; excluir errores
-            ->where(function ($q) {
-                $q->where('dte.codEstado', '=', '02')
-                  ->orWhere('sales.typesale', '=', '0');
-            })
-            // Excluir filas donde el CLQ existe pero su DTE tiene error (no confirmado y no anulado)
-            ->where(function ($q) {
-                $q->whereNull('clq.id')                          // Sin CLQ (Pendiente)
-                  ->orWhere('clq.typesale', '=', '0')            // CLQ anulado
-                  ->orWhere('dte_clq.codEstado', '=', '02');     // CLQ con DTE confirmado
-            })
+            ->where('dte_fact.codEstado', '=', '02') // Solo DTE confirmado
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
             ->get();
