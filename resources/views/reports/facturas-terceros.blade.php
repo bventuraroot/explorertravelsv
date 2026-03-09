@@ -219,7 +219,6 @@ $(document).ready(function() {
                                    : ($sale->tipo_documento_desc ?? '-');
                     $iva       = floatval($sale->iva_operacion ?? 0);
                     $tot_iva  += $iva;
-                    $liquidado = $sale->estado_liquidacion === 'Liquidado';
                 @endphp
                 <tr>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">{{ $i }}</td>
@@ -236,8 +235,10 @@ $(document).ready(function() {
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->clq_codigo_generacion ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap;">{{ $sale->clq_fecha ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">
-                        @if($liquidado)
+                        @if($sale->estado_liquidacion === 'Liquidado')
                             <span class="badge bg-success">Liquidado</span>
+                        @elseif($sale->estado_liquidacion === 'CLQ Anulado')
+                            <span class="badge bg-danger">CLQ Anulado</span>
                         @else
                             <span class="badge bg-warning text-dark">Pendiente</span>
                         @endif

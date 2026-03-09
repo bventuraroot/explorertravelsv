@@ -2137,14 +2137,15 @@ class ReportsController extends Controller
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
             ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            // JOIN para encontrar el CLQ que liquida esta venta
+            // JOIN para encontrar el CLQ que liquida esta venta (excluir CLQs con error: state=0)
             ->leftJoin('salesdetails as sd_clq', function ($join) {
                 $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
                      ->whereNotNull('sd_clq.clq_numero_documento');
             })
             ->leftJoin('sales as clq', function ($join) {
                 $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2);
+                     ->where('clq.typedocument_id', '=', 2)
+                     ->where('clq.state', '!=', 0); // Excluir CLQs con error
             })
             ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
             ->select(
@@ -2159,12 +2160,17 @@ class ReportsController extends Controller
                 'dte.codigoGeneracion AS codigo_generacion',
                 'dte.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
+                'clq.typesale AS clq_typesale'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
-            ->selectRaw("CASE WHEN clq.id IS NOT NULL THEN 'Liquidado' ELSE 'Pendiente' END AS estado_liquidacion")
+            ->selectRaw("CASE
+                WHEN clq.id IS NOT NULL AND clq.typesale = '0' THEN 'CLQ Anulado'
+                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                ELSE 'Pendiente'
+            END AS estado_liquidacion")
             ->where('sales.company_id', '=', $request['company'])
             ->whereNotNull('sales.provider_id')
             ->where('sales.state', '=', 1)
@@ -2205,7 +2211,8 @@ class ReportsController extends Controller
             })
             ->leftJoin('sales as clq', function ($join) {
                 $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2);
+                     ->where('clq.typedocument_id', '=', 2)
+                     ->where('clq.state', '!=', 0); // Excluir CLQs con error
             })
             ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
             ->select(
@@ -2220,12 +2227,17 @@ class ReportsController extends Controller
                 'dte.codigoGeneracion AS codigo_generacion',
                 'dte.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
+                'clq.typesale AS clq_typesale'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
-            ->selectRaw("CASE WHEN clq.id IS NOT NULL THEN 'Liquidado' ELSE 'Pendiente' END AS estado_liquidacion")
+            ->selectRaw("CASE
+                WHEN clq.id IS NOT NULL AND clq.typesale = '0' THEN 'CLQ Anulado'
+                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                ELSE 'Pendiente'
+            END AS estado_liquidacion")
             ->where('sales.company_id', '=', $request['company'])
             ->whereNotNull('sales.provider_id')
             ->where('sales.state', '=', 1)
@@ -2284,6 +2296,14 @@ class ReportsController extends Controller
         foreach ($sales as $sale) {
             $nrcLimpio = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
             $tipoCod   = $sale->tipo_documento_cod ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '') : ($sale->tipo_documento_desc ?? '-');
+            $estado    = $sale->estado_liquidacion ?? 'Pendiente';
+
+            $colorEstado = '';
+            if ($estado === 'CLQ Anulado') {
+                $colorEstado = 'color:red; font-weight:bold;';
+            } elseif ($estado === 'Pendiente') {
+                $colorEstado = 'color:#b45309; font-weight:bold;';
+            }
 
             $html .= '<tr>';
             $html .= '<td>' . $i . '</td>';
@@ -2292,14 +2312,14 @@ class ReportsController extends Controller
             $html .= '<td>' . ($sale->mandante_nombre ?? '-') . '</td>';
             $html .= '<td>' . ($sale->fecha_emision ?? '-') . '</td>';
             $html .= '<td>' . $tipoCod . '</td>';
-            $html .= '<td>-</td>'; // Serie (N/A electrónico)
+            $html .= '<td>-</td>';
             $html .= '<td>' . ($sale->numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->codigo_generacion ?? '-') . '</td>';
             $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->iva_operacion ?? 0), 2, '.', '') . '</td>';
             $html .= '<td>' . ($sale->clq_numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_codigo_generacion ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_fecha ?? '-') . '</td>';
-            $html .= '<td>' . ($sale->estado_liquidacion ?? '-') . '</td>';
+            $html .= '<td style="' . $colorEstado . '">' . $estado . '</td>';
             $html .= '</tr>';
 
             $tot_iva += floatval($sale->iva_operacion ?? 0);
