@@ -2180,6 +2180,11 @@ class ReportsController extends Controller
             ->where(function ($q) {
                 $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
             })
+            // Solo confirmados (DTE aceptado) o anulados; excluir errores
+            ->where(function ($q) {
+                $q->where('dte.codEstado', '=', '02')
+                  ->orWhere('sales.typesale', '=', '0');
+            })
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
             ->get();
@@ -2246,6 +2251,11 @@ class ReportsController extends Controller
             ->whereRaw('MONTH(sales.date) = ?', [$request['period']])
             ->where(function ($q) {
                 $q->whereNull('sales.is_parent')->orWhere('sales.is_parent', 0);
+            })
+            // Solo confirmados (DTE aceptado) o anulados; excluir errores
+            ->where(function ($q) {
+                $q->where('dte.codEstado', '=', '02')
+                  ->orWhere('sales.typesale', '=', '0');
             })
             ->orderBy('sales.date', 'asc')
             ->orderBy('sales.id', 'asc')
