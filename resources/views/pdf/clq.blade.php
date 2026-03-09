@@ -289,7 +289,7 @@
                 <th style="padding: 8px 4px; font-size: 10px; font-weight: bold; width: 11%; color: #000000;">Ventas Gravadas</th>
             </tr>
         </thead>
-        <tbody>+-
+        <tbody>
             @foreach ($detalle as $d)
             <tr style="background-color: {{ $loop->index % 2 == 0 ? '#ffffff' : '#f8f9fa' }};">
                 <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{$loop->index+1}}</td>
