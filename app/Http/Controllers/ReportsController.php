@@ -1899,9 +1899,12 @@ class ReportsController extends Controller
         // Filtro por estado de liquidación
         if ($request->filled('estado_liquidacion')) {
             if ($request['estado_liquidacion'] === 'liquidado') {
-                $query->whereNotNull('clq.id');
+                $query->whereNotNull('clq.id')->where('dte_clq.codEstado', '=', '02');
             } elseif ($request['estado_liquidacion'] === 'pendiente') {
-                $query->whereNull('clq.id');
+                $query->where(function ($q) {
+                    $q->whereNull('clq.id')
+                      ->orWhere('dte_clq.codEstado', '!=', '02');
+                });
             }
         }
 
@@ -1942,21 +1945,36 @@ class ReportsController extends Controller
             return response()->json(['error' => 'Empresa no encontrada'], 404);
         }
 
+        // Subconsulta DTE de la factura (evita duplicados por reenvíos/contingencias)
+        $dteFacExcelSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.estadoHacienda', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta DTE del CLQ (evita duplicados)
+        $dteClqExcelSub = DB::table('dte')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codEstado')
+            ->whereIn('dte.codTransaction', ['01', '05', '06'])
+            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+
+        // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
+        $sdClqActivoExcelSub = DB::table('salesdetails as sd_inner')
+            ->select('sd_inner.clq_numero_documento', DB::raw('MAX(sd_inner.sale_id) AS clq_sale_id'))
+            ->join('sales as s_inner', 's_inner.id', '=', 'sd_inner.sale_id')
+            ->where('s_inner.typedocument_id', '=', 2)
+            ->where('s_inner.state', '!=', 0)
+            ->where('s_inner.typesale', '!=', '0') // Solo CLQs activos (excluye anulados)
+            ->whereNotNull('sd_inner.clq_numero_documento')
+            ->groupBy('sd_inner.clq_numero_documento');
+
         // Query base: ventas con provider_id (ventas a terceros) - misma lógica que ventasTercerosSearch
         $query = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
-            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->leftJoinSub($dteFacExcelSub, 'dte', 'dte.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            ->leftJoin('salesdetails as sd_clq', function($join) {
-                $join->on('dte.codigoGeneracion', '=', 'sd_clq.clq_numero_documento')
-                     ->whereNotNull('sd_clq.clq_numero_documento');
-            })
-            ->leftJoin('sales as clq', function($join) {
-                $join->on('sd_clq.sale_id', '=', 'clq.id')
-                     ->where('clq.typedocument_id', '=', 2)
-                     ->where('clq.state', '!=', 0);
-            })
-            ->leftJoin('dte as dte_clq', 'clq.id', '=', 'dte_clq.sale_id')
+            ->leftJoinSub($sdClqActivoExcelSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+            ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
+            ->leftJoinSub($dteClqExcelSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
                 'sales.id AS sale_id',
                 'sales.date',
@@ -1975,7 +1993,7 @@ class ReportsController extends Controller
             END AS cliente_nombre")
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_formato")
             ->selectRaw("CASE
-                WHEN clq.id IS NOT NULL THEN 'Liquidado'
+                WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
             END AS estado_liquidacion")
             ->selectRaw("clq.id AS clq_id")
@@ -2000,9 +2018,12 @@ class ReportsController extends Controller
 
         if ($request->filled('estado_liquidacion')) {
             if ($request['estado_liquidacion'] === 'liquidado') {
-                $query->whereNotNull('clq.id');
+                $query->whereNotNull('clq.id')->where('dte_clq.codEstado', '=', '02');
             } elseif ($request['estado_liquidacion'] === 'pendiente') {
-                $query->whereNull('clq.id');
+                $query->where(function ($q) {
+                    $q->whereNull('clq.id')
+                      ->orWhere('dte_clq.codEstado', '!=', '02');
+                });
             }
         }
 
