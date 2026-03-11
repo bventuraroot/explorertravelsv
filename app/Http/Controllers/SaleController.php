@@ -100,6 +100,11 @@ class SaleController extends Controller
         }
 
         // Aplicar filtros de fecha: fhRecibido del DTE cuando existe, sales.date como respaldo (todos los tipos de documento)
+        // Si se busca por correlativo y no se especifican fechas manualmente, se omite el filtro de fecha
+        // para que la búsqueda encuentre el registro sin importar cuándo fue creado.
+        $busquedaPorCorrelativo = $request->filled('correlativo') && trim($request->correlativo) != '';
+        $fechasEspecificadasManualmente = $request->filled('fecha_desde') || $request->filled('fecha_hasta');
+
         $fechaFiltroDesde = null;
         $fechaFiltroHasta = null;
         if ($request->filled('fecha_desde') && $request->filled('fecha_hasta')) {
@@ -115,7 +120,8 @@ class SaleController extends Controller
         } elseif ($request->filled('fecha_hasta') && preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->fecha_hasta)) {
             $fechaFiltroDesde = date('Y-m-d', strtotime($request->fecha_hasta . ' -7 days'));
             $fechaFiltroHasta = $request->fecha_hasta;
-        } else {
+        } elseif (!$busquedaPorCorrelativo) {
+            // Solo aplica el rango por defecto (últimos 7 días) si NO se está buscando por correlativo
             $fechaFiltroHasta = date('Y-m-d');
             $fechaFiltroDesde = date('Y-m-d', strtotime('-7 days'));
         }
