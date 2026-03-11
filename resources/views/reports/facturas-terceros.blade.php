@@ -199,6 +199,7 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: center; width: 50px;"><b>SERIE</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 180px;"><b>Nº RESOLUCIÓN<br>(CONTROL DTE)</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 280px;"><b>Nº DOCUMENTO<br>(CÓD. GENERACIÓN)</b></td>
+                    <td style="font-size: 10px; text-align: right; width: 90px;"><b>MONTO GRAVADO<br>(SIN IVA)</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA DE LA<br>OPERACIÓN</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 180px;"><b>RESOLUCIÓN CLQ<br>(CONTROL)</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 280px;"><b>Nº COMPROBANTE<br>(CÓD. GEN.)</b></td>
@@ -209,16 +210,19 @@ $(document).ready(function() {
             <tbody>
                 @php
                     $i = 1;
-                    $tot_iva = 0;
+                    $tot_iva     = 0;
+                    $tot_gravado = 0;
                 @endphp
                 @foreach ($sales as $sale)
                 @php
-                    $nrcLimpio = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
-                    $tipoCod   = $sale->tipo_documento_cod
-                                   ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '')
-                                   : ($sale->tipo_documento_desc ?? '-');
-                    $iva       = floatval($sale->iva_operacion ?? 0);
-                    $tot_iva  += $iva;
+                    $nrcLimpio   = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
+                    $tipoCod     = $sale->tipo_documento_cod
+                                     ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '')
+                                     : ($sale->tipo_documento_desc ?? '-');
+                    $gravado     = floatval($sale->monto_gravado ?? 0);
+                    $iva         = floatval($sale->iva_operacion ?? 0);
+                    $tot_iva    += $iva;
+                    $tot_gravado += $gravado;
                 @endphp
                 <tr>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">{{ $i }}</td>
@@ -230,6 +234,7 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">-</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 180px;">{{ $sale->numero_control ?? '-' }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->codigo_generacion ?? '-' }}</td>
+                    <td style="font-size: 10px; text-align: right; padding-top: 0; padding-bottom: 0;">{{ number_format($gravado, 2) }}</td>
                     <td style="font-size: 10px; text-align: right; padding-top: 0; padding-bottom: 0;">{{ number_format($iva, 2) }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 180px;">{{ $sale->clq_numero_control ?? '-' }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->clq_codigo_generacion ?? '-' }}</td>
@@ -246,6 +251,7 @@ $(document).ready(function() {
                 @endforeach
                 <tr style="text-align: right; font-weight: bold;">
                     <td colspan="9" style="text-align: right; font-size: 10px;"><b>TOTALES DEL MES</b></td>
+                    <td style="font-size: 10px;">{{ number_format($tot_gravado, 2) }}</td>
                     <td style="font-size: 10px;">{{ number_format($tot_iva, 2) }}</td>
                     <td colspan="4" style="font-size: 10px;">-</td>
                 </tr>

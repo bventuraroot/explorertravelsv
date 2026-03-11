@@ -2215,6 +2215,7 @@ class ReportsController extends Controller
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
+            ->selectRaw("(SELECT COALESCE(SUM(sd.pricesale),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS monto_gravado")
             ->selectRaw("CASE
                 WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
@@ -2297,6 +2298,7 @@ class ReportsController extends Controller
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
             ->selectRaw("(SELECT COALESCE(SUM(sd.detained13),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS iva_operacion")
+            ->selectRaw("(SELECT COALESCE(SUM(sd.pricesale),0) FROM salesdetails sd WHERE sd.sale_id = sales.id) AS monto_gravado")
             ->selectRaw("CASE
                 WHEN clq.id IS NOT NULL AND dte_clq.codEstado = '02' THEN 'Liquidado'
                 ELSE 'Pendiente'
@@ -2326,8 +2328,8 @@ class ReportsController extends Controller
         $html .= '<body><table border="1">';
 
         // Encabezado del reporte
-        $html .= '<tr><th colspan="14" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">FACTURAS TERCEROS - MANDANTE/MANDATARIO</th></tr>';
-        $html .= '<tr><td colspan="14" style="text-align:center;">';
+        $html .= '<tr><th colspan="15" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">FACTURAS TERCEROS - MANDANTE/MANDATARIO</th></tr>';
+        $html .= '<tr><td colspan="15" style="text-align:center;">';
         $html .= '<b>Empresa (Mandatario):</b> ' . ($Company['name'] ?? '') . '&nbsp;&nbsp;';
         $html .= '<b>NIT:</b> ' . ($Company['nit'] ?? '') . '&nbsp;&nbsp;';
         $html .= '<b>MES:</b> ' . $mesesMayus[(int)$request['period'] - 1] . '&nbsp;&nbsp;';
@@ -2345,6 +2347,7 @@ class ReportsController extends Controller
         $html .= '<th rowspan="2">SERIE</th>';
         $html .= '<th rowspan="2">Nº RESOLUCIÓN (CONTROL DTE)</th>';
         $html .= '<th rowspan="2">Nº DOCUMENTO (CÓD. GENERACIÓN)</th>';
+        $html .= '<th rowspan="2">MONTO GRAVADO (SIN IVA)</th>';
         $html .= '<th rowspan="2">IVA DE LA OPERACIÓN</th>';
         $html .= '<th colspan="3" style="background:#a4c2f4;">COMPROBANTE DE LIQUIDACIÓN</th>';
         $html .= '<th rowspan="2">ESTADO</th>';
@@ -2357,18 +2360,13 @@ class ReportsController extends Controller
 
         $i = 1;
         $tot_iva = 0;
+        $tot_gravado = 0;
 
         foreach ($sales as $sale) {
-            $nrcLimpio = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
-            $tipoCod   = $sale->tipo_documento_cod ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '') : ($sale->tipo_documento_desc ?? '-');
-            $estado    = $sale->estado_liquidacion ?? 'Pendiente';
-
-            $colorEstado = '';
-            if ($estado === 'CLQ Anulado') {
-                $colorEstado = 'color:red; font-weight:bold;';
-            } elseif ($estado === 'Pendiente') {
-                $colorEstado = 'color:#b45309; font-weight:bold;';
-            }
+            $nrcLimpio   = preg_replace('/[^0-9]/', '', $sale->mandante_ncr ?? '');
+            $tipoCod     = $sale->tipo_documento_cod ? $sale->tipo_documento_cod . ' - ' . ($sale->tipo_documento_desc ?? '') : ($sale->tipo_documento_desc ?? '-');
+            $estado      = $sale->estado_liquidacion ?? 'Pendiente';
+            $colorEstado = ($estado === 'Pendiente') ? 'color:#b45309; font-weight:bold;' : '';
 
             $html .= '<tr>';
             $html .= '<td>' . $i . '</td>';
@@ -2380,6 +2378,7 @@ class ReportsController extends Controller
             $html .= '<td>-</td>';
             $html .= '<td>' . ($sale->numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->codigo_generacion ?? '-') . '</td>';
+            $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->monto_gravado ?? 0), 2, '.', '') . '</td>';
             $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->iva_operacion ?? 0), 2, '.', '') . '</td>';
             $html .= '<td>' . ($sale->clq_numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_codigo_generacion ?? '-') . '</td>';
@@ -2387,13 +2386,15 @@ class ReportsController extends Controller
             $html .= '<td style="' . $colorEstado . '">' . $estado . '</td>';
             $html .= '</tr>';
 
-            $tot_iva += floatval($sale->iva_operacion ?? 0);
+            $tot_gravado += floatval($sale->monto_gravado ?? 0);
+            $tot_iva     += floatval($sale->iva_operacion ?? 0);
             $i++;
         }
 
         // Totales
         $html .= '<tr style="font-weight:bold; background:#c9daf8;">';
         $html .= '<td colspan="9" style="text-align:right;">TOTALES DEL MES</td>';
+        $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_gravado, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva, 2, '.', '') . '</td>';
         $html .= '<td colspan="4"></td>';
         $html .= '</tr>';
