@@ -130,24 +130,30 @@ class SaleController extends Controller
         if ($request->filled('correlativo') && trim($request->correlativo) != '') {
             $correlativo = trim($request->correlativo);
             $sales->where(function($query) use ($correlativo) {
-                // Buscar en el padre directamente
+                // --- Búsqueda en el PADRE ---
                 $query->where('sales.id', 'LIKE', "%{$correlativo}%")
                       ->orWhere('dte_emis.id_doc', 'LIKE', "%{$correlativo}%")
-                      // Si algún hijo coincide por su ID, mostrar el padre
+                      ->orWhere('dte_emis.codigoGeneracion', 'LIKE', "%{$correlativo}%")
+                      ->orWhere('dte_emis.selloRecibido', 'LIKE', "%{$correlativo}%")
+                      // --- Búsqueda en los HIJOS: por ID de sale hijo ---
                       ->orWhereExists(function($sub) use ($correlativo) {
                           $sub->select(DB::raw(1))
                               ->from('sales as children_corr')
                               ->whereColumn('children_corr.parent_sale_id', 'sales.id')
                               ->where('children_corr.id', 'LIKE', "%{$correlativo}%");
                       })
-                      // Si algún hijo coincide por su correlativo DTE, mostrar el padre
+                      // --- Búsqueda en los HIJOS: por número de control, código de generación o sello de recepción del DTE hijo ---
                       ->orWhereExists(function($sub) use ($correlativo) {
                           $sub->select(DB::raw(1))
                               ->from('sales as children_corr')
-                              ->join('dte as dte_children_corr', 'dte_children_corr.sale_id', '=', 'children_corr.id')
+                              ->join('dte as dte_ch', 'dte_ch.sale_id', '=', 'children_corr.id')
                               ->whereColumn('children_corr.parent_sale_id', 'sales.id')
-                              ->whereIn('dte_children_corr.codTransaction', ['01', '05', '06'])
-                              ->where('dte_children_corr.id_doc', 'LIKE', "%{$correlativo}%");
+                              ->whereIn('dte_ch.codTransaction', ['01', '05', '06'])
+                              ->where(function($q) use ($correlativo) {
+                                  $q->where('dte_ch.id_doc', 'LIKE', "%{$correlativo}%")
+                                    ->orWhere('dte_ch.codigoGeneracion', 'LIKE', "%{$correlativo}%")
+                                    ->orWhere('dte_ch.selloRecibido', 'LIKE', "%{$correlativo}%");
+                              });
                       });
             });
         }

@@ -891,7 +891,7 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Correlativo</label>
-                    <input type="text" name="correlativo" id="correlativo" class="form-control" placeholder="ID o DTE" value="{{ request('correlativo') }}" maxlength="50">
+                    <input type="text" name="correlativo" id="correlativo" class="form-control" placeholder="ID, N° Control, Cód. Generación, Sello" value="{{ request('correlativo') }}" maxlength="100">
                     <div class="invalid-feedback" id="error_correlativo" style="display: none;"></div>
                 </div>
                 <div class="col-md-3">
@@ -1322,8 +1322,8 @@ function validarFiltros(form) {
         }
     }
 
-    // Validar formato de correlativo (solo caracteres alfanuméricos, guiones y guiones bajos)
-    if (correlativo && !/^[a-zA-Z0-9\-\_]+$/.test(correlativo)) {
+    // Validar formato de correlativo (alfanuméricos, guiones, guiones bajos y espacios para búsqueda parcial)
+    if (correlativo && !/^[a-zA-Z0-9\-\_\s]+$/.test(correlativo)) {
         document.getElementById('correlativo').classList.add('is-invalid');
         document.getElementById('error_correlativo').textContent = 'El correlativo solo puede contener letras, números, guiones y guiones bajos';
         document.getElementById('error_correlativo').style.display = 'block';
