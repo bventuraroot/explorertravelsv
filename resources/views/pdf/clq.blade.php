@@ -49,6 +49,11 @@
         padding: 6px;
 
         }
+        .texto-largo-pdf {
+            font-size: 7.5px;
+            line-height: 1.25;
+        }
+
         #watermark {
         position: fixed;
 
@@ -114,15 +119,17 @@
                         <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>NIT:</strong> {{$emisor[0]["nit"] ?? ''}} | <strong>NRC:</strong> {{$emisor[0]["nrc"] ?? ($emisor[0]["ncr"] ?? '')}}</td>
                     </tr>
                     <tr>
-                        <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>Act. económica:</strong> {{$emisor[0]["descActividad"] ?? ''}}</td>
+                        <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>Act. económica:</strong> <span class="texto-largo-pdf">{{$emisor[0]["descActividad"] ?? ''}}</span></td>
                     </tr>
                     <tr>
                         <td style="padding-bottom: 2px; font-size: 10px; line-height: 1.3;"><strong>Dirección:</strong>
+                            <span class="texto-largo-pdf">
                             @if(isset($emisor[0]["direccion"]["complemento"]))
                                 {{$emisor[0]["direccion"]["complemento"]}}, {{$MunicipioE}}, {{$DepartamentoE}}
                             @else
                                 {{$emisor[0]["direccion"] ?? ''}}, {{$MunicipioE}}, {{$DepartamentoE}}
                             @endif
+                            </span>
                         </td>
                     </tr>
                     <tr>
@@ -154,6 +161,22 @@
                         <td style="padding: 3px; font-size: 10px;"><strong>Número Control:</strong></td>
                         <td colspan="2" style="padding: 3px; font-size: 10px;">{{ $json["identificacion"]["numeroControl"] ?? ($json["numeroControl"] ?? '') }}</td>
                     </tr>
+                    @php
+                        $fecEmiGen = $json['identificacion']['fecEmi'] ?? ($json['fecEmi'] ?? null);
+                        $horEmiGen = $json['identificacion']['horEmi'] ?? ($json['horEmi'] ?? '');
+                        $fechaGeneracion = $fecEmiGen ? date('d/m/Y', strtotime($fecEmiGen)) : '';
+                        $fhRec = $json['fhRecibido'] ?? null;
+                        $fechaProcRecep = '';
+                        $horaProcRecep = '';
+                        if ($fhRec) {
+                            $fechaProcRecep = date('d/m/Y', strtotime($fhRec));
+                            if (preg_match('/\b(\d{2}:\d{2}:\d{2})\b/', $fhRec, $m)) {
+                                $horaProcRecep = $m[1];
+                            } else {
+                                $horaProcRecep = date('H:i:s', strtotime($fhRec));
+                            }
+                        }
+                    @endphp
                     <tr style="background-color: #ffffff;">
                         <td style="padding: 3px; font-size: 10px;"><strong>Modelo:</strong></td>
                         <td style="padding: 3px; font-size: 10px;">Previo</td>
@@ -162,12 +185,17 @@
                     <tr style="background-color: #ffffff;">
                         <td style="padding: 3px; font-size: 10px;"><strong>Transmisión:</strong></td>
                         <td style="padding: 3px; font-size: 10px;">Normal</td>
-                        <td style="padding: 3px; font-size: 10px;"><strong>Fecha:</strong> {{ isset($json["fhRecibido"]) ? date('d/m/Y', strtotime($json["fhRecibido"])) : (isset($json["identificacion"]["fecEmi"]) ? date('d/m/Y', strtotime($json["identificacion"]["fecEmi"])) : (isset($json["fecEmi"]) ? date('d/m/Y', strtotime($json["fecEmi"])) : '')) }}</td>
+                        <td style="padding: 3px; font-size: 10px;"><strong>Doc. Interno:</strong> {{$documento[0]["actual"] ?? ''}}</td>
                     </tr>
                     <tr style="background-color: #ffffff;">
-                        <td style="padding: 3px; font-size: 10px;"><strong>Hora:</strong></td>
-                        <td style="padding: 3px; font-size: 10px;">{{ isset($json["fhRecibido"]) ? substr($json["fhRecibido"],12,8) : ($json["identificacion"]["horEmi"] ?? ($json["horEmi"] ?? '')) }}</td>
-                        <td style="padding: 3px; font-size: 10px;"><strong>Doc. Interno:</strong> {{$documento[0]["actual"] ?? ''}}</td>
+                        <td style="padding: 3px; font-size: 9px;"><strong>Fecha generación:</strong></td>
+                        <td style="padding: 3px; font-size: 9px;">{{ $fechaGeneracion }}</td>
+                        <td style="padding: 3px; font-size: 9px;"><strong>Fecha proc./recep.:</strong> {{ $fechaProcRecep !== '' ? $fechaProcRecep : '—' }}</td>
+                    </tr>
+                    <tr style="background-color: #ffffff;">
+                        <td style="padding: 3px; font-size: 9px;"><strong>Hora generación:</strong></td>
+                        <td style="padding: 3px; font-size: 9px;">{{ $horEmiGen }}</td>
+                        <td style="padding: 3px; font-size: 9px;"><strong>Hora proc./recep.:</strong> {{ $horaProcRecep !== '' ? $horaProcRecep : '—' }}</td>
                     </tr>
                     @if(isset($json["estadoHacienda"]))
                     <tr style="background-color: #ffffff;">
@@ -203,7 +231,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Actividad económica:</strong></td>
-                                    <td style="padding: 3px; font-size: 10px; line-height: 1.3;">{{$cliente[0]["descActividad"] ?? ($json["receptor"]["descActividad"] ?? '')}}</td>
+                                    <td style="padding: 3px; font-size: 7.5px; line-height: 1.25;" class="texto-largo-pdf">{{$cliente[0]["descActividad"] ?? ($json["receptor"]["descActividad"] ?? '')}}</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Correo electrónico:</strong></td>
@@ -211,7 +239,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding: 3px; font-size: 10px; vertical-align: top;"><strong>Dirección:</strong></td>
-                                    <td style="padding: 3px; font-size: 10px;">
+                                    <td style="padding: 3px; font-size: 7.5px; line-height: 1.25;" class="texto-largo-pdf">
                                         @if(isset($cliente[0]["direccion"]) && is_array($cliente[0]["direccion"]))
                                             {{$cliente[0]["direccion"]["complemento"] ?? ''}}, {{$MunicipioR}}, {{$DepartamentoR}}
                                         @else
