@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Dashboard')
+@section('title', 'Centro de Control · Explorer Travel')
 
 @section('vendor-style')
 <link rel="stylesheet" href="{{asset('assets/vendor/libs/apex-charts/apex-charts.css')}}" />
@@ -12,448 +12,499 @@
 
 @section('page-script')
 <script>
-    window.ventasUltimoAno = @json($ventasUltimoAno);
-    window.ventasUltimoMes = @json($ventasUltimoMes);
-    window.ventasUltimaSemana = @json($ventasUltimaSemana);
-    window.ventasPorMes = @json($ventasPorMes);
-    window.ventasPorDia = @json($ventasPorDia);
-    window.productosMasVendidos = @json($productosMasVendidos);
+  window._dash = {
+    ventasPorMes:        @json($ventasPorMes),
+    ventasPorDia:        @json($ventasPorDia),
+    ventasUltimaSemana:  @json($ventasUltimaSemana),
+    ventasUltimoMes:     @json($ventasUltimoMes),
+    ventasUltimoAno:     @json($ventasUltimoAno),
+    productosMasVendidos:@json($productosMasVendidos),
+  };
 </script>
 <script src="{{asset('assets/js/dashboards-crm.js')}}"></script>
 <script>
-    // Script para controlar la visibilidad de los filtros según el tipo seleccionado
-    document.addEventListener('DOMContentLoaded', function() {
-        const filterType = document.getElementById('filter_type');
-        const filterDayContainer = document.getElementById('filter_day_container');
-        const filterMonthContainer = document.getElementById('filter_month_container');
-        const filterYearContainer = document.getElementById('filter_year_container');
-        const filterCustomFromContainer = document.getElementById('filter_custom_from_container');
-        const filterCustomToContainer = document.getElementById('filter_custom_to_container');
-
-        function toggleFilters() {
-            const selectedType = filterType.value;
-
-            // Ocultar todos los filtros
-            filterDayContainer.style.display = 'none';
-            filterMonthContainer.style.display = 'none';
-            filterYearContainer.style.display = 'none';
-            filterCustomFromContainer.style.display = 'none';
-            filterCustomToContainer.style.display = 'none';
-
-            // Mostrar el filtro correspondiente
-            switch(selectedType) {
-                case 'day':
-                    filterDayContainer.style.display = 'block';
-                    break;
-                case 'month':
-                    filterMonthContainer.style.display = 'block';
-                    break;
-                case 'year':
-                    filterYearContainer.style.display = 'block';
-                    break;
-                case 'custom':
-                    filterCustomFromContainer.style.display = 'block';
-                    filterCustomToContainer.style.display = 'block';
-                    break;
-            }
-        }
-
-        filterType.addEventListener('change', toggleFilters);
-
-        // Inicializar visibilidad al cargar la página
-        toggleFilters();
-    });
+  document.addEventListener('DOMContentLoaded', function () {
+    const sel = document.getElementById('filter_type');
+    if (!sel) return;
+    const ids = [
+      'filter_day_container', 'filter_month_container',
+      'filter_year_container', 'filter_custom_from_container',
+      'filter_custom_to_container'
+    ];
+    function toggle() {
+      ids.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+      const v = sel.value;
+      const show = id => { const el = document.getElementById(id); if (el) el.style.display = 'block'; };
+      if (v === 'day')    show('filter_day_container');
+      if (v === 'month')  show('filter_month_container');
+      if (v === 'year')   show('filter_year_container');
+      if (v === 'custom') { show('filter_custom_from_container'); show('filter_custom_to_container'); }
+    }
+    sel.addEventListener('change', toggle);
+    toggle();
+  });
 </script>
 @endsection
 
 @section('content')
-<div class="row">
-  <!-- Filtros de Fecha -->
-  <div class="mb-4 col-12">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Filtros de Fecha</h5>
-        <small class="text-muted">Período actual: {{ $startDate }} - {{ $endDate }}</small>
-      </div>
-      <div class="card-body">
-        <form method="GET" action="{{ url('/dashboard') }}" id="filterForm">
-          <div class="row g-3">
-            <div class="col-md-2">
-              <label class="form-label">Tipo de Filtro</label>
-              <select name="filter_type" id="filter_type" class="form-select">
-                <option value="all" {{ $filterType == 'all' ? 'selected' : '' }}>Último Año</option>
-                <option value="day" {{ $filterType == 'day' ? 'selected' : '' }}>Por Día</option>
-                <option value="month" {{ $filterType == 'month' ? 'selected' : '' }}>Por Mes</option>
-                <option value="year" {{ $filterType == 'year' ? 'selected' : '' }}>Por Año</option>
-                <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>Rango Personalizado</option>
-              </select>
+@php
+  $colorCrecimiento = $crecimientoVentas >= 0 ? 'success' : 'danger';
+  $iconCrecimiento  = $crecimientoVentas >= 0 ? 'ti-trending-up' : 'ti-trending-down';
+  $signo            = $crecimientoVentas >= 0 ? '+' : '';
+  $totalFeeTotal    = $totalFees + $totalFeesIva;
+  $coloresProd      = ['primary','success','info','warning','danger'];
+@endphp
+
+<style>
+  /* ── Hero ── */
+  .db-hero {
+    background: linear-gradient(135deg, #1a1f71 0%, #0f3460 55%, #16213e 100%);
+    border-radius: 14px;
+    padding: 28px 32px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .db-hero::before {
+    content: ''; position: absolute;
+    top: -50px; right: -30px; width: 230px; height: 230px;
+    border-radius: 50%; background: rgba(105,108,255,.18);
+    pointer-events: none;
+  }
+  .db-hero::after {
+    content: ''; position: absolute;
+    bottom: -40px; left: 28%; width: 170px; height: 170px;
+    border-radius: 50%; background: rgba(40,199,111,.12);
+    pointer-events: none;
+  }
+  .db-hero-plane {
+    position: absolute; right: 180px; top: 16px;
+    font-size: 90px; opacity: .06; transform: rotate(-15deg);
+    pointer-events: none;
+  }
+  /* ── KPI Card ── */
+  .db-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform .18s, box-shadow .18s;
+  }
+  .db-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,.11) !important;
+  }
+  /* ── Icon wrap ── */
+  .db-icon {
+    width: 50px; height: 50px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  /* ── Stat pill ── */
+  .db-pill { display: flex; align-items: center; gap: 14px; }
+  .db-pill-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  /* ── Section label ── */
+  .db-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+    text-transform: uppercase; color: #a1acb8; margin-bottom: 4px;
+  }
+  /* ── Product row ── */
+  .db-prod-row {
+    display: flex; align-items: center; gap: 14px; padding: 11px 0;
+    border-bottom: 1px solid rgba(0,0,0,.055);
+  }
+  .db-prod-row:last-child { border-bottom: none; }
+  .db-prod-rank {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+  }
+  .db-progress { height: 5px; border-radius: 3px; background: #eee; overflow: hidden; }
+  .db-progress-bar { height: 100%; border-radius: 3px; transition: width .6s ease; }
+  /* ── Badge ── */
+  .db-badge {
+    font-size: 10.5px; padding: 4px 10px; border-radius: 20px;
+    font-weight: 600; display: inline-flex; align-items: center; gap: 4px;
+  }
+  /* ── Divider light ── */
+  .db-divider { border-top: 1px solid rgba(0,0,0,.06); margin: 10px 0; }
+  /* ── Filter bar ── */
+  .db-filter { border-radius: 10px; }
+</style>
+
+<div class="row g-4">
+
+  {{-- ══════════════════════════════════════════════════════════════ HERO ══ --}}
+  <div class="col-12">
+    <div class="db-hero">
+      <span class="db-hero-plane"><i class="ti ti-plane"></i></span>
+
+      <div class="row align-items-center">
+        {{-- Izquierda --}}
+        <div class="col-lg-6 mb-3 mb-lg-0">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div style="background:rgba(255,255,255,.14);border-radius:10px;padding:8px 12px;">
+              <i class="ti ti-map-route" style="font-size:22px;color:#fff;"></i>
             </div>
-            <div class="col-md-2" id="filter_day_container" style="display: {{ $filterType == 'day' ? 'block' : 'none' }};">
-              <label class="form-label">Día</label>
-              <input type="date" name="filter_date" class="form-control" value="{{ $filterDate }}">
+            <div>
+              <h4 class="mb-0" style="color:#fff;font-weight:800;letter-spacing:-.4px;">
+                Centro de Control
+              </h4>
+              <span style="color:rgba(255,255,255,.55);font-size:12px;">
+                Explorer Travel · Dashboard de Análisis
+              </span>
             </div>
-            <div class="col-md-2" id="filter_month_container" style="display: {{ $filterType == 'month' ? 'block' : 'none' }};">
-              <label class="form-label">Mes</label>
-              <input type="month" name="filter_month" class="form-control" value="{{ $filterMonth }}">
-            </div>
-            <div class="col-md-2" id="filter_year_container" style="display: {{ $filterType == 'year' ? 'block' : 'none' }};">
-              <label class="form-label">Año</label>
-              <input type="number" name="filter_year" class="form-control" value="{{ $filterYear }}" min="2000" max="2099">
-            </div>
-            <div class="col-md-2" id="filter_custom_from_container" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
-              <label class="form-label">Desde</label>
-              <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
-            </div>
-            <div class="col-md-2" id="filter_custom_to_container" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
-              <label class="form-label">Hasta</label>
-              <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-              <button type="submit" class="btn btn-primary w-100">
-                <i class="ti ti-filter me-1"></i>Aplicar Filtro
-              </button>
-            </div>
+          </div>
+
+          <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+            <span class="db-badge" style="background:rgba(40,199,111,.2);color:#28c76f;">
+              <i class="ti ti-calendar-event"></i>
+              {{ $startDate }} → {{ $endDate }}
+            </span>
             @if($filterType != 'all')
-            <div class="col-md-2 d-flex align-items-end">
-              <a href="{{ url('/dashboard') }}" class="btn btn-label-secondary w-100">
-                <i class="ti ti-refresh me-1"></i>Limpiar
-              </a>
-            </div>
+            <span class="db-badge" style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);">
+              <i class="ti ti-filter"></i> Filtro activo
+            </span>
             @endif
           </div>
+
+          <div class="mt-4 d-flex flex-wrap gap-4">
+            <div>
+              <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">
+                Clientes
+              </div>
+              <div style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.2;">
+                {{ number_format($tclientes) }}
+              </div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">
+                Proveedores
+              </div>
+              <div style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.2;">
+                {{ number_format($tproviders) }}
+              </div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">
+                Servicios
+              </div>
+              <div style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.2;">
+                {{ number_format($tproducts) }}
+              </div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">
+                Documentos
+              </div>
+              <div style="color:#fff;font-size:1.5rem;font-weight:800;line-height:1.2;">
+                {{ number_format($tsales) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{-- Derecha: KPI principal --}}
+        <div class="col-lg-6 text-lg-end">
+          <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:6px;">
+            Ingreso total del período
+          </div>
+          <div style="font-size:3rem;font-weight:900;color:#fff;line-height:1;letter-spacing:-1px;">
+            ${{ number_format($totalVentas, 2) }}
+          </div>
+          <div class="mt-2 d-flex align-items-center gap-3 justify-content-lg-end">
+            <span class="db-badge"
+              style="background:rgba({{ $crecimientoVentas >= 0 ? '40,199,111' : '234,84,85' }},.22);
+                     color:{{ $crecimientoVentas >= 0 ? '#28c76f' : '#ea5455' }};">
+              <i class="ti {{ $iconCrecimiento }}"></i>
+              {{ $signo }}{{ $crecimientoVentas }}% vs año anterior
+            </span>
+          </div>
+          <div class="mt-3 d-flex flex-wrap gap-3 justify-content-lg-end">
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 18px;text-align:center;">
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Fee período</div>
+              <div style="color:#28c76f;font-size:1.1rem;font-weight:800;">${{ number_format($totalFees, 2) }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 18px;text-align:center;">
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Fee + IVA</div>
+              <div style="color:#ff9f43;font-size:1.1rem;font-weight:800;">${{ number_format($totalFeesIva, 2) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ══════════════════════════════════════════════════════════ FILTROS ══ --}}
+  <div class="col-12">
+    <div class="card db-filter mb-0">
+      <div class="card-body py-2 px-3">
+        <form method="GET" action="{{ url('/dashboard') }}" class="row g-2 align-items-end">
+          <div class="col-auto">
+            <label class="form-label mb-1 db-label">Período</label>
+            <select name="filter_type" id="filter_type" class="form-select form-select-sm" style="min-width:130px;">
+              <option value="all"    {{ $filterType=='all'    ?'selected':'' }}>Último año</option>
+              <option value="day"    {{ $filterType=='day'    ?'selected':'' }}>Por día</option>
+              <option value="month"  {{ $filterType=='month'  ?'selected':'' }}>Por mes</option>
+              <option value="year"   {{ $filterType=='year'   ?'selected':'' }}>Por año</option>
+              <option value="custom" {{ $filterType=='custom' ?'selected':'' }}>Rango libre</option>
+            </select>
+          </div>
+          <div class="col-auto" id="filter_day_container"
+               style="display:{{ $filterType=='day'    ?'block':'none' }};">
+            <label class="form-label mb-1 db-label">Día</label>
+            <input type="date" name="filter_date" class="form-control form-control-sm" value="{{ $filterDate }}">
+          </div>
+          <div class="col-auto" id="filter_month_container"
+               style="display:{{ $filterType=='month'  ?'block':'none' }};">
+            <label class="form-label mb-1 db-label">Mes</label>
+            <input type="month" name="filter_month" class="form-control form-control-sm" value="{{ $filterMonth }}">
+          </div>
+          <div class="col-auto" id="filter_year_container"
+               style="display:{{ $filterType=='year'   ?'block':'none' }};">
+            <label class="form-label mb-1 db-label">Año</label>
+            <input type="number" name="filter_year" class="form-control form-control-sm"
+                   value="{{ $filterYear }}" min="2000" max="2099" style="width:88px;">
+          </div>
+          <div class="col-auto" id="filter_custom_from_container"
+               style="display:{{ $filterType=='custom' ?'block':'none' }};">
+            <label class="form-label mb-1 db-label">Desde</label>
+            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ $dateFrom }}">
+          </div>
+          <div class="col-auto" id="filter_custom_to_container"
+               style="display:{{ $filterType=='custom' ?'block':'none' }};">
+            <label class="form-label mb-1 db-label">Hasta</label>
+            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ $dateTo }}">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm px-3">
+              <i class="ti ti-filter me-1"></i>Aplicar
+            </button>
+          </div>
+          @if($filterType != 'all')
+          <div class="col-auto">
+            <a href="{{ url('/dashboard') }}" class="btn btn-outline-secondary btn-sm px-3">
+              <i class="ti ti-refresh me-1"></i>Limpiar
+            </a>
+          </div>
+          @endif
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Estadísticas Generales -->
-  <div class="mb-4 col-12">
-    <div class="row">
-      <div class="mb-4 col-xl-3 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-primary">
-                    <i class="ti ti-users ti-sm"></i>
+  {{-- ══════════════════════════════════════════════════════ KPI FINANCIEROS ══ --}}
+
+  {{-- Ingresos período --}}
+  <div class="col-xl-3 col-md-6">
+    <div class="card db-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="db-icon bg-label-primary">
+            <i class="ti ti-currency-dollar text-primary" style="font-size:22px;"></i>
+          </div>
+          <span class="db-badge bg-label-{{ $colorCrecimiento }}
+                       {{ $crecimientoVentas >= 0 ? 'text-success' : 'text-danger' }}">
+            <i class="ti {{ $iconCrecimiento }}"></i>
+            {{ $signo }}{{ $crecimientoVentas }}%
+          </span>
+        </div>
+        <p class="db-label mb-1">Ingresos del período</p>
+        <h3 class="mb-0 fw-bold">${{ number_format($totalVentas, 2) }}</h3>
+        <small class="text-muted">Tendencia últimos 12 meses</small>
+        <div id="salesLastYear" class="mt-2" style="min-height:58px;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Ingresos mes --}}
+  <div class="col-xl-3 col-md-6">
+    <div class="card db-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="db-icon bg-label-info">
+            <i class="ti ti-calendar-month text-info" style="font-size:22px;"></i>
+          </div>
+          <span class="db-badge bg-label-info text-info">Mes actual</span>
+        </div>
+        <p class="db-label mb-1">Ingresos este mes</p>
+        <h3 class="mb-0 fw-bold">${{ number_format($totalVentasMes, 2) }}</h3>
+        <small class="text-muted">Últimos 30 días</small>
+        <div id="sessionsLastMonth" class="mt-2" style="min-height:58px;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Ingresos semana --}}
+  <div class="col-xl-3 col-md-6">
+    <div class="card db-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="db-icon bg-label-warning">
+            <i class="ti ti-calendar-week text-warning" style="font-size:22px;"></i>
+          </div>
+          <span class="db-badge bg-label-warning text-warning">Esta semana</span>
+        </div>
+        <p class="db-label mb-1">Ingresos esta semana</p>
+        <h3 class="mb-0 fw-bold">${{ number_format($totalVentasSemana, 2) }}</h3>
+        <small class="text-muted">Últimos 7 días</small>
+        <div id="revenueGrowth" class="mt-2" style="min-height:58px;"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Fees --}}
+  <div class="col-xl-3 col-md-6">
+    <div class="card db-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div class="db-icon bg-label-success">
+            <i class="ti ti-wallet text-success" style="font-size:22px;"></i>
+          </div>
+          <span class="db-badge bg-label-success text-success">
+            <i class="ti ti-coin"></i> Comisiones
+          </span>
+        </div>
+        <p class="db-label mb-1">Fees del período</p>
+        <h3 class="mb-0 fw-bold">${{ number_format($totalFees, 2) }}</h3>
+        <small class="text-muted">Sin IVA</small>
+        <div class="db-divider mt-3"></div>
+        <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
+          <span class="text-muted">Fee + IVA</span>
+          <span class="fw-bold text-warning">${{ number_format($totalFeesIva, 2) }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-1" style="font-size:12px;">
+          <span class="text-muted">Total combinado</span>
+          <span class="fw-bold">${{ number_format($totalFeeTotal, 2) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ══════════════════════════════════════════════ GRÁFICO PRINCIPAL + DONUT ══ --}}
+
+  {{-- Tendencia mensual 12 meses --}}
+  <div class="col-xl-8 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <p class="db-label">Rendimiento financiero</p>
+            <h5 class="mb-0 fw-bold">Tendencia de ingresos — 12 meses</h5>
+          </div>
+          <div class="d-flex align-items-center gap-3" style="font-size:11px;color:#a1acb8;">
+            <span><i class="ti ti-circle-filled text-primary me-1" style="font-size:8px;"></i>Ingresos</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body pt-2">
+        <div id="mainRevenueChart"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Donut distribución últimos 6 meses --}}
+  <div class="col-xl-4 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Distribución por mes</p>
+        <h5 class="mb-0 fw-bold">Últimos 6 meses</h5>
+      </div>
+      <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
+        <div id="feeDonutChart"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ══════════════════════════════════════════════ SEMANA + TOP PRODUCTOS ══ --}}
+
+  {{-- Tendencia semanal --}}
+  <div class="col-xl-4 col-lg-5 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Actividad reciente</p>
+        <h5 class="mb-0 fw-bold">Ventas — últimos 7 días</h5>
+        <div class="d-flex align-items-center gap-2 mt-1">
+          <span class="fw-bold text-success" style="font-size:16px;">
+            ${{ number_format($totalVentasSemana, 2) }}
+          </span>
+          <span class="db-badge bg-label-{{ $colorCrecimiento }}
+                       {{ $crecimientoVentas >= 0 ? 'text-success' : 'text-danger' }}"
+                style="font-size:9px;">
+            {{ $signo }}{{ $crecimientoVentas }}% YoY
+          </span>
+        </div>
+      </div>
+      <div class="card-body pt-2">
+        <div id="weeklyTrendChart"></div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Top 5 servicios más vendidos --}}
+  <div class="col-xl-8 col-lg-7 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <div class="d-flex align-items-start justify-content-between">
+          <div>
+            <p class="db-label">Ranking de servicios</p>
+            <h5 class="mb-0 fw-bold">Top 5 más vendidos</h5>
+          </div>
+          <span class="db-badge bg-label-primary text-primary" style="font-size:9.5px;">
+            <i class="ti ti-trophy"></i> Período seleccionado
+          </span>
+        </div>
+      </div>
+      <div class="card-body pb-2">
+        @php
+          $maxCantidad = $productosMasVendidos->max('cantidad_vendida') ?: 1;
+        @endphp
+        @forelse($productosMasVendidos as $idx => $prod)
+          @php
+            $pct   = round(($prod->cantidad_vendida / $maxCantidad) * 100, 1);
+            $color = $coloresProd[$idx % 5];
+            $barColors = [
+              'primary' => '#696cff',
+              'success' => '#28c76f',
+              'info'    => '#00cfe8',
+              'warning' => '#ff9f43',
+              'danger'  => '#ea5455',
+            ];
+            $barHex = $barColors[$color] ?? '#696cff';
+          @endphp
+          <div class="db-prod-row">
+            <div class="db-prod-rank bg-label-{{ $color }}">
+              <span class="text-{{ $color }}">#{{ $idx + 1 }}</span>
+            </div>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="font-size:13px;font-weight:600;line-height:1.2;">
+                  {{ $prod->name }}
+                </span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="db-badge bg-label-{{ $color }} text-{{ $color }}">
+                    {{ number_format($prod->cantidad_vendida) }} unidades
+                  </span>
+                  <span style="font-size:10px;color:#a1acb8;min-width:34px;text-align:right;">
+                    {{ $pct }}%
                   </span>
                 </div>
-                <div class="card-info">
-                  <h5 class="mb-0">{{ $tclientes }}</h5>
-                  <small>Clientes</small>
-                </div>
+              </div>
+              <div class="db-progress">
+                <div class="db-progress-bar" style="width:{{ $pct }}%;background:{{ $barHex }};"></div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div class="mb-4 col-xl-3 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-success">
-                    <i class="ti ti-truck ti-sm"></i>
-                  </span>
-                </div>
-                <div class="card-info">
-                  <h5 class="mb-0">{{ $tproviders }}</h5>
-                  <small>Proveedores</small>
-                </div>
-              </div>
-            </div>
+        @empty
+          <div class="text-center py-5" style="color:#a1acb8;">
+            <i class="ti ti-database-off" style="font-size:40px;opacity:.4;"></i>
+            <p class="mt-2 mb-0" style="font-size:13px;">
+              Sin datos para el período seleccionado
+            </p>
           </div>
-        </div>
-      </div>
-      <div class="mb-4 col-xl-3 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-warning">
-                    <i class="ti ti-package ti-sm"></i>
-                  </span>
-                </div>
-                <div class="card-info">
-                  <h5 class="mb-0">{{ $tproducts }}</h5>
-                  <small>Productos</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="mb-4 col-xl-3 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-info">
-                    <i class="ti ti-shopping-cart ti-sm"></i>
-                  </span>
-                </div>
-                <div class="card-info">
-                  <h5 class="mb-0">{{ $tsales }}</h5>
-                  <small>Ventas</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tarjetas de Fees -->
-  <div class="mb-4 col-12">
-    <div class="row">
-      <div class="mb-4 col-xl-6 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-success">
-                    <i class="ti ti-wallet ti-sm"></i>
-                  </span>
-                </div>
-                <div class="card-info">
-                  <h5 class="mb-0">${{ number_format($totalFees, 2) }}</h5>
-                  <small>Total Fee (Período Filtrado)</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="mb-4 col-xl-6 col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div class="gap-3 d-flex align-items-center">
-                <div class="avatar">
-                  <span class="rounded avatar-initial bg-label-warning">
-                    <i class="ti ti-receipt-tax ti-sm"></i>
-                  </span>
-                </div>
-                <div class="card-info">
-                  <h5 class="mb-0">${{ number_format($totalFeesIva, 2) }}</h5>
-                  <small>Total Fee IVA (Período Filtrado)</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ventas del último año -->
-  <div class="mb-4 col-xl-2 col-md-4 col-6">
-    <div class="card">
-      <div class="pb-0 card-header">
-        <h5 class="mb-0 card-title">Ventas</h5>
-        <small class="text-muted">Último Año</small>
-      </div>
-      <div id="salesLastYear"></div>
-      <div class="pt-0 card-body">
-        <div class="gap-3 mt-3 d-flex justify-content-between align-items-center">
-          <h4 class="mb-0">${{ number_format($totalVentas, 2) }}</h4>
-          <small class="{{ $crecimientoVentas >= 0 ? 'text-success' : 'text-danger' }}">
-            {{ $crecimientoVentas >= 0 ? '+' : '' }}{{ $crecimientoVentas }}%
-          </small>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ventas del último mes -->
-  <div class="mb-4 col-xl-2 col-md-4 col-6">
-    <div class="card">
-      <div class="pb-0 card-header">
-        <h5 class="mb-0 card-title">Ventas</h5>
-        <small class="text-muted">Último Mes</small>
-      </div>
-      <div class="card-body">
-        <div id="sessionsLastMonth"></div>
-        <div class="gap-3 mt-3 d-flex justify-content-between align-items-center">
-          <h4 class="mb-0">${{ number_format($totalVentasMes, 2) }}</h4>
-          <small class="text-success">+{{ $crecimientoVentas }}%</small>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Beneficio Total -->
-  <div class="mb-4 col-xl-2 col-md-4 col-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="p-2 mb-2 rounded badge bg-label-danger"><i class="ti ti-currency-dollar ti-md"></i></div>
-        <h5 class="pt-2 mb-1 card-title">Beneficio Total</h5>
-        <small class="text-muted">Última semana</small>
-        <p class="mt-1 mb-2">${{ number_format($totalVentasSemana * 0.3, 2) }}</p>
-        <div class="pt-1">
-          <span class="badge bg-label-secondary">{{ $crecimientoVentas >= 0 ? '+' : '' }}{{ $crecimientoVentas }}%</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Total de Ventas -->
-  <div class="mb-4 col-xl-2 col-md-4 col-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="p-2 mb-2 rounded badge bg-label-info"><i class="ti ti-chart-bar ti-md"></i></div>
-        <h5 class="pt-2 mb-1 card-title">Total Ventas</h5>
-        <small class="text-muted">Última semana</small>
-        <p class="mt-1 mb-2">${{ number_format($totalVentasSemana, 2) }}</p>
-        <div class="pt-1">
-          <span class="badge bg-label-secondary">{{ $crecimientoVentas >= 0 ? '+' : '' }}{{ $crecimientoVentas }}%</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Crecimiento de Ingresos -->
-  <div class="mb-4 col-xl-4 col-md-8">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <div class="d-flex flex-column">
-            <div class="mb-auto card-title">
-              <h5 class="mb-1 text-nowrap">Crecimiento de Ingresos</h5>
-              <small>Reporte Semanal</small>
-            </div>
-            <div class="chart-statistics">
-              <h3 class="mb-1 card-title">${{ number_format($totalVentasSemana, 2) }}</h3>
-              <span class="badge bg-label-success">{{ $crecimientoVentas >= 0 ? '+' : '' }}{{ $crecimientoVentas }}%</span>
-            </div>
-          </div>
-          <div id="revenueGrowth"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Reportes de Ganancias -->
-  <div class="mb-4 col-12 col-xl-8">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <div class="mb-0 card-title">
-          <h5 class="mb-0">Reportes de Ganancias</h5>
-          <small class="text-muted">Vista General Anual</small>
-        </div>
-        <div class="dropdown">
-          <button class="p-0 btn" type="button" id="earningReportsTabsId" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-dots-vertical ti-sm text-muted"></i>
-          </button>
-          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="earningReportsTabsId">
-            <a class="dropdown-item" href="javascript:void(0);">Ver Más</a>
-            <a class="dropdown-item" href="javascript:void(0);">Eliminar</a>
-          </div>
-        </div>
-      </div>
-      <div class="card-body">
-        <ul class="gap-4 pb-3 mx-1 flex-nowrap nav nav-tabs widget-nav-tabs d-flex" role="tablist">
-          <li class="nav-item">
-            <a href="javascript:void(0);" class="nav-link btn d-flex flex-column align-items-center justify-content-center" role="tab" data-bs-toggle="tab" data-bs-target="#navs-sales-id" aria-controls="navs-sales-id" aria-selected="true">
-              <div class="p-2 rounded badge bg-label-secondary"><i class="ti ti-chart-bar ti-sm"></i></div>
-              <h6 class="mt-2 mb-0 tab-widget-title">Ventas</h6>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="javascript:void(0);" class="nav-link btn d-flex flex-column align-items-center justify-content-center" role="tab" data-bs-toggle="tab" data-bs-target="#navs-profit-id" aria-controls="navs-profit-id" aria-selected="false">
-              <div class="p-2 rounded badge bg-label-secondary"><i class="ti ti-currency-dollar ti-sm"></i></div>
-              <h6 class="mt-2 mb-0 tab-widget-title">Beneficios</h6>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="javascript:void(0);" class="nav-link btn d-flex flex-column align-items-center justify-content-center" role="tab" data-bs-toggle="tab" data-bs-target="#navs-income-id" aria-controls="navs-income-id" aria-selected="false">
-              <div class="p-2 rounded badge bg-label-secondary"><i class="ti ti-chart-pie-2 ti-sm"></i></div>
-              <h6 class="mt-2 mb-0 tab-widget-title">Ingresos</h6>
-            </a>
-          </li>
-        </ul>
-        <div class="p-0 tab-content ms-0 ms-sm-2">
-          <div class="tab-pane fade show active" id="navs-sales-id" role="tabpanel">
-            <div id="earningReportsTabsSales"></div>
-          </div>
-          <div class="tab-pane fade" id="navs-profit-id" role="tabpanel">
-            <div id="earningReportsTabsProfit"></div>
-          </div>
-          <div class="tab-pane fade" id="navs-income-id" role="tabpanel">
-            <div id="earningReportsTabsIncome"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Productos Más Vendidos -->
-  <div class="mb-4 col-xl-4 col-md-6">
-    <div class="card h-100">
-      <div class="card-header d-flex justify-content-between">
-        <div class="m-0 card-title me-2">
-          <h5 class="m-0 me-2">Productos Más Vendidos</h5>
-          <small class="text-muted">Top 5 Productos</small>
-        </div>
-        <div class="dropdown">
-          <button class="p-0 btn" type="button" id="employeeList" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="ti ti-dots-vertical ti-sm text-muted"></i>
-          </button>
-          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="employeeList">
-            <a class="dropdown-item" href="javascript:void(0);">Descargar</a>
-            <a class="dropdown-item" href="javascript:void(0);">Actualizar</a>
-            <a class="dropdown-item" href="javascript:void(0);">Compartir</a>
-          </div>
-        </div>
-      </div>
-      <div class="card-body">
-        <ul class="p-0 m-0">
-          @forelse($productosMasVendidos as $index => $producto)
-          <li class="pb-1 mb-4 d-flex align-items-center">
-            <div class="p-2 rounded badge bg-label-{{ $index % 2 == 0 ? 'primary' : 'success' }} me-3">
-              <i class="ti ti-package ti-sm"></i>
-            </div>
-            <div class="gap-2 d-flex w-100 align-items-center">
-              <div class="flex-wrap d-flex justify-content-between flex-grow-1">
-                <div>
-                  <h6 class="mb-0">{{ $producto->name }}</h6>
-                </div>
-                <div class="gap-2 user-progress d-flex align-items-center">
-                  <h6 class="mb-0">{{ $producto->cantidad_vendida }}</h6>
-                </div>
-              </div>
-              @php
-                $maxCantidad = $productosMasVendidos->max('cantidad_vendida');
-                $porcentaje = $maxCantidad > 0 ? ($producto->cantidad_vendida / $maxCantidad) * 100 : 0;
-              @endphp
-              <div class="chart-progress" data-color="{{ $index % 2 == 0 ? 'primary' : 'success' }}" data-series="{{ $porcentaje }}"></div>
-            </div>
-          </li>
-          @empty
-          <li class="pb-1 mb-4 d-flex align-items-center">
-            <div class="p-2 rounded badge bg-label-secondary me-3">
-              <i class="ti ti-package ti-sm"></i>
-            </div>
-            <div class="gap-2 d-flex w-100 align-items-center">
-              <div class="flex-wrap d-flex justify-content-between flex-grow-1">
-                <div>
-                  <h6 class="mb-0">Sin datos disponibles</h6>
-                </div>
-                <div class="gap-2 user-progress d-flex align-items-center">
-                  <h6 class="mb-0">0</h6>
-                </div>
-              </div>
-              <div class="chart-progress" data-color="secondary" data-series="0"></div>
-            </div>
-          </li>
-          @endforelse
-        </ul>
+        @endforelse
       </div>
     </div>
   </div>
