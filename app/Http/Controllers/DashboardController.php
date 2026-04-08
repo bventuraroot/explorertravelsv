@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -135,6 +136,108 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Ventas por proveedor (línea del detalle)
+        $ventasPorProveedor = $this->ventasAgrupadasPorDetalle(
+            $startDate,
+            $endDate,
+            'salesdetails.line_provider_id',
+            function ($raw) {
+                if ($raw === null || $raw === '') {
+                    return 'Sin proveedor en línea';
+                }
+                $pid = (int) $raw;
+                $p = Provider::find($pid);
+
+                return $p ? Str::limit($p->razonsocial, 42) : 'Proveedor #' . $pid;
+            }
+        );
+
+        // Ventas por destino
+        $ventasPorDestino = $this->ventasAgrupadasPorDetalle(
+            $startDate,
+            $endDate,
+            'salesdetails.destino',
+            function ($raw) {
+                $s = is_string($raw) ? trim($raw) : '';
+
+                return $s !== '' ? Str::limit($s, 48) : 'Sin destino';
+            }
+        );
+
+        // Ventas por ruta (trayecto / códigos; útil cuando se registran segmentos o aeropuertos en ruta)
+        $ventasPorRuta = $this->ventasAgrupadasPorDetalle(
+            $startDate,
+            $endDate,
+            'salesdetails.ruta',
+            function ($raw) {
+                $s = is_string($raw) ? trim($raw) : '';
+
+                return $s !== '' ? Str::limit($s, 48) : 'Sin ruta';
+            }
+        );
+
+        // Ventas por aerolínea (campo "línea" en el detalle)
+        $ventasPorAerolinea = $this->ventasAgrupadasPorDetalle(
+            $startDate,
+            $endDate,
+            'salesdetails.linea',
+            function ($raw) {
+                $s = is_string($raw) ? trim($raw) : '';
+
+                return $s !== '' ? Str::limit($s, 42) : 'Sin aerolínea';
+            }
+        );
+
+        // Ventas por canal (si se usa en el detalle)
+        $ventasPorCanal = $this->ventasAgrupadasPorDetalle(
+            $startDate,
+            $endDate,
+            'salesdetails.canal',
+            function ($raw) {
+                $s = is_string($raw) ? trim($raw) : '';
+
+                return $s !== '' ? Str::limit($s, 36) : 'Sin canal';
+            }
+        );
+
+        // Top clientes por monto de venta (cabecera)
+        $ventasPorCliente = Sale::query()
+            ->whereBetween('date', [$startDate, $endDate])
+            ->where('state', '<>', 0)
+            ->whereNotNull('client_id')
+            ->selectRaw('client_id, SUM(totalamount) as total')
+            ->groupBy('client_id')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get();
+
+        $clienteIds = $ventasPorCliente->pluck('client_id')->filter()->unique()->values();
+        $clientesMap = $clienteIds->isNotEmpty()
+            ? Client::whereIn('id', $clienteIds)->get()->keyBy('id')
+            : collect();
+
+        $ventasPorCliente = $ventasPorCliente->map(function ($row) use ($clientesMap) {
+            $c = $clientesMap->get($row->client_id);
+            $nombre = 'Cliente #' . $row->client_id;
+            if ($c) {
+                if (($c->tpersona ?? '') === 'J') {
+                    $nombre = Str::limit(trim((string) ($c->name_contribuyente ?: $c->comercial_name ?: $nombre)), 48);
+                } else {
+                    $nombre = Str::limit(trim(implode(' ', array_filter([
+                        $c->firstname,
+                        $c->secondname,
+                        $c->firtslastname,
+                        $c->secondlastname,
+                    ]))), 48) ?: $nombre;
+                }
+            }
+
+            return [
+                'label' => $nombre,
+                'total' => round((float) $row->total, 2),
+            ];
+        })->values();
+
         // Estructuras esperadas por la vista/JS
         $ventasUltimoAno = $ventasPorMes; // alias esperado por JS
         $ventasUltimoMes = $ventasPorDia30; // alias esperado por JS
@@ -160,6 +263,12 @@ class DashboardController extends Controller
             ->with('ventasPorMes', $ventasPorMes)
             ->with('ventasPorDia', $ventasPorDia)
             ->with('productosMasVendidos', $productosMasVendidos)
+            ->with('ventasPorProveedor', $ventasPorProveedor)
+            ->with('ventasPorDestino', $ventasPorDestino)
+            ->with('ventasPorRuta', $ventasPorRuta)
+            ->with('ventasPorAerolinea', $ventasPorAerolinea)
+            ->with('ventasPorCanal', $ventasPorCanal)
+            ->with('ventasPorCliente', $ventasPorCliente)
             ->with('filterType', $filterType)
             ->with('filterDate', $filterDate)
             ->with('filterMonth', $filterMonth)
@@ -168,5 +277,44 @@ class DashboardController extends Controller
             ->with('dateTo', $dateTo)
             ->with('startDate', $startDate->format('d/m/Y'))
             ->with('endDate', $endDate->format('d/m/Y'));
+    }
+
+    /**
+     * Suma de ventas por línea de detalle agrupada por columna (excluye ventas anuladas state=0).
+     *
+     * @param  callable(string|null): string  $labelResolver
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function ventasAgrupadasPorDetalle(
+        Carbon $startDate,
+        Carbon $endDate,
+        string $groupColumn,
+        callable $labelResolver
+    ): Collection {
+        $rows = DB::table('salesdetails')
+            ->join('sales', 'sales.id', '=', 'salesdetails.sale_id')
+            ->whereBetween('sales.date', [$startDate, $endDate])
+            ->where('sales.state', '<>', 0)
+            ->selectRaw($groupColumn . ' as grp_key')
+            ->selectRaw('SUM(salesdetails.pricesale + salesdetails.nosujeta + salesdetails.exempt) as total')
+            ->groupBy(DB::raw($groupColumn))
+            ->get();
+
+        $merged = [];
+        foreach ($rows as $row) {
+            $keyRaw = $row->grp_key;
+            $label = $labelResolver($keyRaw);
+            $amount = (float) ($row->total ?? 0);
+            if (! isset($merged[$label])) {
+                $merged[$label] = 0.0;
+            }
+            $merged[$label] += $amount;
+        }
+
+        return collect($merged)
+            ->map(fn ($total, $label) => ['label' => $label, 'total' => round($total, 2)])
+            ->sortByDesc('total')
+            ->values()
+            ->take(10);
     }
 }

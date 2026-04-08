@@ -138,7 +138,7 @@
       },
       colors: ['#696cff'],
       dataLabels: { enabled: false },
-      series: [{ name: 'Ingresos', data: mesesTotales }],
+      series: [{ name: 'Ventas', data: mesesTotales }],
       xaxis: {
         categories: mesesLabels,
         labels: {
@@ -266,7 +266,72 @@
   }
 
   /* ════════════════════════════════════════════════════════════════════════
-   * 7. RADIAL – progress bars (ranking de productos)
+   * 7. BARRAS HORIZONTALES – análisis operativo (proveedor, destino, etc.)
+   * ════════════════════════════════════════════════════════════════════════ */
+  function renderHBarChart(selector, rows, color) {
+    var el = document.querySelector(selector);
+    if (!el) return;
+    var list = Array.isArray(rows) && rows.length
+      ? rows
+      : [{ label: 'Sin datos en el período', total: 0 }];
+    var labels = list.map(function (r) { return r.label || '—'; });
+    var values = list.map(function (r) { return parseFloat(r.total) || 0; });
+    var h = Math.max(240, labels.length * 32 + 72);
+    new ApexCharts(el, {
+      chart: {
+        type: 'bar',
+        height: h,
+        toolbar: { show: false },
+        animations: { speed: 650 }
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          borderRadius: 5,
+          barHeight: '68%'
+        }
+      },
+      colors: [color],
+      dataLabels: {
+        enabled: true,
+        formatter: function (val) { return moneyCompact(val); },
+        offsetX: 0,
+        style: { fontSize: '10px', colors: [labelColor], fontWeight: 600 }
+      },
+      series: [{ name: 'Ventas', data: values }],
+      xaxis: {
+        categories: labels,
+        labels: {
+          maxHeight: 140,
+          style: { colors: labelColor, fontSize: '11px' }
+        }
+      },
+      yaxis: {
+        labels: {
+          style: { colors: labelColor, fontSize: '11px' }
+        }
+      },
+      grid: {
+        borderColor: borderColor,
+        strokeDashArray: 4,
+        padding: { top: 0, right: 12, bottom: 0, left: 4 }
+      },
+      tooltip: {
+        theme: tooltipTheme,
+        y: { formatter: money }
+      }
+    }).render();
+  }
+
+  renderHBarChart('#chartVentasProveedor', D.ventasPorProveedor || [], '#696cff');
+  renderHBarChart('#chartVentasDestino', D.ventasPorDestino || [], '#ea5455');
+  renderHBarChart('#chartVentasRuta', D.ventasPorRuta || [], '#00cfe8');
+  renderHBarChart('#chartVentasAerolinea', D.ventasPorAerolinea || [], '#ff9f43');
+  renderHBarChart('#chartVentasCanal', D.ventasPorCanal || [], '#28c76f');
+  renderHBarChart('#chartVentasClientes', D.ventasPorCliente || [], '#7367f0');
+
+  /* ════════════════════════════════════════════════════════════════════════
+   * 8. RADIAL – progress bars (ranking de productos)
    * ════════════════════════════════════════════════════════════════════════ */
   document.querySelectorAll('.chart-progress').forEach(function (el) {
     var color  = (typeof config !== 'undefined' && config.colors)

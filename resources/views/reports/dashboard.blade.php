@@ -13,12 +13,18 @@
 @section('page-script')
 <script>
   window._dash = {
-    ventasPorMes:        @json($ventasPorMes),
-    ventasPorDia:        @json($ventasPorDia),
-    ventasUltimaSemana:  @json($ventasUltimaSemana),
-    ventasUltimoMes:     @json($ventasUltimoMes),
-    ventasUltimoAno:     @json($ventasUltimoAno),
-    productosMasVendidos:@json($productosMasVendidos),
+    ventasPorMes:         @json($ventasPorMes),
+    ventasPorDia:         @json($ventasPorDia),
+    ventasUltimaSemana:   @json($ventasUltimaSemana),
+    ventasUltimoMes:      @json($ventasUltimoMes),
+    ventasUltimoAno:      @json($ventasUltimoAno),
+    productosMasVendidos: @json($productosMasVendidos),
+    ventasPorProveedor:   @json($ventasPorProveedor),
+    ventasPorDestino:     @json($ventasPorDestino),
+    ventasPorRuta:        @json($ventasPorRuta),
+    ventasPorAerolinea:   @json($ventasPorAerolinea),
+    ventasPorCanal:       @json($ventasPorCanal),
+    ventasPorCliente:     @json($ventasPorCliente),
   };
 </script>
 <script src="{{asset('assets/js/dashboards-crm.js')}}"></script>
@@ -132,6 +138,7 @@
   .db-divider { border-top: 1px solid rgba(0,0,0,.06); margin: 10px 0; }
   /* ── Filter bar ── */
   .db-filter { border-radius: 10px; }
+  .db-hbar { min-height: 300px; }
 </style>
 
 <div class="row g-4">
@@ -209,7 +216,7 @@
         {{-- Derecha: KPI principal --}}
         <div class="col-lg-6 text-lg-end">
           <div style="color:rgba(255,255,255,.5);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;margin-bottom:6px;">
-            Ingreso total del período
+            Ventas totales del período
           </div>
           <div style="font-size:3rem;font-weight:900;color:#fff;line-height:1;letter-spacing:-1px;">
             ${{ number_format($totalVentas, 2) }}
@@ -295,9 +302,9 @@
     </div>
   </div>
 
-  {{-- ══════════════════════════════════════════════════════ KPI FINANCIEROS ══ --}}
+  {{-- ══════════════════════════════════════════════════════ KPI VENTAS ══ --}}
 
-  {{-- Ingresos período --}}
+  {{-- Ventas período --}}
   <div class="col-xl-3 col-md-6">
     <div class="card db-card h-100">
       <div class="card-body">
@@ -311,7 +318,7 @@
             {{ $signo }}{{ $crecimientoVentas }}%
           </span>
         </div>
-        <p class="db-label mb-1">Ingresos del período</p>
+        <p class="db-label mb-1">Ventas del período</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalVentas, 2) }}</h3>
         <small class="text-muted">Tendencia últimos 12 meses</small>
         <div id="salesLastYear" class="mt-2" style="min-height:58px;"></div>
@@ -319,7 +326,7 @@
     </div>
   </div>
 
-  {{-- Ingresos mes --}}
+  {{-- Ventas mes --}}
   <div class="col-xl-3 col-md-6">
     <div class="card db-card h-100">
       <div class="card-body">
@@ -329,7 +336,7 @@
           </div>
           <span class="db-badge bg-label-info text-info">Mes actual</span>
         </div>
-        <p class="db-label mb-1">Ingresos este mes</p>
+        <p class="db-label mb-1">Ventas este mes</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalVentasMes, 2) }}</h3>
         <small class="text-muted">Últimos 30 días</small>
         <div id="sessionsLastMonth" class="mt-2" style="min-height:58px;"></div>
@@ -337,7 +344,7 @@
     </div>
   </div>
 
-  {{-- Ingresos semana --}}
+  {{-- Ventas semana --}}
   <div class="col-xl-3 col-md-6">
     <div class="card db-card h-100">
       <div class="card-body">
@@ -347,7 +354,7 @@
           </div>
           <span class="db-badge bg-label-warning text-warning">Esta semana</span>
         </div>
-        <p class="db-label mb-1">Ingresos esta semana</p>
+        <p class="db-label mb-1">Ventas esta semana</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalVentasSemana, 2) }}</h3>
         <small class="text-muted">Últimos 7 días</small>
         <div id="revenueGrowth" class="mt-2" style="min-height:58px;"></div>
@@ -391,11 +398,11 @@
       <div class="card-header pb-0">
         <div class="d-flex align-items-start justify-content-between">
           <div>
-            <p class="db-label">Rendimiento financiero</p>
-            <h5 class="mb-0 fw-bold">Tendencia de ingresos — 12 meses</h5>
+            <p class="db-label">Evolución comercial</p>
+            <h5 class="mb-0 fw-bold">Tendencia de ventas — 12 meses</h5>
           </div>
           <div class="d-flex align-items-center gap-3" style="font-size:11px;color:#a1acb8;">
-            <span><i class="ti ti-circle-filled text-primary me-1" style="font-size:8px;"></i>Ingresos</span>
+            <span><i class="ti ti-circle-filled text-primary me-1" style="font-size:8px;"></i>Ventas</span>
           </div>
         </div>
       </div>
@@ -409,8 +416,8 @@
   <div class="col-xl-4 col-12">
     <div class="card db-card h-100">
       <div class="card-header pb-0">
-        <p class="db-label">Distribución por mes</p>
-        <h5 class="mb-0 fw-bold">Últimos 6 meses</h5>
+        <p class="db-label">Participación por mes</p>
+        <h5 class="mb-0 fw-bold">Ventas — últimos 6 meses</h5>
       </div>
       <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
         <div id="feeDonutChart"></div>
@@ -506,6 +513,81 @@
           </div>
         @endforelse
       </div>
+    </div>
+  </div>
+
+  {{-- ══════════════════════════════════════════ ANÁLISIS OPERATIVO (BI) ══ --}}
+  <div class="col-12">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <i class="ti ti-chart-dots-3 text-primary" style="font-size:22px;"></i>
+      <div>
+        <p class="db-label mb-0">Inteligencia de negocio</p>
+        <h5 class="mb-0 fw-bold">Análisis por proveedor, destino, ruta y aerolínea</h5>
+        <small class="text-muted">Montos por línea de detalle (gravado + exento + no sujeto), período filtrado. Ventas anuladas excluidas.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Red de proveedores</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-truck-delivery me-1 text-primary"></i>Ventas por proveedor (línea)</h5>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasProveedor" class="db-hbar"></div></div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Mercados</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-danger"></i>Ventas por destino</h5>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasDestino" class="db-hbar"></div></div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Trayectos</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-route me-1 text-info"></i>Ventas por ruta / segmento</h5>
+        <small class="text-muted">Incluye códigos o texto de ruta registrado en cada línea.</small>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasRuta" class="db-hbar"></div></div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Transporte</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-warning"></i>Ventas por aerolínea</h5>
+        <small class="text-muted">Campo «Aerolínea» del detalle de venta.</small>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasAerolinea" class="db-hbar"></div></div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Canales</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-device-analytics me-1 text-success"></i>Ventas por canal</h5>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasCanal" class="db-hbar"></div></div>
+    </div>
+  </div>
+
+  <div class="col-xl-6 col-12">
+    <div class="card db-card h-100">
+      <div class="card-header pb-0">
+        <p class="db-label">Relaciones</p>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-users me-1 text-primary"></i>Principales clientes por ventas</h5>
+        <small class="text-muted">Suma de montos de documento en el período.</small>
+      </div>
+      <div class="card-body pt-2"><div id="chartVentasClientes" class="db-hbar"></div></div>
     </div>
   </div>
 
