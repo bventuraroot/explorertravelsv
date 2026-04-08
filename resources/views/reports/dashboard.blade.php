@@ -221,6 +221,10 @@
           <div style="font-size:3rem;font-weight:900;color:#fff;line-height:1;letter-spacing:-1px;">
             ${{ number_format($totalVentas, 2) }}
           </div>
+          <div class="text-lg-end ms-lg-auto mt-1" style="color:rgba(255,255,255,.48);font-size:10px;max-width:28rem;line-height:1.35;">
+            Suma de líneas de detalle <strong style="color:rgba(255,255,255,.65);">incluye venta a terceros</strong>.
+            Excluye productos de fee: cargo administrativo, CXS, comisiones y producto aéreo (van en comisiones abajo).
+          </div>
           <div class="mt-2 d-flex align-items-center gap-3 justify-content-lg-end">
             <span class="db-badge"
               style="background:rgba({{ $crecimientoVentas >= 0 ? '40,199,111' : '234,84,85' }},.22);
@@ -231,7 +235,7 @@
           </div>
           <div class="mt-3 d-flex flex-wrap gap-3 justify-content-lg-end">
             <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 18px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Fee período</div>
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Comisiones / fee</div>
               <div style="color:#28c76f;font-size:1.1rem;font-weight:800;">${{ number_format($totalFees, 2) }}</div>
             </div>
             <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 18px;text-align:center;">
@@ -374,9 +378,9 @@
             <i class="ti ti-coin"></i> Comisiones
           </span>
         </div>
-        <p class="db-label mb-1">Fees del período</p>
+        <p class="db-label mb-1">Comisiones y cargos (fee)</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalFees, 2) }}</h3>
-        <small class="text-muted">Sin IVA</small>
+        <small class="text-muted">Fee en líneas + montos de productos fee (admin., CXS, comisiones, prod. aéreo)</small>
         <div class="db-divider mt-3"></div>
         <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
           <span class="text-muted">Fee + IVA</span>
@@ -523,7 +527,7 @@
       <div>
         <p class="db-label mb-0">Inteligencia de negocio</p>
         <h5 class="mb-0 fw-bold">Análisis por proveedor, destino, ruta y aerolínea</h5>
-        <small class="text-muted">Montos por línea de detalle (gravado + exento + no sujeto), período filtrado. Ventas anuladas excluidas.</small>
+        <small class="text-muted">Montos por línea (gravado + exento + no sujeto), solo <strong>ventas operativas</strong> (sin productos fee). Período filtrado; anuladas excluidas.</small>
       </div>
     </div>
   </div>
@@ -542,7 +546,8 @@
     <div class="card db-card h-100">
       <div class="card-header pb-0">
         <p class="db-label">Mercados</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-danger"></i>Ventas por destino</h5>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-danger"></i>Ventas por destino (aeropuerto)</h5>
+        <small class="text-muted">Etiqueta desde la tabla <code>aeropuertos</code> (IATA · ciudad · país).</small>
       </div>
       <div class="card-body pt-2"><div id="chartVentasDestino" class="db-hbar"></div></div>
     </div>
@@ -564,7 +569,7 @@
       <div class="card-header pb-0">
         <p class="db-label">Transporte</p>
         <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-warning"></i>Ventas por aerolínea</h5>
-        <small class="text-muted">Campo «Aerolínea» del detalle de venta.</small>
+        <small class="text-muted">Nombre desde la tabla <code>aerolineas</code> (IATA · nombre).</small>
       </div>
       <div class="card-body pt-2"><div id="chartVentasAerolinea" class="db-hbar"></div></div>
     </div>

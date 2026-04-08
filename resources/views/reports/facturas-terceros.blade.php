@@ -173,15 +173,15 @@ $(document).ready(function() {
         }
     </style>
     <div id="areaImprimir" class="report-container table-responsive">
-        <table class="table table-sm table-bordered" style="min-width: 2200px;">
+        <table class="table table-sm table-bordered" style="min-width: 2600px;">
             <thead style="font-size: 11px;">
                 <tr>
-                    <th class="text-center" colspan="14">
+                    <th class="text-center" colspan="17">
                         FACTURAS TERCEROS – MANDANTE / MANDATARIO (Valores expresados en USD)
                     </th>
                 </tr>
                 <tr>
-                    <td class="text-center" colspan="14" style="font-size: 12px;">
+                    <td class="text-center" colspan="17" style="font-size: 12px;">
                         <b>Mandatario:</b> {{ $heading->name }} &nbsp;&nbsp;
                         <b>NIT:</b> {{ $heading->nit ?? '-' }} &nbsp;&nbsp;
                         <b>NRC:</b> {{ $heading->nrc ?? '-' }} &nbsp;&nbsp;
@@ -199,11 +199,13 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: center; width: 50px;"><b>SERIE</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 180px;"><b>Nº RESOLUCIÓN<br>(CONTROL DTE)</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 280px;"><b>Nº DOCUMENTO<br>(CÓD. GENERACIÓN)</b></td>
+                    <td style="font-size: 9px; text-align: center; min-width: 200px;"><b>SELLO RECEPCIÓN<br>(FACTURA)</b></td>
                     <td style="font-size: 10px; text-align: right; width: 90px;"><b>MONTO GRAVADO<br>(SIN IVA)</b></td>
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA DE LA<br>OPERACIÓN</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 180px;"><b>RESOLUCIÓN CLQ<br>(CONTROL)</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 280px;"><b>Nº COMPROBANTE<br>(CÓD. GEN.)</b></td>
                     <td style="font-size: 10px; text-align: center; width: 80px;"><b>FECHA CLQ</b></td>
+                    <td style="font-size: 9px; text-align: center; min-width: 200px;"><b>SELLO RECEPCIÓN<br>(CLQ)</b></td>
                     <td style="font-size: 10px; text-align: center; width: 80px;"><b>ESTADO</b></td>
                 </tr>
             </thead>
@@ -234,11 +236,13 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">-</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 180px;">{{ $sale->numero_control ?? '-' }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->codigo_generacion ?? '-' }}</td>
+                    <td style="font-size: 7px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 200px; word-break: break-all; font-family: ui-monospace, monospace;">{{ $sale->sello_recibido ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: right; padding-top: 0; padding-bottom: 0;">{{ number_format($gravado, 2) }}</td>
                     <td style="font-size: 10px; text-align: right; padding-top: 0; padding-bottom: 0;">{{ number_format($iva, 2) }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 180px;">{{ $sale->clq_numero_control ?? '-' }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->clq_codigo_generacion ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap;">{{ $sale->clq_fecha ?? '-' }}</td>
+                    <td style="font-size: 7px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 200px; word-break: break-all; font-family: ui-monospace, monospace;">{{ $sale->clq_sello_recibido ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">
                         @if($sale->estado_liquidacion === 'Liquidado')
                             <span class="badge bg-success">Liquidado</span>
@@ -250,10 +254,10 @@ $(document).ready(function() {
                 <?php $i++; ?>
                 @endforeach
                 <tr style="text-align: right; font-weight: bold;">
-                    <td colspan="9" style="text-align: right; font-size: 10px;"><b>TOTALES DEL MES</b></td>
+                    <td colspan="10" style="text-align: right; font-size: 10px;"><b>TOTALES DEL MES</b></td>
                     <td style="font-size: 10px;">{{ number_format($tot_gravado, 2) }}</td>
                     <td style="font-size: 10px;">{{ number_format($tot_iva, 2) }}</td>
-                    <td colspan="4" style="font-size: 10px;">-</td>
+                    <td colspan="5" style="font-size: 10px;">-</td>
                 </tr>
             </tbody>
         </table>

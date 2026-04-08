@@ -2177,7 +2177,7 @@ class ReportsController extends Controller
 
         // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
         $dteCLQSub = DB::table('dte')
-            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.codEstado')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
             ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
 
@@ -2210,7 +2210,8 @@ class ReportsController extends Controller
                 'dte_fact.codigoGeneracion AS codigo_generacion',
                 'dte_fact.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
+                'dte_clq.selloRecibido AS clq_sello_recibido'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
@@ -2260,7 +2261,7 @@ class ReportsController extends Controller
 
         // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
         $dteCLQSubExc = DB::table('dte')
-            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.codEstado')
+            ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
             ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
 
@@ -2293,7 +2294,8 @@ class ReportsController extends Controller
                 'dte_fact.codigoGeneracion AS codigo_generacion',
                 'dte_fact.selloRecibido AS sello_recibido',
                 'dte_clq.id_doc AS clq_numero_control',
-                'dte_clq.codigoGeneracion AS clq_codigo_generacion'
+                'dte_clq.codigoGeneracion AS clq_codigo_generacion',
+                'dte_clq.selloRecibido AS clq_sello_recibido'
             )
             ->selectRaw("DATE_FORMAT(sales.date, '%d/%m/%Y') AS fecha_emision")
             ->selectRaw("DATE_FORMAT(clq.date, '%d/%m/%Y') AS clq_fecha")
@@ -2328,8 +2330,8 @@ class ReportsController extends Controller
         $html .= '<body><table border="1">';
 
         // Encabezado del reporte
-        $html .= '<tr><th colspan="15" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">FACTURAS TERCEROS - MANDANTE/MANDATARIO</th></tr>';
-        $html .= '<tr><td colspan="15" style="text-align:center;">';
+        $html .= '<tr><th colspan="17" style="text-align:center; font-weight:bold; background:#1e3a5f; color:#fff;">FACTURAS TERCEROS - MANDANTE/MANDATARIO</th></tr>';
+        $html .= '<tr><td colspan="17" style="text-align:center;">';
         $html .= '<b>Empresa (Mandatario):</b> ' . ($Company['name'] ?? '') . '&nbsp;&nbsp;';
         $html .= '<b>NIT:</b> ' . ($Company['nit'] ?? '') . '&nbsp;&nbsp;';
         $html .= '<b>MES:</b> ' . $mesesMayus[(int)$request['period'] - 1] . '&nbsp;&nbsp;';
@@ -2347,15 +2349,17 @@ class ReportsController extends Controller
         $html .= '<th rowspan="2">SERIE</th>';
         $html .= '<th rowspan="2">Nº RESOLUCIÓN (CONTROL DTE)</th>';
         $html .= '<th rowspan="2">Nº DOCUMENTO (CÓD. GENERACIÓN)</th>';
+        $html .= '<th rowspan="2">SELLO RECEPCIÓN (FACTURA)</th>';
         $html .= '<th rowspan="2">MONTO GRAVADO (SIN IVA)</th>';
         $html .= '<th rowspan="2">IVA DE LA OPERACIÓN</th>';
-        $html .= '<th colspan="3" style="background:#a4c2f4;">COMPROBANTE DE LIQUIDACIÓN</th>';
+        $html .= '<th colspan="4" style="background:#a4c2f4;">COMPROBANTE DE LIQUIDACIÓN</th>';
         $html .= '<th rowspan="2">ESTADO</th>';
         $html .= '</tr>';
         $html .= '<tr style="background:#a4c2f4; font-weight:bold; text-align:center;">';
         $html .= '<th>RESOLUCIÓN CLQ (CONTROL)</th>';
         $html .= '<th>Nº COMPROBANTE (CÓD. GEN.)</th>';
         $html .= '<th>FECHA CLQ</th>';
+        $html .= '<th>SELLO RECEPCIÓN CLQ</th>';
         $html .= '</tr>';
 
         $i = 1;
@@ -2378,11 +2382,13 @@ class ReportsController extends Controller
             $html .= '<td>-</td>';
             $html .= '<td>' . ($sale->numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->codigo_generacion ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->sello_recibido ?? '-') . '</td>';
             $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->monto_gravado ?? 0), 2, '.', '') . '</td>';
             $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->iva_operacion ?? 0), 2, '.', '') . '</td>';
             $html .= '<td>' . ($sale->clq_numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_codigo_generacion ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_fecha ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->clq_sello_recibido ?? '-') . '</td>';
             $html .= '<td style="' . $colorEstado . '">' . $estado . '</td>';
             $html .= '</tr>';
 
@@ -2393,10 +2399,10 @@ class ReportsController extends Controller
 
         // Totales
         $html .= '<tr style="font-weight:bold; background:#c9daf8;">';
-        $html .= '<td colspan="9" style="text-align:right;">TOTALES DEL MES</td>';
+        $html .= '<td colspan="10" style="text-align:right;">TOTALES DEL MES</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_gravado, 2, '.', '') . '</td>';
         $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format($tot_iva, 2, '.', '') . '</td>';
-        $html .= '<td colspan="4"></td>';
+        $html .= '<td colspan="5"></td>';
         $html .= '</tr>';
 
         $html .= '</table></body></html>';
