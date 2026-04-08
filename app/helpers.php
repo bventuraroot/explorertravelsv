@@ -1062,6 +1062,13 @@ if (!function_exists('clq')) {
         $caja = "P001";
         //$tipo_establecimiento = CerosIzquierda($encabezado["tipo_establecimiento"], 4);
         $tipo_establecimiento = "M001";
+        $tsCreacion = !empty($encabezado->fechacreacion) ? strtotime($encabezado->fechacreacion) : false;
+        $tsFechaVenta = isset($encabezado->fecha_venta) && $encabezado->fecha_venta !== null && $encabezado->fecha_venta !== ''
+            ? strtotime($encabezado->fecha_venta)
+            : false;
+        $fecEmi = $tsFechaVenta ? date('Y-m-d', $tsFechaVenta) : ($tsCreacion ? date('Y-m-d', $tsCreacion) : date('Y-m-d'));
+        $horEmi = $tsCreacion ? date('H:i:s', $tsCreacion) : date('H:i:s');
+
         $identificacion = [
             "version"           => intval($encabezado->versionJson),
             "ambiente"          => $encabezado->ambiente,
@@ -1070,8 +1077,8 @@ if (!function_exists('clq')) {
             "codigoGeneracion"  => $uuid,
             "tipoModelo"        => 1,
             "tipoOperacion"     => 1,
-            "fecEmi"            => date('Y-m-d'), //"2022-07-20", // $encabezado["fecEmi"],    //Cambiar
-            "horEmi"            => date("H:i:s"),      //Cambiar
+            "fecEmi"            => $fecEmi,
+            "horEmi"            => $horEmi,
             "tipoMoneda"        => "USD"            //Cambiar
         ];
         $comprobante = [

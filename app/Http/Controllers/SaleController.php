@@ -783,6 +783,7 @@ class SaleController extends Controller
         docs.estado estado,
         a.company_id id_empresa,
         a.user_id hechopor,
+        a.date fecha_venta,
         a.created_at fechacreacion,
         b.description NombreDocumento,
         c.name NombreUsuario,

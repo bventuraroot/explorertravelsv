@@ -170,7 +170,9 @@ class DteService
                     'versionJson' => $dte->versionJson,
                     'ambiente' => $dte->ambiente_id,
                     'tipodocumento' => $dte->tipoDte,
-                    'actual' => $sale->nu_doc ?? null
+                    'actual' => $sale->nu_doc ?? null,
+                    'fecha_venta' => $sale->date,
+                    'fechacreacion' => $sale->created_at,
                 ]
             ],
             'detalle' => $sale->details->map(function($detail){
