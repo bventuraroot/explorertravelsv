@@ -347,20 +347,23 @@ class DashboardController extends Controller
         $feeN = $this->sqlEsNombreProductoFee('p');
         $sub = $this->sqlSubtotalLinea('sd');
 
-        $rows = DB::table('salesdetails as sd')
+        // Subconsulta: solo agregación + GROUP BY. El JOIN al catálogo en la misma query
+        // provoca error 1055 (ONLY_FULL_GROUP_BY) porque el ON referencia sd.destino.
+        $aggregated = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
-            ->leftJoin('aeropuertos as ap', function ($join) {
-                $join->whereRaw('ap.id_aeropuerto = CAST(NULLIF(NULLIF(TRIM(sd.destino), ""), "0") AS UNSIGNED)');
-            })
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->selectRaw($destinoExpr . ' as destino_key')
             ->selectRaw('SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END) as total')
-            ->selectRaw('MAX(ap.iata) as ap_iata')
-            ->selectRaw('MAX(ap.ciudad) as ap_ciudad')
-            ->selectRaw('MAX(ap.pais) as ap_pais')
-            ->groupBy(DB::raw($destinoExpr))
+            ->groupBy(DB::raw($destinoExpr));
+
+        $rows = DB::query()
+            ->fromSub($aggregated, 'agg')
+            ->leftJoin('aeropuertos as ap', function ($join) {
+                $join->whereRaw('ap.id_aeropuerto = CAST(agg.destino_key AS UNSIGNED)');
+            })
+            ->select('agg.destino_key', 'agg.total', 'ap.iata as ap_iata', 'ap.ciudad as ap_ciudad', 'ap.pais as ap_pais')
             ->get();
 
         return $rows
@@ -400,19 +403,21 @@ class DashboardController extends Controller
         $feeN = $this->sqlEsNombreProductoFee('p');
         $sub = $this->sqlSubtotalLinea('sd');
 
-        $rows = DB::table('salesdetails as sd')
+        $aggregated = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
-            ->leftJoin('aerolineas as al', function ($join) {
-                $join->whereRaw('al.id_aerolinea = CAST(NULLIF(NULLIF(TRIM(sd.linea), ""), "0") AS UNSIGNED)');
-            })
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->selectRaw($lineaExpr . ' as linea_key')
             ->selectRaw('SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END) as total')
-            ->selectRaw('MAX(al.iata) as al_iata')
-            ->selectRaw('MAX(al.nombre) as al_nombre')
-            ->groupBy(DB::raw($lineaExpr))
+            ->groupBy(DB::raw($lineaExpr));
+
+        $rows = DB::query()
+            ->fromSub($aggregated, 'agg')
+            ->leftJoin('aerolineas as al', function ($join) {
+                $join->whereRaw('al.id_aerolinea = CAST(agg.linea_key AS UNSIGNED)');
+            })
+            ->select('agg.linea_key', 'agg.total', 'al.iata as al_iata', 'al.nombre as al_nombre')
             ->get();
 
         return $rows
