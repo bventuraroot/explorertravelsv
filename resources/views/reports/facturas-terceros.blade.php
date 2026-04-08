@@ -204,8 +204,8 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: right; width: 80px;"><b>IVA DE LA<br>OPERACIÓN</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 180px;"><b>RESOLUCIÓN CLQ<br>(CONTROL)</b></td>
                     <td style="font-size: 10px; text-align: center; min-width: 280px;"><b>Nº COMPROBANTE<br>(CÓD. GEN.)</b></td>
-                    <td style="font-size: 10px; text-align: center; width: 80px;"><b>FECHA CLQ</b></td>
                     <td style="font-size: 9px; text-align: center; min-width: 200px;"><b>SELLO RECEPCIÓN<br>(CLQ)</b></td>
+                    <td style="font-size: 10px; text-align: center; width: 80px;"><b>FECHA CLQ</b></td>
                     <td style="font-size: 10px; text-align: center; width: 80px;"><b>ESTADO</b></td>
                 </tr>
             </thead>
@@ -241,8 +241,8 @@ $(document).ready(function() {
                     <td style="font-size: 10px; text-align: right; padding-top: 0; padding-bottom: 0;">{{ number_format($iva, 2) }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 180px;">{{ $sale->clq_numero_control ?? '-' }}</td>
                     <td style="font-size: 8px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 280px;">{{ $sale->clq_codigo_generacion ?? '-' }}</td>
-                    <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap;">{{ $sale->clq_fecha ?? '-' }}</td>
                     <td style="font-size: 7px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap; min-width: 200px; word-break: break-all; font-family: ui-monospace, monospace;">{{ $sale->clq_sello_recibido ?? '-' }}</td>
+                    <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0; white-space: nowrap;">{{ $sale->clq_fecha ?? '-' }}</td>
                     <td style="font-size: 10px; text-align: center; padding-top: 0; padding-bottom: 0;">
                         @if($sale->estado_liquidacion === 'Liquidado')
                             <span class="badge bg-success">Liquidado</span>

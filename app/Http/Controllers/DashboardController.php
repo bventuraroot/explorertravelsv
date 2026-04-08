@@ -346,17 +346,25 @@ class DashboardController extends Controller
 
         $feeN = $this->sqlEsNombreProductoFee('p');
         $sub = $this->sqlSubtotalLinea('sd');
+        $lineAmountExpr = 'CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END';
 
-        // Subconsulta: solo agregación + GROUP BY. El JOIN al catálogo en la misma query
-        // provoca error 1055 (ONLY_FULL_GROUP_BY) porque el ON referencia sd.destino.
-        $aggregated = DB::table('salesdetails as sd')
+        // 1) Una fila por línea de detalle: clave normalizada + monto (sin GROUP BY).
+        //    Así se evita 1055: el SUM no puede ir en la misma query que GROUP BY
+        //    sobre expresión de sd.destino con referencias a p.name y sd.*.
+        $porLinea = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->selectRaw($destinoExpr . ' as destino_key')
-            ->selectRaw('SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END) as total')
-            ->groupBy(DB::raw($destinoExpr));
+            ->selectRaw($lineAmountExpr . ' as line_amount');
+
+        // 2) Agregación solo por destino_key (columna del subresultado).
+        $aggregated = DB::query()
+            ->fromSub($porLinea, 'pl')
+            ->select('pl.destino_key')
+            ->selectRaw('SUM(pl.line_amount) as total')
+            ->groupBy('pl.destino_key');
 
         $rows = DB::query()
             ->fromSub($aggregated, 'agg')
@@ -402,15 +410,21 @@ class DashboardController extends Controller
 
         $feeN = $this->sqlEsNombreProductoFee('p');
         $sub = $this->sqlSubtotalLinea('sd');
+        $lineAmountExpr = 'CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END';
 
-        $aggregated = DB::table('salesdetails as sd')
+        $porLinea = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->selectRaw($lineaExpr . ' as linea_key')
-            ->selectRaw('SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END) as total')
-            ->groupBy(DB::raw($lineaExpr));
+            ->selectRaw($lineAmountExpr . ' as line_amount');
+
+        $aggregated = DB::query()
+            ->fromSub($porLinea, 'pl')
+            ->select('pl.linea_key')
+            ->selectRaw('SUM(pl.line_amount) as total')
+            ->groupBy('pl.linea_key');
 
         $rows = DB::query()
             ->fromSub($aggregated, 'agg')

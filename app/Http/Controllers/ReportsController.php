@@ -2358,8 +2358,8 @@ class ReportsController extends Controller
         $html .= '<tr style="background:#a4c2f4; font-weight:bold; text-align:center;">';
         $html .= '<th>RESOLUCIÓN CLQ (CONTROL)</th>';
         $html .= '<th>Nº COMPROBANTE (CÓD. GEN.)</th>';
-        $html .= '<th>FECHA CLQ</th>';
         $html .= '<th>SELLO RECEPCIÓN CLQ</th>';
+        $html .= '<th>FECHA CLQ</th>';
         $html .= '</tr>';
 
         $i = 1;
@@ -2387,8 +2387,8 @@ class ReportsController extends Controller
             $html .= '<td style="mso-number-format:\'\#\,\#\#0\.00\';">' . number_format(floatval($sale->iva_operacion ?? 0), 2, '.', '') . '</td>';
             $html .= '<td>' . ($sale->clq_numero_control ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_codigo_generacion ?? '-') . '</td>';
-            $html .= '<td>' . ($sale->clq_fecha ?? '-') . '</td>';
             $html .= '<td>' . ($sale->clq_sello_recibido ?? '-') . '</td>';
+            $html .= '<td>' . ($sale->clq_fecha ?? '-') . '</td>';
             $html .= '<td style="' . $colorEstado . '">' . $estado . '</td>';
             $html .= '</tr>';
 
