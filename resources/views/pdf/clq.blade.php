@@ -190,12 +190,12 @@
                     <tr style="background-color: #ffffff;">
                         <td style="padding: 3px; font-size: 9px;"><strong>Fecha generación:</strong></td>
                         <td style="padding: 3px; font-size: 9px;">{{ $fechaGeneracion }}</td>
-                        <td style="padding: 3px; font-size: 9px;"><strong>Fecha proc./recep.:</strong> {{ $fechaProcRecep !== '' ? $fechaProcRecep : '—' }}</td>
+                        <td style="padding: 3px; font-size: 9px;"><strong>Fecha recepción:</strong> {{ $fechaProcRecep !== '' ? $fechaProcRecep : '—' }}</td>
                     </tr>
                     <tr style="background-color: #ffffff;">
                         <td style="padding: 3px; font-size: 9px;"><strong>Hora generación:</strong></td>
                         <td style="padding: 3px; font-size: 9px;">{{ $horEmiGen }}</td>
-                        <td style="padding: 3px; font-size: 9px;"><strong>Hora proc./recep.:</strong> {{ $horaProcRecep !== '' ? $horaProcRecep : '—' }}</td>
+                        <td style="padding: 3px; font-size: 9px;"><strong>Hora recepción:</strong> {{ $horaProcRecep !== '' ? $horaProcRecep : '—' }}</td>
                     </tr>
                     @if(isset($json["estadoHacienda"]))
                     <tr style="background-color: #ffffff;">
@@ -330,11 +330,11 @@
                 <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaExenta"] ?? $d["exentas"] ?? $d["ventaExenta"] ?? 0)}}</td>
                 <td style="padding: 6px 4px; text-align: center; font-size: 10px; white-space: nowrap;">{{FNumero($d["ventaGravada"] ?? $d["gravadas"] ?? $d["ventaGravada"] ?? 0)}}</td>
             </tr>
-            @if (($loop->index+1) % 11 == 0)
-            <tr style='page-break-after: always;'>
-                <td align="right" colspan="9">Pasan ......</td>
+            {{-- Salto solo si completamos un bloque de 10 y aún vienen más filas (evita hoja en blanco con exactamente 10 ítems) --}}
+            @if (($loop->index + 1) % 10 == 0 && ! $loop->last)
+            <tr style="page-break-after: always;">
+                <td colspan="9" style="height: 0; padding: 0; border: none; font-size: 0; line-height: 0;">&nbsp;</td>
             </tr>
-
             @endif
             @endforeach
         </tbody>
