@@ -1328,7 +1328,7 @@ if (!function_exists('clq')) {
         $comprobante["apendice"]                 = $apendice;
 
         //$comprobante2 = [];
-        //dd($comprobante);
+        dd($comprobante);
         return ($comprobante);
     }
 }
