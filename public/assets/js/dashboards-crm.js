@@ -268,9 +268,10 @@
   /* ════════════════════════════════════════════════════════════════════════
    * 7. BARRAS HORIZONTALES – análisis operativo (proveedor, destino, etc.)
    * ════════════════════════════════════════════════════════════════════════ */
-  function renderHBarChart(selector, rows, color) {
+  function renderHBarChart(selector, rows, color, seriesName) {
     var el = document.querySelector(selector);
     if (!el) return;
+    var name = seriesName || 'Ventas';
     var list = Array.isArray(rows) && rows.length
       ? rows
       : [{ label: 'Sin datos en el período', total: 0 }];
@@ -298,7 +299,7 @@
         offsetX: 0,
         style: { fontSize: '10px', colors: [labelColor], fontWeight: 600 }
       },
-      series: [{ name: 'Ventas', data: values }],
+      series: [{ name: name, data: values }],
       xaxis: {
         categories: labels,
         labels: {
@@ -323,6 +324,8 @@
     }).render();
   }
 
+  renderHBarChart('#chartIngresoDestino', D.ingresoEmpresaPorDestino || [], '#00cfe8', 'Ingreso empresa');
+  renderHBarChart('#chartIngresoAerolinea', D.ingresoEmpresaPorAerolinea || [], '#7367f0', 'Ingreso empresa');
   renderHBarChart('#chartVentasProveedor', D.ventasPorProveedor || [], '#696cff');
   renderHBarChart('#chartVentasDestino', D.ventasPorDestino || [], '#ea5455');
   renderHBarChart('#chartVentasRuta', D.ventasPorRuta || [], '#00cfe8');

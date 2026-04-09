@@ -16,19 +16,26 @@ use Illuminate\Support\Str;
 class DashboardController extends Controller
 {
     /**
-     * Productos que representan fee/comisiones de la agencia (no venta operativa ni passthrough).
-     * Alineado con la lógica de ReportsController: el resto del detalle cuenta como venta (incl. venta a terceros).
+     * FEE estricto: solo cargo administrativo y CXS.
      *
      * @return list<string>
      */
-    private static function productosNombreFeeLowercase(): array
+    private static function productosSoloFeeLowercase(): array
     {
         return [
             'cargo administrativo',
             'cxs',
-            'comisiones',
-            'producto aereo',
-            'producto aéreo',
+        ];
+    }
+
+    /**
+     * Ingreso para la empresa: producto «Comisiones producto aéreo» (variantes de nombre).
+     *
+     * @return list<string>
+     */
+    private static function productosIngresoEmpresaLowercase(): array
+    {
+        return [
             'comisiones producto aereo',
             'comisiones producto aéreo',
         ];
@@ -44,23 +51,47 @@ class DashboardController extends Controller
         return "({$alias}.pricesale > 0 AND ({$alias}.exempt = 0 OR {$alias}.exempt IS NULL) AND ({$alias}.nosujeta = 0 OR {$alias}.nosujeta IS NULL))";
     }
 
-    /** Condición SQL: nombre de producto es uno de los de fee (comparación en minúsculas). */
-    private function sqlEsNombreProductoFee(string $aliasProducto = 'p'): string
+    /** @param  list<string>  $nombresLowercase */
+    private function sqlNombreProductoInList(array $nombresLowercase, string $aliasProducto = 'p'): string
     {
         $escaped = array_map(static function (string $s): string {
             return "'" . str_replace(["\\", "'"], ["\\\\", "''"], $s) . "'";
-        }, self::productosNombreFeeLowercase());
+        }, $nombresLowercase);
 
         return 'LOWER(TRIM(COALESCE(' . $aliasProducto . '.name, \'\'))) IN (' . implode(',', $escaped) . ')';
     }
 
+    private function sqlEsSoloProductoFee(string $alias = 'p'): string
+    {
+        return $this->sqlNombreProductoInList(self::productosSoloFeeLowercase(), $alias);
+    }
+
+    private function sqlEsIngresoEmpresaComisionAereo(string $alias = 'p'): string
+    {
+        return $this->sqlNombreProductoInList(self::productosIngresoEmpresaLowercase(), $alias);
+    }
+
+    /** Venta a terceros: todo lo que no es FEE (admin/CXS) ni ingreso empresa (Comisiones producto aéreo). */
+    private function sqlEsVentaATercerosLinea(string $alias = 'p'): string
+    {
+        return '(NOT (' . $this->sqlEsSoloProductoFee($alias) . ') AND NOT (' . $this->sqlEsIngresoEmpresaComisionAereo($alias) . '))';
+    }
+
     /**
-     * @return array{ventas_operativas: float, fee_monto: float, fee_iva: float}
+     * @return array{
+     *   ventas_operativas: float,
+     *   fee_monto: float,
+     *   fee_iva: float,
+     *   ingreso_empresa_monto: float,
+     *   ingreso_empresa_iva: float
+     * }
      */
     private function totalesVentasYFeeEnRango(Carbon $startDate, Carbon $endDate): array
     {
         $grav = $this->sqlLineaGravada('sd');
-        $feeN = $this->sqlEsNombreProductoFee('p');
+        $soloF = $this->sqlEsSoloProductoFee('p');
+        $ingE = $this->sqlEsIngresoEmpresaComisionAereo('p');
+        $vTer = $this->sqlEsVentaATercerosLinea('p');
         $sub = $this->sqlSubtotalLinea('sd');
 
         $row = DB::table('salesdetails as sd')
@@ -69,11 +100,15 @@ class DashboardController extends Controller
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->selectRaw('
-                COALESCE(SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END), 0) as ventas_operativas,
-                COALESCE(SUM(CASE WHEN ' . $grav . ' THEN sd.fee ELSE 0 END), 0)
-                + COALESCE(SUM(CASE WHEN ' . $feeN . ' THEN ' . $sub . ' ELSE 0 END), 0) as fee_monto,
-                COALESCE(SUM(CASE WHEN ' . $grav . ' THEN sd.feeiva ELSE 0 END), 0)
-                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $feeN . ' THEN sd.detained13 ELSE 0 END), 0) as fee_iva
+                COALESCE(SUM(CASE WHEN ' . $vTer . ' THEN ' . $sub . ' ELSE 0 END), 0) as ventas_operativas,
+                COALESCE(SUM(CASE WHEN ' . $soloF . ' THEN ' . $sub . ' ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.fee ELSE 0 END), 0) as fee_monto,
+                COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.feeiva ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.detained13 ELSE 0 END), 0) as fee_iva,
+                COALESCE(SUM(CASE WHEN ' . $ingE . ' THEN ' . $sub . ' ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.fee ELSE 0 END), 0) as ingreso_empresa_monto,
+                COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.feeiva ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.detained13 ELSE 0 END), 0) as ingreso_empresa_iva
             ')
             ->first();
 
@@ -81,6 +116,8 @@ class DashboardController extends Controller
             'ventas_operativas' => round((float) ($row->ventas_operativas ?? 0), 2),
             'fee_monto' => round((float) ($row->fee_monto ?? 0), 2),
             'fee_iva' => round((float) ($row->fee_iva ?? 0), 2),
+            'ingreso_empresa_monto' => round((float) ($row->ingreso_empresa_monto ?? 0), 2),
+            'ingreso_empresa_iva' => round((float) ($row->ingreso_empresa_iva ?? 0), 2),
         ];
     }
 
@@ -89,13 +126,43 @@ class DashboardController extends Controller
         $user = auth()->user();
         $now = Carbon::now();
 
-        // Procesar filtros de fecha
-        $filterType = $request->input('filter_type', 'all'); // all, day, month, year, custom
+        // Procesar filtros de fecha (por defecto: mes en curso)
+        $filterType = $request->input('filter_type', 'month'); // all, day, month, year, custom
         $filterDate = $request->input('filter_date', $now->format('Y-m-d'));
-        $filterMonth = $request->input('filter_month', $now->format('Y-m'));
         $filterYear = $request->input('filter_year', $now->format('Y'));
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
+
+        if ($request->has('filter_month_year') || $request->has('filter_month_num')) {
+            $y = (int) $request->input('filter_month_year', $now->year);
+            $m = (int) $request->input('filter_month_num', $now->month);
+            if ($y < 2000 || $y > 2100) {
+                $y = (int) $now->year;
+            }
+            if ($m < 1 || $m > 12) {
+                $m = (int) $now->month;
+            }
+            $filterMonth = sprintf('%04d-%02d', $y, $m);
+        } elseif ($request->filled('filter_month')) {
+            try {
+                $filterMonth = Carbon::createFromFormat('Y-m', $request->input('filter_month'))->format('Y-m');
+            } catch (\Throwable $e) {
+                $filterMonth = $now->format('Y-m');
+            }
+        } else {
+            $filterMonth = $now->format('Y-m');
+        }
+
+        $filterMonthParts = explode('-', $filterMonth);
+        $filterMonthYear = isset($filterMonthParts[0]) ? max(2000, min(2100, (int) $filterMonthParts[0])) : (int) $now->year;
+        $filterMonthNum = isset($filterMonthParts[1])
+            ? str_pad((string) max(1, min(12, (int) $filterMonthParts[1])), 2, '0', STR_PAD_LEFT)
+            : $now->format('m');
+        $yearsForMonthFilter = range((int) $now->year - 8, (int) $now->year + 2);
+        if (! in_array($filterMonthYear, $yearsForMonthFilter, true)) {
+            $yearsForMonthFilter[] = $filterMonthYear;
+            sort($yearsForMonthFilter);
+        }
 
         // Determinar rango de fechas según el filtro
         switch ($filterType) {
@@ -136,11 +203,13 @@ class DashboardController extends Controller
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfWeek = $now->copy()->startOfWeek();
 
-        // Totales: "ventas" = detalle sin líneas de productos fee; fee = columnas fee/feeiva + líneas de esos productos (como reportes)
+        // Ventas a terceros | FEE (admin+CXS) | Ingreso empresa (Comisiones producto aéreo)
         $totalesPeriodo = $this->totalesVentasYFeeEnRango($startDate, $endDate);
         $totalVentas = $totalesPeriodo['ventas_operativas'];
         $totalFees = $totalesPeriodo['fee_monto'];
         $totalFeesIva = $totalesPeriodo['fee_iva'];
+        $totalIngresoEmpresa = $totalesPeriodo['ingreso_empresa_monto'];
+        $totalIngresoEmpresaIva = $totalesPeriodo['ingreso_empresa_iva'];
 
         $inicioMes = $startDate->greaterThan($startOfMonth) ? $startDate : $startOfMonth;
         $totalVentasMes = $this->totalesVentasYFeeEnRango($inicioMes, $endDate)['ventas_operativas'];
@@ -193,14 +262,14 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Top productos más vendidos (excluye líneas de fee/comisiones de agencia)
-        $feeN = $this->sqlEsNombreProductoFee('products');
+        // Top productos más vendidos (solo ventas a terceros: sin FEE ni ingreso empresa)
+        $vTerProd = $this->sqlEsVentaATercerosLinea('products');
         $productosMasVendidos = Salesdetail::query()
             ->select('products.id', 'products.name', DB::raw('SUM(salesdetails.amountp) as cantidad_vendida'))
             ->join('sales', 'sales.id', '=', 'salesdetails.sale_id')
             ->join('products', 'products.id', '=', 'salesdetails.product_id')
             ->whereBetween('sales.date', [$startDate, $endDate])
-            ->whereRaw('NOT (' . $feeN . ')')
+            ->whereRaw('(' . $vTerProd . ')')
             ->groupBy('products.id', 'products.name')
             ->orderByDesc(DB::raw('SUM(salesdetails.amountp)'))
             ->limit(5)
@@ -240,6 +309,10 @@ class DashboardController extends Controller
         // Ventas por aerolínea (id → tabla aerolineas)
         $ventasPorAerolinea = $this->ventasPorAerolineaConCatalogo($startDate, $endDate);
 
+        // Ingreso empresa (solo «Comisiones producto aéreo»): desglose por destino / aerolínea
+        $ingresoEmpresaPorDestino = $this->ingresoEmpresaPorDestinoConAeropuerto($startDate, $endDate);
+        $ingresoEmpresaPorAerolinea = $this->ingresoEmpresaPorAerolineaConCatalogo($startDate, $endDate);
+
         // Ventas por canal (si se usa en el detalle)
         $ventasPorCanal = $this->ventasAgrupadasPorDetalle(
             $startDate,
@@ -252,8 +325,8 @@ class DashboardController extends Controller
             }
         );
 
-        // Top clientes por ventas operativas (sin líneas de productos fee)
-        $feeNCli = $this->sqlEsNombreProductoFee('p');
+        // Top clientes por ventas a terceros
+        $vTerCli = $this->sqlEsVentaATercerosLinea('p');
         $subCli = $this->sqlSubtotalLinea('sd');
         $ventasPorCliente = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
@@ -262,7 +335,7 @@ class DashboardController extends Controller
             ->where('s.state', '<>', 0)
             ->whereNotNull('s.client_id')
             ->groupBy('s.client_id')
-            ->selectRaw('s.client_id, SUM(CASE WHEN NOT (' . $feeNCli . ') THEN ' . $subCli . ' ELSE 0 END) as total')
+            ->selectRaw('s.client_id, SUM(CASE WHEN (' . $vTerCli . ') THEN ' . $subCli . ' ELSE 0 END) as total')
             ->orderByDesc('total')
             ->limit(6)
             ->get();
@@ -312,6 +385,10 @@ class DashboardController extends Controller
             ->with('totalVentasSemana', round($totalVentasSemana, 2))
             ->with('totalFees', round($totalFees, 2))
             ->with('totalFeesIva', round($totalFeesIva, 2))
+            ->with('totalIngresoEmpresa', round($totalIngresoEmpresa, 2))
+            ->with('totalIngresoEmpresaIva', round($totalIngresoEmpresaIva, 2))
+            ->with('ingresoEmpresaPorDestino', $ingresoEmpresaPorDestino)
+            ->with('ingresoEmpresaPorAerolinea', $ingresoEmpresaPorAerolinea)
             ->with('crecimientoVentas', $crecimientoVentas)
             ->with('ventasUltimoAno', $ventasUltimoAno)
             ->with('ventasUltimoMes', $ventasUltimoMes)
@@ -328,6 +405,9 @@ class DashboardController extends Controller
             ->with('filterType', $filterType)
             ->with('filterDate', $filterDate)
             ->with('filterMonth', $filterMonth)
+            ->with('filterMonthYear', $filterMonthYear)
+            ->with('filterMonthNum', $filterMonthNum)
+            ->with('yearsForMonthFilter', $yearsForMonthFilter)
             ->with('filterYear', $filterYear)
             ->with('dateFrom', $dateFrom)
             ->with('dateTo', $dateTo)
@@ -344,55 +424,128 @@ class DashboardController extends Controller
     {
         $destinoExpr = 'NULLIF(NULLIF(TRIM(sd.destino), ""), "0")';
 
-        $feeN = $this->sqlEsNombreProductoFee('p');
+        $vTer = $this->sqlEsVentaATercerosLinea('p');
         $sub = $this->sqlSubtotalLinea('sd');
-        $lineAmountExpr = 'CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END';
+        $lineAmountExpr = 'CASE WHEN (' . $vTer . ') THEN ' . $sub . ' ELSE 0 END';
 
-        // 1) Una fila por línea de detalle: clave normalizada + monto (sin GROUP BY).
-        //    Así se evita 1055: el SUM no puede ir en la misma query que GROUP BY
-        //    sobre expresión de sd.destino con referencias a p.name y sd.*.
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $destinoExpr,
+            'destino_key',
+            'aeropuertos',
+            'id_aeropuerto',
+            ['iata' => 'ap_iata', 'ciudad' => 'ap_ciudad', 'pais' => 'ap_pais'],
+            $lineAmountExpr,
+            'Aeropuerto',
+            'Destino'
+        );
+    }
+
+    /**
+     * Monto por línea alineado con totales de ingreso empresa (sub + fee en línea gravada).
+     */
+    private function sqlMontoIngresoEmpresaPorLinea(): string
+    {
+        $grav = $this->sqlLineaGravada('sd');
+        $ingE = $this->sqlEsIngresoEmpresaComisionAereo('p');
+        $sub = $this->sqlSubtotalLinea('sd');
+
+        return '(CASE WHEN ' . $ingE . ' THEN ' . $sub . ' ELSE 0 END + CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN COALESCE(sd.fee, 0) ELSE 0 END)';
+    }
+
+    /**
+     * Ingreso empresa por destino (misma lógica de totales que ingreso_empresa_monto).
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function ingresoEmpresaPorDestinoConAeropuerto(Carbon $startDate, Carbon $endDate): Collection
+    {
+        $destinoExpr = 'NULLIF(NULLIF(TRIM(sd.destino), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoIngresoEmpresaPorLinea();
+
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $destinoExpr,
+            'destino_key',
+            'aeropuertos',
+            'id_aeropuerto',
+            ['iata' => 'ap_iata', 'ciudad' => 'ap_ciudad', 'pais' => 'ap_pais'],
+            $lineAmountExpr,
+            'Aeropuerto',
+            'Destino'
+        );
+    }
+
+    /**
+     * @param  array<string, string>  $joinSelectMap  keys: ap fields -> alias
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function agregarPorClaveDestinoOAerolinea(
+        Carbon $startDate,
+        Carbon $endDate,
+        string $keyExpr,
+        string $keyAlias,
+        string $catalogTable,
+        string $catalogIdColumn,
+        array $joinSelectMap,
+        string $lineAmountExpr,
+        string $entityLabelWhenResolved,
+        string $fallbackPrefix
+    ): Collection {
         $porLinea = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
-            ->selectRaw($destinoExpr . ' as destino_key')
+            ->selectRaw($keyExpr . ' as ' . $keyAlias)
             ->selectRaw($lineAmountExpr . ' as line_amount');
 
-        // 2) Agregación solo por destino_key (columna del subresultado).
         $aggregated = DB::query()
             ->fromSub($porLinea, 'pl')
-            ->select('pl.destino_key')
+            ->select('pl.' . $keyAlias)
             ->selectRaw('SUM(pl.line_amount) as total')
-            ->groupBy('pl.destino_key');
+            ->groupBy('pl.' . $keyAlias);
 
-        $rows = DB::query()
+        $joinAlias = $catalogTable === 'aeropuertos' ? 'ap' : 'al';
+
+        $q = DB::query()
             ->fromSub($aggregated, 'agg')
-            ->leftJoin('aeropuertos as ap', function ($join) {
-                $join->whereRaw('ap.id_aeropuerto = CAST(agg.destino_key AS UNSIGNED)');
-            })
-            ->select('agg.destino_key', 'agg.total', 'ap.iata as ap_iata', 'ap.ciudad as ap_ciudad', 'ap.pais as ap_pais')
-            ->get();
+            ->leftJoin($catalogTable . ' as ' . $joinAlias, function ($join) use ($catalogIdColumn, $keyAlias, $joinAlias) {
+                $join->whereRaw($joinAlias . '.' . $catalogIdColumn . ' = CAST(agg.' . $keyAlias . ' AS UNSIGNED)');
+            });
+
+        $select = ['agg.' . $keyAlias, 'agg.total'];
+        foreach ($joinSelectMap as $col => $as) {
+            $select[] = $joinAlias . '.' . $col . ' as ' . $as;
+        }
+        $rows = $q->select($select)->get();
 
         return $rows
-            ->map(function ($row) {
-                $key = $row->destino_key;
+            ->map(function ($row) use ($keyAlias, $joinSelectMap, $entityLabelWhenResolved, $fallbackPrefix) {
+                $key = $row->{$keyAlias};
                 $total = round((float) ($row->total ?? 0), 2);
                 if ($key === null || $key === '' || (string) $key === '0') {
-                    return ['label' => 'Sin destino', 'total' => $total];
+                    $sin = $keyAlias === 'destino_key' ? 'Sin destino' : 'Sin aerolínea';
+
+                    return ['label' => $sin, 'total' => $total];
                 }
-                $parts = array_filter([
-                    $row->ap_iata !== null ? (string) $row->ap_iata : null,
-                    $row->ap_ciudad !== null ? (string) $row->ap_ciudad : null,
-                    $row->ap_pais !== null ? (string) $row->ap_pais : null,
-                ]);
+                $parts = [];
+                foreach ($joinSelectMap as $col => $as) {
+                    $v = $row->{$as} ?? null;
+                    if ($v !== null && $v !== '') {
+                        $parts[] = (string) $v;
+                    }
+                }
+                $parts = array_filter($parts);
                 if ($parts !== []) {
                     $label = trim(implode(' - ', $parts));
 
-                    return ['label' => Str::limit($label !== '' ? $label : 'Aeropuerto #' . $key, 64), 'total' => $total];
+                    return ['label' => Str::limit($label !== '' ? $label : $entityLabelWhenResolved . ' #' . $key, 64), 'total' => $total];
                 }
 
-                return ['label' => 'Destino #' . $key, 'total' => $total];
+                return ['label' => $fallbackPrefix . ' #' . $key, 'total' => $total];
             })
             ->sortByDesc('total')
             ->values()
@@ -407,55 +560,46 @@ class DashboardController extends Controller
     private function ventasPorAerolineaConCatalogo(Carbon $startDate, Carbon $endDate): Collection
     {
         $lineaExpr = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
-
-        $feeN = $this->sqlEsNombreProductoFee('p');
+        $vTer = $this->sqlEsVentaATercerosLinea('p');
         $sub = $this->sqlSubtotalLinea('sd');
-        $lineAmountExpr = 'CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END';
+        $lineAmountExpr = 'CASE WHEN (' . $vTer . ') THEN ' . $sub . ' ELSE 0 END';
 
-        $porLinea = DB::table('salesdetails as sd')
-            ->join('sales as s', 's.id', '=', 'sd.sale_id')
-            ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
-            ->whereBetween('s.date', [$startDate, $endDate])
-            ->where('s.state', '<>', 0)
-            ->selectRaw($lineaExpr . ' as linea_key')
-            ->selectRaw($lineAmountExpr . ' as line_amount');
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $lineaExpr,
+            'linea_key',
+            'aerolineas',
+            'id_aerolinea',
+            ['iata' => 'al_iata', 'nombre' => 'al_nombre'],
+            $lineAmountExpr,
+            'Aerolínea',
+            'Aerolínea'
+        );
+    }
 
-        $aggregated = DB::query()
-            ->fromSub($porLinea, 'pl')
-            ->select('pl.linea_key')
-            ->selectRaw('SUM(pl.line_amount) as total')
-            ->groupBy('pl.linea_key');
+    /**
+     * Ingreso empresa por aerolínea (producto Comisiones producto aéreo).
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function ingresoEmpresaPorAerolineaConCatalogo(Carbon $startDate, Carbon $endDate): Collection
+    {
+        $lineaExpr = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoIngresoEmpresaPorLinea();
 
-        $rows = DB::query()
-            ->fromSub($aggregated, 'agg')
-            ->leftJoin('aerolineas as al', function ($join) {
-                $join->whereRaw('al.id_aerolinea = CAST(agg.linea_key AS UNSIGNED)');
-            })
-            ->select('agg.linea_key', 'agg.total', 'al.iata as al_iata', 'al.nombre as al_nombre')
-            ->get();
-
-        return $rows
-            ->map(function ($row) {
-                $key = $row->linea_key;
-                $total = round((float) ($row->total ?? 0), 2);
-                if ($key === null || $key === '' || (string) $key === '0') {
-                    return ['label' => 'Sin aerolínea', 'total' => $total];
-                }
-                $parts = array_filter([
-                    $row->al_iata !== null ? (string) $row->al_iata : null,
-                    $row->al_nombre !== null ? (string) $row->al_nombre : null,
-                ]);
-                if ($parts !== []) {
-                    $label = trim(implode(' - ', $parts));
-
-                    return ['label' => Str::limit($label !== '' ? $label : 'Aerolínea #' . $key, 52), 'total' => $total];
-                }
-
-                return ['label' => 'Aerolínea #' . $key, 'total' => $total];
-            })
-            ->sortByDesc('total')
-            ->values()
-            ->take(10);
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $lineaExpr,
+            'linea_key',
+            'aerolineas',
+            'id_aerolinea',
+            ['iata' => 'al_iata', 'nombre' => 'al_nombre'],
+            $lineAmountExpr,
+            'Aerolínea',
+            'Aerolínea'
+        );
     }
 
     /**
@@ -470,7 +614,7 @@ class DashboardController extends Controller
         string $groupColumn,
         callable $labelResolver
     ): Collection {
-        $feeN = $this->sqlEsNombreProductoFee('p');
+        $vTer = $this->sqlEsVentaATercerosLinea('p');
         $sub = '(salesdetails.pricesale + salesdetails.nosujeta + salesdetails.exempt)';
 
         $rows = DB::table('salesdetails')
@@ -479,7 +623,7 @@ class DashboardController extends Controller
             ->whereBetween('sales.date', [$startDate, $endDate])
             ->where('sales.state', '<>', 0)
             ->selectRaw($groupColumn . ' as grp_key')
-            ->selectRaw('SUM(CASE WHEN NOT (' . $feeN . ') THEN ' . $sub . ' ELSE 0 END) as total')
+            ->selectRaw('SUM(CASE WHEN (' . $vTer . ') THEN ' . $sub . ' ELSE 0 END) as total')
             ->groupBy(DB::raw($groupColumn))
             ->get();
 
