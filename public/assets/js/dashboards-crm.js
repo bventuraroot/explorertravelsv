@@ -324,8 +324,8 @@
     }).render();
   }
 
-  renderHBarChart('#chartIngresoDestino', D.ingresoEmpresaPorDestino || [], '#00cfe8', 'Ingreso empresa');
-  renderHBarChart('#chartIngresoAerolinea', D.ingresoEmpresaPorAerolinea || [], '#7367f0', 'Ingreso empresa');
+  renderHBarChart('#chartComisionesDestino', D.comisionesPorDestino || [], '#00cfe8', 'Comisiones');
+  renderHBarChart('#chartComisionesAerolinea', D.comisionesPorAerolinea || [], '#7367f0', 'Comisiones');
   renderHBarChart('#chartVentasProveedor', D.ventasPorProveedor || [], '#696cff');
   renderHBarChart('#chartVentasDestino', D.ventasPorDestino || [], '#ea5455');
   renderHBarChart('#chartVentasRuta', D.ventasPorRuta || [], '#00cfe8');

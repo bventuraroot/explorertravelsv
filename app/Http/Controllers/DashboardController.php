@@ -28,19 +28,6 @@ class DashboardController extends Controller
         ];
     }
 
-    /**
-     * Ingreso para la empresa: producto «Comisiones producto aéreo» (variantes de nombre).
-     *
-     * @return list<string>
-     */
-    private static function productosIngresoEmpresaLowercase(): array
-    {
-        return [
-            'comisiones producto aereo',
-            'comisiones producto aéreo',
-        ];
-    }
-
     private function sqlSubtotalLinea(string $alias = 'sd'): string
     {
         return "({$alias}.pricesale + {$alias}.nosujeta + {$alias}.exempt)";
@@ -66,15 +53,19 @@ class DashboardController extends Controller
         return $this->sqlNombreProductoInList(self::productosSoloFeeLowercase(), $alias);
     }
 
-    private function sqlEsIngresoEmpresaComisionAereo(string $alias = 'p'): string
+    /**
+     * Comisiones: cualquier producto cuyo nombre contenga «comision» (con o sin tilde, insensible a mayúsculas).
+     * Captura «comisiones», «comisiones producto aéreo», «comision aérea», etc.
+     */
+    private function sqlEsProductoComisiones(string $alias = 'p'): string
     {
-        return $this->sqlNombreProductoInList(self::productosIngresoEmpresaLowercase(), $alias);
+        return "(LOWER(TRIM(COALESCE({$alias}.name, ''))) LIKE '%comision%')";
     }
 
-    /** Venta a terceros: todo lo que no es FEE (admin/CXS) ni ingreso empresa (Comisiones producto aéreo). */
+    /** Ventas a terceros: todo lo que NO es FEE (admin/CXS) ni Comisiones. */
     private function sqlEsVentaATercerosLinea(string $alias = 'p'): string
     {
-        return '(NOT (' . $this->sqlEsSoloProductoFee($alias) . ') AND NOT (' . $this->sqlEsIngresoEmpresaComisionAereo($alias) . '))';
+        return '(NOT (' . $this->sqlEsSoloProductoFee($alias) . ') AND NOT (' . $this->sqlEsProductoComisiones($alias) . '))';
     }
 
     /**
@@ -82,17 +73,17 @@ class DashboardController extends Controller
      *   ventas_operativas: float,
      *   fee_monto: float,
      *   fee_iva: float,
-     *   ingreso_empresa_monto: float,
-     *   ingreso_empresa_iva: float
+     *   comisiones_monto: float,
+     *   comisiones_iva: float
      * }
      */
     private function totalesVentasYFeeEnRango(Carbon $startDate, Carbon $endDate): array
     {
-        $grav = $this->sqlLineaGravada('sd');
+        $grav  = $this->sqlLineaGravada('sd');
         $soloF = $this->sqlEsSoloProductoFee('p');
-        $ingE = $this->sqlEsIngresoEmpresaComisionAereo('p');
-        $vTer = $this->sqlEsVentaATercerosLinea('p');
-        $sub = $this->sqlSubtotalLinea('sd');
+        $com   = $this->sqlEsProductoComisiones('p');
+        $vTer  = $this->sqlEsVentaATercerosLinea('p');
+        $sub   = $this->sqlSubtotalLinea('sd');
 
         $row = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
@@ -105,19 +96,19 @@ class DashboardController extends Controller
                 + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.fee ELSE 0 END), 0) as fee_monto,
                 COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.feeiva ELSE 0 END), 0)
                 + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.detained13 ELSE 0 END), 0) as fee_iva,
-                COALESCE(SUM(CASE WHEN ' . $ingE . ' THEN ' . $sub . ' ELSE 0 END), 0)
-                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.fee ELSE 0 END), 0) as ingreso_empresa_monto,
-                COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.feeiva ELSE 0 END), 0)
-                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN sd.detained13 ELSE 0 END), 0) as ingreso_empresa_iva
+                COALESCE(SUM(CASE WHEN ' . $com . ' THEN ' . $sub . ' ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $com . ' THEN sd.fee ELSE 0 END), 0) as comisiones_monto,
+                COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $com . ' THEN sd.feeiva ELSE 0 END), 0)
+                + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $com . ' THEN sd.detained13 ELSE 0 END), 0) as comisiones_iva
             ')
             ->first();
 
         return [
             'ventas_operativas' => round((float) ($row->ventas_operativas ?? 0), 2),
-            'fee_monto' => round((float) ($row->fee_monto ?? 0), 2),
-            'fee_iva' => round((float) ($row->fee_iva ?? 0), 2),
-            'ingreso_empresa_monto' => round((float) ($row->ingreso_empresa_monto ?? 0), 2),
-            'ingreso_empresa_iva' => round((float) ($row->ingreso_empresa_iva ?? 0), 2),
+            'fee_monto'         => round((float) ($row->fee_monto ?? 0), 2),
+            'fee_iva'           => round((float) ($row->fee_iva ?? 0), 2),
+            'comisiones_monto'  => round((float) ($row->comisiones_monto ?? 0), 2),
+            'comisiones_iva'    => round((float) ($row->comisiones_iva ?? 0), 2),
         ];
     }
 
@@ -203,13 +194,13 @@ class DashboardController extends Controller
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfWeek = $now->copy()->startOfWeek();
 
-        // Ventas a terceros | FEE (admin+CXS) | Ingreso empresa (Comisiones producto aéreo)
+        // Ventas a terceros | FEE (admin+CXS) | Comisiones (cualquier producto con «comision» en nombre)
         $totalesPeriodo = $this->totalesVentasYFeeEnRango($startDate, $endDate);
-        $totalVentas = $totalesPeriodo['ventas_operativas'];
-        $totalFees = $totalesPeriodo['fee_monto'];
-        $totalFeesIva = $totalesPeriodo['fee_iva'];
-        $totalIngresoEmpresa = $totalesPeriodo['ingreso_empresa_monto'];
-        $totalIngresoEmpresaIva = $totalesPeriodo['ingreso_empresa_iva'];
+        $totalVentas        = $totalesPeriodo['ventas_operativas'];
+        $totalFees          = $totalesPeriodo['fee_monto'];
+        $totalFeesIva       = $totalesPeriodo['fee_iva'];
+        $totalComisiones    = $totalesPeriodo['comisiones_monto'];
+        $totalComisionesIva = $totalesPeriodo['comisiones_iva'];
 
         $inicioMes = $startDate->greaterThan($startOfMonth) ? $startDate : $startOfMonth;
         $totalVentasMes = $this->totalesVentasYFeeEnRango($inicioMes, $endDate)['ventas_operativas'];
@@ -309,9 +300,9 @@ class DashboardController extends Controller
         // Ventas por aerolínea (id → tabla aerolineas)
         $ventasPorAerolinea = $this->ventasPorAerolineaConCatalogo($startDate, $endDate);
 
-        // Ingreso empresa (solo «Comisiones producto aéreo»): desglose por destino / aerolínea
-        $ingresoEmpresaPorDestino = $this->ingresoEmpresaPorDestinoConAeropuerto($startDate, $endDate);
-        $ingresoEmpresaPorAerolinea = $this->ingresoEmpresaPorAerolineaConCatalogo($startDate, $endDate);
+        // Comisiones: desglose por destino / aerolínea
+        $comisionesPorDestino   = $this->comisionesPorDestinoConAeropuerto($startDate, $endDate);
+        $comisionesPorAerolinea = $this->comisionesPorAerolineaConCatalogo($startDate, $endDate);
 
         // Ventas por canal (si se usa en el detalle)
         $ventasPorCanal = $this->ventasAgrupadasPorDetalle(
@@ -385,10 +376,10 @@ class DashboardController extends Controller
             ->with('totalVentasSemana', round($totalVentasSemana, 2))
             ->with('totalFees', round($totalFees, 2))
             ->with('totalFeesIva', round($totalFeesIva, 2))
-            ->with('totalIngresoEmpresa', round($totalIngresoEmpresa, 2))
-            ->with('totalIngresoEmpresaIva', round($totalIngresoEmpresaIva, 2))
-            ->with('ingresoEmpresaPorDestino', $ingresoEmpresaPorDestino)
-            ->with('ingresoEmpresaPorAerolinea', $ingresoEmpresaPorAerolinea)
+            ->with('totalComisiones', round($totalComisiones, 2))
+            ->with('totalComisionesIva', round($totalComisionesIva, 2))
+            ->with('comisionesPorDestino', $comisionesPorDestino)
+            ->with('comisionesPorAerolinea', $comisionesPorAerolinea)
             ->with('crecimientoVentas', $crecimientoVentas)
             ->with('ventasUltimoAno', $ventasUltimoAno)
             ->with('ventasUltimoMes', $ventasUltimoMes)
@@ -443,26 +434,26 @@ class DashboardController extends Controller
     }
 
     /**
-     * Monto por línea alineado con totales de ingreso empresa (sub + fee en línea gravada).
+     * Monto por línea de comisiones (subtotal + columna fee en línea gravada).
      */
-    private function sqlMontoIngresoEmpresaPorLinea(): string
+    private function sqlMontoComisionesPorLinea(): string
     {
         $grav = $this->sqlLineaGravada('sd');
-        $ingE = $this->sqlEsIngresoEmpresaComisionAereo('p');
-        $sub = $this->sqlSubtotalLinea('sd');
+        $com  = $this->sqlEsProductoComisiones('p');
+        $sub  = $this->sqlSubtotalLinea('sd');
 
-        return '(CASE WHEN ' . $ingE . ' THEN ' . $sub . ' ELSE 0 END + CASE WHEN ' . $grav . ' AND ' . $ingE . ' THEN COALESCE(sd.fee, 0) ELSE 0 END)';
+        return '(CASE WHEN ' . $com . ' THEN ' . $sub . ' ELSE 0 END + CASE WHEN ' . $grav . ' AND ' . $com . ' THEN COALESCE(sd.fee, 0) ELSE 0 END)';
     }
 
     /**
-     * Ingreso empresa por destino (misma lógica de totales que ingreso_empresa_monto).
+     * Comisiones por destino.
      *
      * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
      */
-    private function ingresoEmpresaPorDestinoConAeropuerto(Carbon $startDate, Carbon $endDate): Collection
+    private function comisionesPorDestinoConAeropuerto(Carbon $startDate, Carbon $endDate): Collection
     {
-        $destinoExpr = 'NULLIF(NULLIF(TRIM(sd.destino), ""), "0")';
-        $lineAmountExpr = $this->sqlMontoIngresoEmpresaPorLinea();
+        $destinoExpr    = 'NULLIF(NULLIF(TRIM(sd.destino), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoComisionesPorLinea();
 
         return $this->agregarPorClaveDestinoOAerolinea(
             $startDate,
@@ -583,10 +574,10 @@ class DashboardController extends Controller
      *
      * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
      */
-    private function ingresoEmpresaPorAerolineaConCatalogo(Carbon $startDate, Carbon $endDate): Collection
+    private function comisionesPorAerolineaConCatalogo(Carbon $startDate, Carbon $endDate): Collection
     {
-        $lineaExpr = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
-        $lineAmountExpr = $this->sqlMontoIngresoEmpresaPorLinea();
+        $lineaExpr      = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoComisionesPorLinea();
 
         return $this->agregarPorClaveDestinoOAerolinea(
             $startDate,

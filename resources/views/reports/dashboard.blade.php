@@ -24,9 +24,9 @@
     ventasPorRuta:        @json($ventasPorRuta),
     ventasPorAerolinea:   @json($ventasPorAerolinea),
     ventasPorCanal:       @json($ventasPorCanal),
-    ventasPorCliente:          @json($ventasPorCliente),
-    ingresoEmpresaPorDestino:  @json($ingresoEmpresaPorDestino ?? []),
-    ingresoEmpresaPorAerolinea: @json($ingresoEmpresaPorAerolinea ?? []),
+    ventasPorCliente:       @json($ventasPorCliente),
+    comisionesPorDestino:   @json($comisionesPorDestino ?? []),
+    comisionesPorAerolinea: @json($comisionesPorAerolinea ?? []),
   };
 </script>
 <script src="{{asset('assets/js/dashboards-crm.js')}}"></script>
@@ -59,9 +59,9 @@
   $colorCrecimiento = $crecimientoVentas >= 0 ? 'success' : 'danger';
   $iconCrecimiento  = $crecimientoVentas >= 0 ? 'ti-trending-up' : 'ti-trending-down';
   $signo            = $crecimientoVentas >= 0 ? '+' : '';
-  $totalFeeTotal           = $totalFees + $totalFeesIva;
-  $totalIngresoEmpresaTotal = $totalIngresoEmpresa + $totalIngresoEmpresaIva;
-  $coloresProd             = ['primary','success','info','warning','danger'];
+  $totalFeeTotal       = $totalFees + $totalFeesIva;
+  $totalComisionesTotal = $totalComisiones + $totalComisionesIva;
+  $coloresProd         = ['primary','success','info','warning','danger'];
 @endphp
 
 <style>
@@ -225,9 +225,9 @@
             ${{ number_format($totalVentas, 2) }}
           </div>
           <div class="text-lg-end ms-lg-auto mt-1" style="color:rgba(255,255,255,.48);font-size:10px;max-width:30rem;line-height:1.35;">
-            Suma de <strong style="color:rgba(255,255,255,.65);">ventas a terceros</strong> (resto de productos).
-            <strong style="color:rgba(255,255,255,.55);">FEE</strong> = cargo administrativo + CXS.
-            <strong style="color:rgba(255,255,255,.55);">Ingreso empresa</strong> = producto «Comisiones producto aéreo».
+            <strong style="color:rgba(255,255,255,.7);">Ventas</strong> = productos varios (terceros). ·
+            <strong style="color:rgba(255,255,255,.7);">FEE</strong> = cargo administrativo + CXS. ·
+            <strong style="color:rgba(255,255,255,.7);">Comisiones</strong> = productos con «comision» en nombre.
           </div>
           <div class="mt-2 d-flex align-items-center gap-3 justify-content-lg-end">
             <span class="db-badge"
@@ -237,22 +237,22 @@
               {{ $signo }}{{ $crecimientoVentas }}% vs año anterior
             </span>
           </div>
-          <div class="mt-3 d-flex flex-wrap gap-3 justify-content-lg-end">
-            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">FEE (admin. + CXS)</div>
-              <div style="color:#28c76f;font-size:1.05rem;font-weight:800;">${{ number_format($totalFees, 2) }}</div>
+          <div class="mt-3 d-flex flex-wrap gap-2 justify-content-lg-end">
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">FEE</div>
+              <div style="color:#28c76f;font-size:1rem;font-weight:800;">${{ number_format($totalFees, 2) }}</div>
             </div>
-            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;text-align:center;">
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
               <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">FEE + IVA</div>
-              <div style="color:#ff9f43;font-size:1.05rem;font-weight:800;">${{ number_format($totalFeesIva, 2) }}</div>
+              <div style="color:#ff9f43;font-size:1rem;font-weight:800;">${{ number_format($totalFeesIva, 2) }}</div>
             </div>
-            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Ingreso empresa</div>
-              <div style="color:#00cfe8;font-size:1.05rem;font-weight:800;">${{ number_format($totalIngresoEmpresa, 2) }}</div>
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Comisiones</div>
+              <div style="color:#00cfe8;font-size:1rem;font-weight:800;">${{ number_format($totalComisiones, 2) }}</div>
             </div>
-            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 16px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Ingreso + IVA</div>
-              <div style="color:#7367f0;font-size:1.05rem;font-weight:800;">${{ number_format($totalIngresoEmpresaIva, 2) }}</div>
+            <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Comisiones + IVA</div>
+              <div style="color:#7367f0;font-size:1rem;font-weight:800;">${{ number_format($totalComisionesIva, 2) }}</div>
             </div>
           </div>
         </div>
@@ -341,7 +341,7 @@
   {{-- ══════════════════════════════════════════════════════ KPI VENTAS ══ --}}
 
   {{-- Ventas período --}}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+  <div class="col-6 col-lg-4 col-xl">
     <div class="card db-card h-100">
       <div class="card-body">
         <div class="d-flex align-items-start justify-content-between mb-3">
@@ -363,7 +363,7 @@
   </div>
 
   {{-- Ventas mes --}}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+  <div class="col-6 col-lg-4 col-xl">
     <div class="card db-card h-100">
       <div class="card-body">
         <div class="d-flex align-items-start justify-content-between mb-3">
@@ -381,7 +381,7 @@
   </div>
 
   {{-- Ventas semana --}}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+  <div class="col-6 col-lg-4 col-xl">
     <div class="card db-card h-100">
       <div class="card-body">
         <div class="d-flex align-items-start justify-content-between mb-3">
@@ -398,57 +398,57 @@
     </div>
   </div>
 
-  {{-- FEE: solo cargo administrativo + CXS --}}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
+  {{-- FEE: cargo administrativo + CXS --}}
+  <div class="col-6 col-lg-4 col-xl">
     <div class="card db-card h-100">
       <div class="card-body">
         <div class="d-flex align-items-start justify-content-between mb-3">
           <div class="db-icon bg-label-success">
-            <i class="ti ti-wallet text-success" style="font-size:22px;"></i>
+            <i class="ti ti-receipt-2 text-success" style="font-size:22px;"></i>
           </div>
           <span class="db-badge bg-label-success text-success">
             <i class="ti ti-receipt"></i> FEE
           </span>
         </div>
-        <p class="db-label mb-1">Cargos FEE (admin. + CXS)</p>
+        <p class="db-label mb-1">FEE (admin. + CXS)</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalFees, 2) }}</h3>
-        <small class="text-muted">Subtotal de línea + columna fee en líneas gravadas (solo esos productos)</small>
+        <small class="text-muted">Cargo administrativo y CXS</small>
         <div class="db-divider mt-3"></div>
         <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
-          <span class="text-muted">FEE + IVA</span>
+          <span class="text-muted">+ IVA</span>
           <span class="fw-bold text-warning">${{ number_format($totalFeesIva, 2) }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-1" style="font-size:12px;">
-          <span class="text-muted">Total combinado</span>
+          <span class="text-muted">Total</span>
           <span class="fw-bold">${{ number_format($totalFeeTotal, 2) }}</span>
         </div>
       </div>
     </div>
   </div>
 
-  {{-- Ingreso empresa: Comisiones producto aéreo --}}
-  <div class="col-12 col-sm-6 col-lg-4 col-xl-2">
-    <div class="card db-card h-100 border border-info border-opacity-25">
+  {{-- Comisiones --}}
+  <div class="col-6 col-lg-4 col-xl">
+    <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.2);">
       <div class="card-body">
         <div class="d-flex align-items-start justify-content-between mb-3">
           <div class="db-icon bg-label-info">
-            <i class="ti ti-building-bank text-info" style="font-size:22px;"></i>
+            <i class="ti ti-percentage text-info" style="font-size:22px;"></i>
           </div>
           <span class="db-badge bg-label-info text-info">
-            <i class="ti ti-plane"></i> Ingreso empresa
+            <i class="ti ti-coin"></i> Comisiones
           </span>
         </div>
-        <p class="db-label mb-1">Ingreso para la empresa</p>
-        <h3 class="mb-0 fw-bold">${{ number_format($totalIngresoEmpresa, 2) }}</h3>
-        <small class="text-muted">Producto «Comisiones producto aéreo» (subtotal + fee en línea gravada)</small>
+        <p class="db-label mb-1">Comisiones</p>
+        <h3 class="mb-0 fw-bold">${{ number_format($totalComisiones, 2) }}</h3>
+        <small class="text-muted">Productos con «comision» en nombre</small>
         <div class="db-divider mt-3"></div>
         <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
-          <span class="text-muted">Ingreso + IVA</span>
-          <span class="fw-bold text-warning">${{ number_format($totalIngresoEmpresaIva, 2) }}</span>
+          <span class="text-muted">+ IVA</span>
+          <span class="fw-bold text-warning">${{ number_format($totalComisionesIva, 2) }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-1" style="font-size:12px;">
-          <span class="text-muted">Total combinado</span>
-          <span class="fw-bold">${{ number_format($totalIngresoEmpresaTotal, 2) }}</span>
+          <span class="text-muted">Total</span>
+          <span class="fw-bold">${{ number_format($totalComisionesTotal, 2) }}</span>
         </div>
       </div>
     </div>
@@ -587,42 +587,42 @@
       <div>
         <p class="db-label mb-0">Inteligencia de negocio</p>
         <h5 class="mb-0 fw-bold">Análisis por proveedor, destino, ruta y aerolínea</h5>
-        <small class="text-muted">Montos por línea (gravado + exento + no sujeto), solo <strong>ventas a terceros</strong> (excluye FEE admin./CXS e ingreso empresa «Comisiones producto aéreo»). Período filtrado; anuladas excluidas.</small>
+        <small class="text-muted">Montos por línea (gravado + exento + no sujeto), solo <strong>ventas a terceros</strong> — excluye FEE (admin./CXS) y Comisiones. Período filtrado; anuladas excluidas.</small>
       </div>
     </div>
   </div>
 
-  {{-- Ingreso empresa: solo producto Comisiones producto aéreo --}}
+  {{-- Comisiones: desglose por destino y aerolínea --}}
   <div class="col-12">
     <div class="d-flex align-items-center gap-2 mb-1 mt-2">
-      <i class="ti ti-building-bank text-info" style="font-size:22px;"></i>
+      <i class="ti ti-percentage text-info" style="font-size:22px;"></i>
       <div>
-        <p class="db-label mb-0">Ingreso para la empresa</p>
-        <h5 class="mb-0 fw-bold">Análisis — Comisiones producto aéreo</h5>
-        <small class="text-muted">Mismo criterio que la tarjeta «Ingreso empresa» (subtotal + fee en línea gravada). Sin IVA en el gráfico.</small>
+        <p class="db-label mb-0">Comisiones</p>
+        <h5 class="mb-0 fw-bold">Análisis de comisiones por destino y aerolínea</h5>
+        <small class="text-muted">Productos cuyo nombre contiene «comision» — subtotal de línea + columna fee en líneas gravadas.</small>
       </div>
     </div>
   </div>
 
   <div class="col-xl-6 col-12">
-    <div class="card db-card h-100 border border-info border-opacity-25">
+    <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
       <div class="card-header pb-0">
         <p class="db-label">Mercados</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-info"></i>Ingreso empresa por destino</h5>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-info"></i>Comisiones por destino</h5>
         <small class="text-muted">Etiqueta desde <code>aeropuertos</code>.</small>
       </div>
-      <div class="card-body pt-2"><div id="chartIngresoDestino" class="db-hbar"></div></div>
+      <div class="card-body pt-2"><div id="chartComisionesDestino" class="db-hbar"></div></div>
     </div>
   </div>
 
   <div class="col-xl-6 col-12">
-    <div class="card db-card h-100 border border-info border-opacity-25">
+    <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
       <div class="card-header pb-0">
         <p class="db-label">Transporte</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-info"></i>Ingreso empresa por aerolínea</h5>
+        <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-info"></i>Comisiones por aerolínea</h5>
         <small class="text-muted">Nombre desde <code>aerolineas</code>.</small>
       </div>
-      <div class="card-body pt-2"><div id="chartIngresoAerolinea" class="db-hbar"></div></div>
+      <div class="card-body pt-2"><div id="chartComisionesAerolinea" class="db-hbar"></div></div>
     </div>
   </div>
 
