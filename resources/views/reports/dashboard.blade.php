@@ -25,6 +25,8 @@
     ventasPorAerolinea:   @json($ventasPorAerolinea),
     ventasPorCanal:       @json($ventasPorCanal),
     ventasPorCliente:       @json($ventasPorCliente),
+    feePorDestino:          @json($feePorDestino ?? []),
+    feePorAerolinea:        @json($feePorAerolinea ?? []),
     comisionesPorDestino:   @json($comisionesPorDestino ?? []),
     comisionesPorAerolinea: @json($comisionesPorAerolinea ?? []),
   };
@@ -142,6 +144,23 @@
   /* ── Filter bar ── */
   .db-filter { border-radius: 10px; }
   .db-hbar { min-height: 300px; }
+  /* Pestañas BI */
+  .db-bi-tabs .nav-link {
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 10px 18px;
+    color: #697a8d;
+    border: 1px solid transparent;
+  }
+  .db-bi-tabs .nav-link:hover { color: #696cff; background: rgba(105,108,255,.06); }
+  .db-bi-tabs .nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, #696cff 0%, #5a5fef 100%);
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(105,108,255,.28);
+  }
+  .db-bi-tabs + .tab-content { margin-top: 4px; }
 </style>
 
 <div class="row g-4">
@@ -243,15 +262,15 @@
               <div style="color:#28c76f;font-size:1rem;font-weight:800;">${{ number_format($totalFees, 2) }}</div>
             </div>
             <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">FEE + IVA</div>
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">IVA FEE</div>
               <div style="color:#ff9f43;font-size:1rem;font-weight:800;">${{ number_format($totalFeesIva, 2) }}</div>
             </div>
             <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Comisiones</div>
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">FEE COMISIONES</div>
               <div style="color:#00cfe8;font-size:1rem;font-weight:800;">${{ number_format($totalComisiones, 2) }}</div>
             </div>
             <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:9px 14px;text-align:center;">
-              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">Comisiones + IVA</div>
+              <div style="color:rgba(255,255,255,.5);font-size:9px;text-transform:uppercase;letter-spacing:1px;">IVA COMISIONES</div>
               <div style="color:#7367f0;font-size:1rem;font-weight:800;">${{ number_format($totalComisionesIva, 2) }}</div>
             </div>
           </div>
@@ -415,7 +434,7 @@
         <small class="text-muted">Cargo administrativo y CXS</small>
         <div class="db-divider mt-3"></div>
         <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
-          <span class="text-muted">+ IVA</span>
+          <span class="text-muted">IVA FEE</span>
           <span class="fw-bold text-warning">${{ number_format($totalFeesIva, 2) }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-1" style="font-size:12px;">
@@ -426,7 +445,7 @@
     </div>
   </div>
 
-  {{-- Comisiones --}}
+  {{-- FEE Comisiones --}}
   <div class="col-6 col-lg-4 col-xl">
     <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.2);">
       <div class="card-body">
@@ -435,15 +454,15 @@
             <i class="ti ti-percentage text-info" style="font-size:22px;"></i>
           </div>
           <span class="db-badge bg-label-info text-info">
-            <i class="ti ti-coin"></i> Comisiones
+            <i class="ti ti-coin"></i> FEE COMISIONES
           </span>
         </div>
-        <p class="db-label mb-1">Comisiones</p>
+        <p class="db-label mb-1">FEE COMISIONES</p>
         <h3 class="mb-0 fw-bold">${{ number_format($totalComisiones, 2) }}</h3>
         <small class="text-muted">Productos con «comision» en nombre</small>
         <div class="db-divider mt-3"></div>
         <div class="d-flex justify-content-between align-items-center" style="font-size:12px;">
-          <span class="text-muted">+ IVA</span>
+          <span class="text-muted">IVA COMISIONES</span>
           <span class="fw-bold text-warning">${{ number_format($totalComisionesIva, 2) }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center mt-1" style="font-size:12px;">
@@ -580,113 +599,156 @@
     </div>
   </div>
 
-  {{-- ══════════════════════════════════════════ ANÁLISIS OPERATIVO (BI) ══ --}}
+  {{-- ══════════════════════════════════════════ ANÁLISIS OPERATIVO (BI) — pestañas ══ --}}
   <div class="col-12">
-    <div class="d-flex align-items-center gap-2 mb-1">
-      <i class="ti ti-chart-dots-3 text-primary" style="font-size:22px;"></i>
-      <div>
-        <p class="db-label mb-0">Inteligencia de negocio</p>
-        <h5 class="mb-0 fw-bold">Análisis por proveedor, destino, ruta y aerolínea</h5>
-        <small class="text-muted">Montos por línea (gravado + exento + no sujeto), solo <strong>ventas a terceros</strong> — excluye FEE (admin./CXS) y Comisiones. Período filtrado; anuladas excluidas.</small>
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ti ti-chart-dots-3 text-primary" style="font-size:22px;"></i>
+        <div>
+          <p class="db-label mb-0">Inteligencia de negocio</p>
+          <h5 class="mb-0 fw-bold">Reportes operativos</h5>
+          <small class="text-muted">Elige si quieres ver <strong>ventas a terceros</strong> o el desglose de <strong>FEE + comisiones</strong>.</small>
+        </div>
       </div>
     </div>
-  </div>
 
-  {{-- Comisiones: desglose por destino y aerolínea --}}
-  <div class="col-12">
-    <div class="d-flex align-items-center gap-2 mb-1 mt-2">
-      <i class="ti ti-percentage text-info" style="font-size:22px;"></i>
-      <div>
-        <p class="db-label mb-0">Comisiones</p>
-        <h5 class="mb-0 fw-bold">Análisis de comisiones por destino y aerolínea</h5>
-        <small class="text-muted">Productos cuyo nombre contiene «comision» — subtotal de línea + columna fee en líneas gravadas.</small>
-      </div>
-    </div>
-  </div>
+    <ul class="nav nav-pills db-bi-tabs mb-3" id="biReportTabs" role="tablist">
+      <li class="nav-item flex-fill text-center" role="presentation">
+        <button class="nav-link active w-100" id="tab-bi-ventas" data-bs-toggle="tab" data-bs-target="#pane-bi-ventas"
+                type="button" role="tab" aria-controls="pane-bi-ventas" aria-selected="true">
+          <i class="ti ti-shopping-cart me-1"></i> Ventas (terceros)
+        </button>
+      </li>
+      <li class="nav-item flex-fill text-center" role="presentation">
+        <button class="nav-link w-100" id="tab-bi-fee-comisiones" data-bs-toggle="tab" data-bs-target="#pane-bi-fee-comisiones"
+                type="button" role="tab" aria-controls="pane-bi-fee-comisiones" aria-selected="false">
+          <i class="ti ti-receipt-2 me-1"></i> FEE + comisiones
+        </button>
+      </li>
+    </ul>
 
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
-      <div class="card-header pb-0">
-        <p class="db-label">Mercados</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-info"></i>Comisiones por destino</h5>
-        <small class="text-muted">Etiqueta desde <code>aeropuertos</code>.</small>
+    <div class="tab-content" id="biReportTabContent">
+      {{-- Pestaña Ventas --}}
+      <div class="tab-pane fade show active" id="pane-bi-ventas" role="tabpanel" aria-labelledby="tab-bi-ventas" tabindex="0">
+        <p class="text-muted small mb-3">
+          Montos por línea (gravado + exento + no sujeto), solo <strong>ventas a terceros</strong> — excluye FEE (admin./CXS) y comisiones. Período filtrado; anuladas excluidas.
+        </p>
+        <div class="row g-4">
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Red de proveedores</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-truck-delivery me-1 text-primary"></i>Ventas por proveedor (línea)</h5>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasProveedor" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Mercados</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-danger"></i>Ventas por destino (aeropuerto)</h5>
+                <small class="text-muted">Etiqueta desde la tabla <code>aeropuertos</code> (IATA · ciudad · país).</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasDestino" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Trayectos</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-route me-1 text-info"></i>Ventas por ruta / segmento</h5>
+                <small class="text-muted">Incluye códigos o texto de ruta registrado en cada línea.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasRuta" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Transporte</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-warning"></i>Ventas por aerolínea</h5>
+                <small class="text-muted">Nombre desde la tabla <code>aerolineas</code> (IATA · nombre).</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasAerolinea" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Canales</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-device-analytics me-1 text-success"></i>Ventas por canal</h5>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasCanal" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100">
+              <div class="card-header pb-0">
+                <p class="db-label">Relaciones</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-users me-1 text-primary"></i>Principales clientes por ventas</h5>
+                <small class="text-muted">Suma de montos de documento en el período.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartVentasClientes" class="db-hbar"></div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body pt-2"><div id="chartComisionesDestino" class="db-hbar"></div></div>
-    </div>
-  </div>
 
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
-      <div class="card-header pb-0">
-        <p class="db-label">Transporte</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-info"></i>Comisiones por aerolínea</h5>
-        <small class="text-muted">Nombre desde <code>aerolineas</code>.</small>
+      {{-- Pestaña FEE + Comisiones --}}
+      <div class="tab-pane fade" id="pane-bi-fee-comisiones" role="tabpanel" aria-labelledby="tab-bi-fee-comisiones" tabindex="0">
+        <p class="text-muted small mb-3">
+          <strong>FEE</strong> = cargo administrativo y CXS. <strong>Comisiones</strong> = productos cuyo nombre contiene «comision». Mismo criterio de monto que las tarjetas superiores (subtotal + columna fee en líneas gravadas).
+        </p>
+        <div class="row g-4">
+          <div class="col-12">
+            <p class="db-label mb-1 text-success">FEE (admin. + CXS)</p>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100 border border-success border-opacity-25">
+              <div class="card-header pb-0">
+                <p class="db-label">Mercados</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-success"></i>FEE por destino</h5>
+                <small class="text-muted">Etiqueta desde <code>aeropuertos</code>.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartFeeDestino" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100 border border-success border-opacity-25">
+              <div class="card-header pb-0">
+                <p class="db-label">Transporte</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-success"></i>FEE por aerolínea</h5>
+                <small class="text-muted">Nombre desde <code>aerolineas</code>.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartFeeAerolinea" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-12 mt-1">
+            <p class="db-label mb-1 text-info">Comisiones</p>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
+              <div class="card-header pb-0">
+                <p class="db-label">Mercados</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-info"></i>Comisiones por destino</h5>
+                <small class="text-muted">Etiqueta desde <code>aeropuertos</code>.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartComisionesDestino" class="db-hbar"></div></div>
+            </div>
+          </div>
+          <div class="col-xl-6 col-12">
+            <div class="card db-card h-100" style="border:1px solid rgba(0,207,232,.18);">
+              <div class="card-header pb-0">
+                <p class="db-label">Transporte</p>
+                <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-info"></i>Comisiones por aerolínea</h5>
+                <small class="text-muted">Nombre desde <code>aerolineas</code>.</small>
+              </div>
+              <div class="card-body pt-2"><div id="chartComisionesAerolinea" class="db-hbar"></div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body pt-2"><div id="chartComisionesAerolinea" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Red de proveedores</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-truck-delivery me-1 text-primary"></i>Ventas por proveedor (línea)</h5>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasProveedor" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Mercados</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-map-pin me-1 text-danger"></i>Ventas por destino (aeropuerto)</h5>
-        <small class="text-muted">Etiqueta desde la tabla <code>aeropuertos</code> (IATA · ciudad · país).</small>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasDestino" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Trayectos</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-route me-1 text-info"></i>Ventas por ruta / segmento</h5>
-        <small class="text-muted">Incluye códigos o texto de ruta registrado en cada línea.</small>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasRuta" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Transporte</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-plane-inflight me-1 text-warning"></i>Ventas por aerolínea</h5>
-        <small class="text-muted">Nombre desde la tabla <code>aerolineas</code> (IATA · nombre).</small>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasAerolinea" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Canales</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-device-analytics me-1 text-success"></i>Ventas por canal</h5>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasCanal" class="db-hbar"></div></div>
-    </div>
-  </div>
-
-  <div class="col-xl-6 col-12">
-    <div class="card db-card h-100">
-      <div class="card-header pb-0">
-        <p class="db-label">Relaciones</p>
-        <h5 class="mb-0 fw-bold"><i class="ti ti-users me-1 text-primary"></i>Principales clientes por ventas</h5>
-        <small class="text-muted">Suma de montos de documento en el período.</small>
-      </div>
-      <div class="card-body pt-2"><div id="chartVentasClientes" class="db-hbar"></div></div>
     </div>
   </div>
 

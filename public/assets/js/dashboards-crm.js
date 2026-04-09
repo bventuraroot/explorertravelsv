@@ -324,14 +324,35 @@
     }).render();
   }
 
-  renderHBarChart('#chartComisionesDestino', D.comisionesPorDestino || [], '#00cfe8', 'Comisiones');
-  renderHBarChart('#chartComisionesAerolinea', D.comisionesPorAerolinea || [], '#7367f0', 'Comisiones');
   renderHBarChart('#chartVentasProveedor', D.ventasPorProveedor || [], '#696cff');
   renderHBarChart('#chartVentasDestino', D.ventasPorDestino || [], '#ea5455');
   renderHBarChart('#chartVentasRuta', D.ventasPorRuta || [], '#00cfe8');
   renderHBarChart('#chartVentasAerolinea', D.ventasPorAerolinea || [], '#ff9f43');
   renderHBarChart('#chartVentasCanal', D.ventasPorCanal || [], '#28c76f');
   renderHBarChart('#chartVentasClientes', D.ventasPorCliente || [], '#7367f0');
+
+  /* Pestaña «FEE + comisiones»: render al mostrar (evita ancho 0 en Apex con pane oculto) */
+  (function initBiTabFeeComisiones() {
+    var rendered = false;
+    var tabBtn = document.getElementById('tab-bi-fee-comisiones');
+    function paint() {
+      if (rendered) {
+        window.dispatchEvent(new Event('resize'));
+        return;
+      }
+      rendered = true;
+      renderHBarChart('#chartFeeDestino', D.feePorDestino || [], '#28c76f', 'FEE');
+      renderHBarChart('#chartFeeAerolinea', D.feePorAerolinea || [], '#28c76f', 'FEE');
+      renderHBarChart('#chartComisionesDestino', D.comisionesPorDestino || [], '#00cfe8', 'Comisiones');
+      renderHBarChart('#chartComisionesAerolinea', D.comisionesPorAerolinea || [], '#7367f0', 'Comisiones');
+      setTimeout(function () {
+        window.dispatchEvent(new Event('resize'));
+      }, 120);
+    }
+    if (tabBtn) {
+      tabBtn.addEventListener('shown.bs.tab', paint);
+    }
+  })();
 
   /* ════════════════════════════════════════════════════════════════════════
    * 8. RADIAL – progress bars (ranking de productos)

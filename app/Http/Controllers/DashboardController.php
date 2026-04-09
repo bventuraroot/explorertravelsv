@@ -300,7 +300,9 @@ class DashboardController extends Controller
         // Ventas por aerolínea (id → tabla aerolineas)
         $ventasPorAerolinea = $this->ventasPorAerolineaConCatalogo($startDate, $endDate);
 
-        // Comisiones: desglose por destino / aerolínea
+        // FEE + Comisiones: desglose por destino / aerolínea
+        $feePorDestino          = $this->feePorDestinoConAeropuerto($startDate, $endDate);
+        $feePorAerolinea        = $this->feePorAerolineaConCatalogo($startDate, $endDate);
         $comisionesPorDestino   = $this->comisionesPorDestinoConAeropuerto($startDate, $endDate);
         $comisionesPorAerolinea = $this->comisionesPorAerolineaConCatalogo($startDate, $endDate);
 
@@ -378,6 +380,8 @@ class DashboardController extends Controller
             ->with('totalFeesIva', round($totalFeesIva, 2))
             ->with('totalComisiones', round($totalComisiones, 2))
             ->with('totalComisionesIva', round($totalComisionesIva, 2))
+            ->with('feePorDestino', $feePorDestino)
+            ->with('feePorAerolinea', $feePorAerolinea)
             ->with('comisionesPorDestino', $comisionesPorDestino)
             ->with('comisionesPorAerolinea', $comisionesPorAerolinea)
             ->with('crecimientoVentas', $crecimientoVentas)
@@ -443,6 +447,42 @@ class DashboardController extends Controller
         $sub  = $this->sqlSubtotalLinea('sd');
 
         return '(CASE WHEN ' . $com . ' THEN ' . $sub . ' ELSE 0 END + CASE WHEN ' . $grav . ' AND ' . $com . ' THEN COALESCE(sd.fee, 0) ELSE 0 END)';
+    }
+
+    /**
+     * Monto por línea FEE (cargo administrativo + CXS), alineado con totales de FEE.
+     */
+    private function sqlMontoSoloFeePorLinea(): string
+    {
+        $grav  = $this->sqlLineaGravada('sd');
+        $soloF = $this->sqlEsSoloProductoFee('p');
+        $sub   = $this->sqlSubtotalLinea('sd');
+
+        return '(CASE WHEN ' . $soloF . ' THEN ' . $sub . ' ELSE 0 END + CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN COALESCE(sd.fee, 0) ELSE 0 END)';
+    }
+
+    /**
+     * FEE por destino (productos admin. + CXS).
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function feePorDestinoConAeropuerto(Carbon $startDate, Carbon $endDate): Collection
+    {
+        $destinoExpr    = 'NULLIF(NULLIF(TRIM(sd.destino), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoSoloFeePorLinea();
+
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $destinoExpr,
+            'destino_key',
+            'aeropuertos',
+            'id_aeropuerto',
+            ['iata' => 'ap_iata', 'ciudad' => 'ap_ciudad', 'pais' => 'ap_pais'],
+            $lineAmountExpr,
+            'Aeropuerto',
+            'Destino'
+        );
     }
 
     /**
@@ -570,7 +610,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Ingreso empresa por aerolínea (producto Comisiones producto aéreo).
+     * Comisiones por aerolínea.
      *
      * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
      */
@@ -578,6 +618,30 @@ class DashboardController extends Controller
     {
         $lineaExpr      = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
         $lineAmountExpr = $this->sqlMontoComisionesPorLinea();
+
+        return $this->agregarPorClaveDestinoOAerolinea(
+            $startDate,
+            $endDate,
+            $lineaExpr,
+            'linea_key',
+            'aerolineas',
+            'id_aerolinea',
+            ['iata' => 'al_iata', 'nombre' => 'al_nombre'],
+            $lineAmountExpr,
+            'Aerolínea',
+            'Aerolínea'
+        );
+    }
+
+    /**
+     * FEE por aerolínea (cargo administrativo + CXS).
+     *
+     * @return \Illuminate\Support\Collection<int, array{label: string, total: float}>
+     */
+    private function feePorAerolineaConCatalogo(Carbon $startDate, Carbon $endDate): Collection
+    {
+        $lineaExpr      = 'NULLIF(NULLIF(TRIM(sd.linea), ""), "0")';
+        $lineAmountExpr = $this->sqlMontoSoloFeePorLinea();
 
         return $this->agregarPorClaveDestinoOAerolinea(
             $startDate,
