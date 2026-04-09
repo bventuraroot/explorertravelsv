@@ -244,9 +244,8 @@
             ${{ number_format($totalVentas, 2) }}
           </div>
           <div class="text-lg-end ms-lg-auto mt-1" style="color:rgba(255,255,255,.48);font-size:10px;max-width:30rem;line-height:1.35;">
-            <strong style="color:rgba(255,255,255,.7);">Ventas</strong> = productos varios (terceros). ·
-            <strong style="color:rgba(255,255,255,.7);">FEE</strong> = cargo administrativo + CXS. ·
-            <strong style="color:rgba(255,255,255,.7);">Comisiones</strong> = productos con «comision» en nombre.
+            <strong style="color:rgba(255,255,255,.7);">Ventas</strong> = todo lo vendido (productos y servicios). ·
+            <strong style="color:rgba(255,255,255,.7);">FEE</strong> y <strong style="color:rgba(255,255,255,.7);">comisiones</strong> se muestran desglosados en las tarjetas y en su pestaña.
           </div>
           <div class="mt-2 d-flex align-items-center gap-3 justify-content-lg-end">
             <span class="db-badge"
@@ -607,7 +606,7 @@
         <div>
           <p class="db-label mb-0">Inteligencia de negocio</p>
           <h5 class="mb-0 fw-bold">Reportes operativos</h5>
-          <small class="text-muted">Elige si quieres ver <strong>ventas a terceros</strong> o el desglose de <strong>FEE + comisiones</strong>.</small>
+          <small class="text-muted">Consulta <strong>Ventas</strong> (todo lo operativo que se vende) o el análisis de <strong>FEE + comisiones</strong>.</small>
         </div>
       </div>
     </div>
@@ -616,7 +615,7 @@
       <li class="nav-item flex-fill text-center" role="presentation">
         <button class="nav-link active w-100" id="tab-bi-ventas" data-bs-toggle="tab" data-bs-target="#pane-bi-ventas"
                 type="button" role="tab" aria-controls="pane-bi-ventas" aria-selected="true">
-          <i class="ti ti-shopping-cart me-1"></i> Ventas (terceros)
+          <i class="ti ti-shopping-cart me-1"></i> Ventas
         </button>
       </li>
       <li class="nav-item flex-fill text-center" role="presentation">
@@ -631,7 +630,7 @@
       {{-- Pestaña Ventas --}}
       <div class="tab-pane fade show active" id="pane-bi-ventas" role="tabpanel" aria-labelledby="tab-bi-ventas" tabindex="0">
         <p class="text-muted small mb-3">
-          Montos por línea (gravado + exento + no sujeto), solo <strong>ventas a terceros</strong> — excluye FEE (admin./CXS) y comisiones. Período filtrado; anuladas excluidas.
+          <strong>Ventas</strong>: montos por línea (gravado + exento + no sujeto) de todo lo vendido como producto o servicio; las líneas de FEE (admin./CXS) y comisiones van en la otra pestaña. Período filtrado; anuladas excluidas.
         </p>
         <div class="row g-4">
           <div class="col-xl-6 col-12">
