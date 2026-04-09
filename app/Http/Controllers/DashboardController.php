@@ -70,19 +70,30 @@ class DashboardController extends Controller
     }
 
     /**
-     * Solo documentos con DTE de emisión aceptado (codEstado 02 = emitido / recibido por MH).
-     * Usa el último DTE por venta entre transacciones de emisión (01, 05, 06), igual que reportes.
+     * Venta con al menos un registro en `dte` (ligero: un EXISTS sin subconsultas correlacionadas).
      */
-    private function aplicarFiltroVentaConDteEmitido(Builder $query, string $aliasVentas): void
+    private function aplicarFiltroVentaConDteRelacionado(Builder $query, string $aliasVentas): void
     {
         $query->whereExists(function ($q) use ($aliasVentas) {
             $q->selectRaw('1')
-                ->from('dte as dte_emit')
-                ->whereColumn('dte_emit.sale_id', $aliasVentas . '.id')
-                ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
-                ->where('dte_emit.codEstado', '02')
-                ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+                ->from('dte')
+                ->whereColumn('dte.sale_id', $aliasVentas . '.id');
         });
+    }
+
+    /**
+     * Base: detalle + venta en rango, no anulada, con DTE relacionado.
+     */
+    private function querySalesdetailsBase(Carbon $startDate, Carbon $endDate): Builder
+    {
+        $q = DB::table('salesdetails as sd')
+            ->join('sales as s', 's.id', '=', 'sd.sale_id')
+            ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
+            ->whereBetween('s.date', [$startDate, $endDate])
+            ->where('s.state', '<>', 0);
+        $this->aplicarFiltroVentaConDteRelacionado($q, 's');
+
+        return $q;
     }
 
     /**
@@ -102,14 +113,7 @@ class DashboardController extends Controller
         $vTer  = $this->sqlEsVentaATercerosLinea('p');
         $sub   = $this->sqlSubtotalLinea('sd');
 
-        $qTotales = DB::table('salesdetails as sd')
-            ->join('sales as s', 's.id', '=', 'sd.sale_id')
-            ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
-            ->whereBetween('s.date', [$startDate, $endDate])
-            ->where('s.state', '<>', 0);
-        $this->aplicarFiltroVentaConDteEmitido($qTotales, 's');
-
-        $row = $qTotales->selectRaw('
+        $row = $this->querySalesdetailsBase($startDate, $endDate)->selectRaw('
                 COALESCE(SUM(CASE WHEN ' . $vTer . ' THEN ' . $sub . ' ELSE 0 END), 0) as ventas_operativas,
                 COALESCE(SUM(CASE WHEN ' . $soloF . ' THEN ' . $sub . ' ELSE 0 END), 0)
                 + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.fee ELSE 0 END), 0) as fee_monto,
@@ -129,6 +133,61 @@ class DashboardController extends Controller
             'comisiones_monto'  => round((float) ($row->comisiones_monto ?? 0), 2),
             'comisiones_iva'    => round((float) ($row->comisiones_iva ?? 0), 2),
         ];
+    }
+
+    /**
+     * Últimos 12 meses (incluye meses en 0) — una sola consulta agrupada.
+     *
+     * @return \Illuminate\Support\Collection<int, array{mes: string, total: float}>
+     */
+    private function ventasOperativasPorMesUltimos12(Carbon $now): Collection
+    {
+        $vTer  = $this->sqlEsVentaATercerosLinea('p');
+        $sub   = $this->sqlSubtotalLinea('sd');
+        $start = $now->copy()->subMonths(11)->startOfMonth();
+        $end   = $now->copy()->endOfDay();
+
+        $rows = $this->querySalesdetailsBase($start, $end)
+            ->selectRaw("DATE_FORMAT(s.date, '%Y-%m') as ym, SUM(CASE WHEN {$vTer} THEN {$sub} ELSE 0 END) as total")
+            ->groupBy(DB::raw("DATE_FORMAT(s.date, '%Y-%m')"))
+            ->get();
+
+        $byYm = $rows->pluck('total', 'ym');
+
+        return collect(range(0, 11))
+            ->map(function ($i) use ($now, $byYm) {
+                $monthStart = $now->copy()->subMonths(11 - $i)->startOfMonth();
+                $key = $monthStart->format('Y-m');
+
+                return [
+                    'mes' => $key,
+                    'total' => round((float) ($byYm[$key] ?? 0), 2),
+                ];
+            });
+    }
+
+    /**
+     * Ventas operativas por día en rango — una consulta; clave Y-m-d.
+     *
+     * @return array<string, float>
+     */
+    private function ventasOperativasPorDiaEnRango(Carbon $startDate, Carbon $endDate): array
+    {
+        $vTer = $this->sqlEsVentaATercerosLinea('p');
+        $sub  = $this->sqlSubtotalLinea('sd');
+
+        $rows = $this->querySalesdetailsBase($startDate, $endDate)
+            ->selectRaw('DATE(s.date) as dia, SUM(CASE WHEN ' . $vTer . ' THEN ' . $sub . ' ELSE 0 END) as total')
+            ->groupBy(DB::raw('DATE(s.date)'))
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $key = Carbon::parse($r->dia)->format('Y-m-d');
+            $out[$key] = round((float) ($r->total ?? 0), 2);
+        }
+
+        return $out;
     }
 
     public function home(Request $request)
@@ -212,11 +271,8 @@ class DashboardController extends Controller
             ->where('state', '<>', 0)
             ->whereExists(function ($sub) {
                 $sub->selectRaw('1')
-                    ->from('dte as dte_emit')
-                    ->whereColumn('dte_emit.sale_id', 'sales.id')
-                    ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
-                    ->where('dte_emit.codEstado', '02')
-                    ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+                    ->from('dte')
+                    ->whereColumn('dte.sale_id', 'sales.id');
             })
             ->count();
 
@@ -246,39 +302,28 @@ class DashboardController extends Controller
             $crecimientoVentas = round((($totalVentas - $ventasMismoRangoAnioAnterior) / $ventasMismoRangoAnioAnterior) * 100, 2);
         }
 
-        // Series por mes (últimos 12 meses) — ventas operativas por mes
-        $ventasPorMes = collect(range(0, 11))
-            ->map(function ($i) use ($now) {
-                $monthStart = $now->copy()->subMonths(11 - $i)->startOfMonth();
-                $monthEnd = $now->copy()->subMonths(11 - $i)->endOfMonth();
-                $sum = $this->totalesVentasYFeeEnRango($monthStart, $monthEnd)['ventas_operativas'];
-
-                return [
-                    'mes' => $monthStart->format('Y-m'),
-                    'total' => round($sum, 2),
-                ];
-            });
-
-        // Series por día (últimos 30 días y última semana)
+        // Series por mes / día: una consulta agrupada cada una (antes: 12 + 30 + 7 llamadas a totales)
+        $ventasPorMes = $this->ventasOperativasPorMesUltimos12($now);
+        $mapDia30 = $this->ventasOperativasPorDiaEnRango(
+            $now->copy()->subDays(29)->startOfDay(),
+            $now->copy()->endOfDay()
+        );
         $ventasPorDia30 = collect(range(0, 29))
-            ->map(function ($i) use ($now) {
-                $day = $now->copy()->subDays(29 - $i)->startOfDay();
-                $sum = $this->totalesVentasYFeeEnRango($day, $day->copy()->endOfDay())['ventas_operativas'];
+            ->map(function ($i) use ($now, $mapDia30) {
+                $day = $now->copy()->subDays(29 - $i)->format('Y-m-d');
 
                 return [
-                    'dia' => $day->format('Y-m-d'),
-                    'total' => round($sum, 2),
+                    'dia' => $day,
+                    'total' => round((float) ($mapDia30[$day] ?? 0), 2),
                 ];
             });
-
         $ventasPorDia7 = collect(range(0, 6))
-            ->map(function ($i) use ($now) {
-                $day = $now->copy()->subDays(6 - $i)->startOfDay();
-                $sum = $this->totalesVentasYFeeEnRango($day, $day->copy()->endOfDay())['ventas_operativas'];
+            ->map(function ($i) use ($now, $mapDia30) {
+                $day = $now->copy()->subDays(6 - $i)->format('Y-m-d');
 
                 return [
-                    'dia' => $day->format('Y-m-d'),
-                    'total' => round($sum, 2),
+                    'dia' => $day,
+                    'total' => round((float) ($mapDia30[$day] ?? 0), 2),
                 ];
             });
 
@@ -293,11 +338,8 @@ class DashboardController extends Controller
             ->whereRaw('(' . $vTerProd . ')')
             ->whereExists(function ($sub) {
                 $sub->selectRaw('1')
-                    ->from('dte as dte_emit')
-                    ->whereColumn('dte_emit.sale_id', 'sales.id')
-                    ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
-                    ->where('dte_emit.codEstado', '02')
-                    ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+                    ->from('dte')
+                    ->whereColumn('dte.sale_id', 'sales.id');
             })
             ->groupBy('products.id', 'products.name')
             ->orderByDesc(DB::raw('SUM(salesdetails.amountp)'))
@@ -365,7 +407,7 @@ class DashboardController extends Controller
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
             ->whereNotNull('s.client_id');
-        $this->aplicarFiltroVentaConDteEmitido($qCli, 's');
+        $this->aplicarFiltroVentaConDteRelacionado($qCli, 's');
 
         $ventasPorCliente = $qCli
             ->groupBy('s.client_id')
@@ -571,7 +613,7 @@ class DashboardController extends Controller
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0);
-        $this->aplicarFiltroVentaConDteEmitido($porLinea, 's');
+        $this->aplicarFiltroVentaConDteRelacionado($porLinea, 's');
 
         $porLinea->selectRaw($keyExpr . ' as ' . $keyAlias)
             ->selectRaw($lineAmountExpr . ' as line_amount');
@@ -720,7 +762,7 @@ class DashboardController extends Controller
             ->leftJoin('products as p', 'p.id', '=', 'salesdetails.product_id')
             ->whereBetween('sales.date', [$startDate, $endDate])
             ->where('sales.state', '<>', 0);
-        $this->aplicarFiltroVentaConDteEmitido($qDet, 'sales');
+        $this->aplicarFiltroVentaConDteRelacionado($qDet, 'sales');
 
         $rows = $qDet
             ->selectRaw($groupColumn . ' as grp_key')
