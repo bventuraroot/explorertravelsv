@@ -606,7 +606,7 @@
         <div>
           <p class="db-label mb-0">Inteligencia de negocio</p>
           <h5 class="mb-0 fw-bold">Reportes operativos</h5>
-          <small class="text-muted">Consulta <strong>Ventas</strong> (todo lo operativo que se vende) o el análisis de <strong>FEE + comisiones</strong>.</small>
+          <small class="text-muted">Consulta <strong>Ventas</strong> (todo lo operativo que se vende) o el análisis de <strong>FEE + comisiones</strong>. Solo documentos con <strong>DTE emitido</strong> (aceptado por Hacienda).</small>
         </div>
       </div>
     </div>

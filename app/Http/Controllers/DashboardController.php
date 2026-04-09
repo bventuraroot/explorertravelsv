@@ -10,6 +10,7 @@ use App\Models\Salesdetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -69,6 +70,22 @@ class DashboardController extends Controller
     }
 
     /**
+     * Solo documentos con DTE de emisión aceptado (codEstado 02 = emitido / recibido por MH).
+     * Usa el último DTE por venta entre transacciones de emisión (01, 05, 06), igual que reportes.
+     */
+    private function aplicarFiltroVentaConDteEmitido(Builder $query, string $aliasVentas): void
+    {
+        $query->whereExists(function ($q) use ($aliasVentas) {
+            $q->selectRaw('1')
+                ->from('dte as dte_emit')
+                ->whereColumn('dte_emit.sale_id', $aliasVentas . '.id')
+                ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
+                ->where('dte_emit.codEstado', '02')
+                ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+        });
+    }
+
+    /**
      * @return array{
      *   ventas_operativas: float,
      *   fee_monto: float,
@@ -85,12 +102,14 @@ class DashboardController extends Controller
         $vTer  = $this->sqlEsVentaATercerosLinea('p');
         $sub   = $this->sqlSubtotalLinea('sd');
 
-        $row = DB::table('salesdetails as sd')
+        $qTotales = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
-            ->where('s.state', '<>', 0)
-            ->selectRaw('
+            ->where('s.state', '<>', 0);
+        $this->aplicarFiltroVentaConDteEmitido($qTotales, 's');
+
+        $row = $qTotales->selectRaw('
                 COALESCE(SUM(CASE WHEN ' . $vTer . ' THEN ' . $sub . ' ELSE 0 END), 0) as ventas_operativas,
                 COALESCE(SUM(CASE WHEN ' . $soloF . ' THEN ' . $sub . ' ELSE 0 END), 0)
                 + COALESCE(SUM(CASE WHEN ' . $grav . ' AND ' . $soloF . ' THEN sd.fee ELSE 0 END), 0) as fee_monto,
@@ -189,7 +208,17 @@ class DashboardController extends Controller
         $tclientes = Client::count();
         $tproviders = Provider::count();
         $tproducts = Product::count();
-        $tsales = Sale::count();
+        $tsales = Sale::query()
+            ->where('state', '<>', 0)
+            ->whereExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('dte as dte_emit')
+                    ->whereColumn('dte_emit.sale_id', 'sales.id')
+                    ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
+                    ->where('dte_emit.codEstado', '02')
+                    ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+            })
+            ->count();
 
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfWeek = $now->copy()->startOfWeek();
@@ -260,7 +289,16 @@ class DashboardController extends Controller
             ->join('sales', 'sales.id', '=', 'salesdetails.sale_id')
             ->join('products', 'products.id', '=', 'salesdetails.product_id')
             ->whereBetween('sales.date', [$startDate, $endDate])
+            ->where('sales.state', '<>', 0)
             ->whereRaw('(' . $vTerProd . ')')
+            ->whereExists(function ($sub) {
+                $sub->selectRaw('1')
+                    ->from('dte as dte_emit')
+                    ->whereColumn('dte_emit.sale_id', 'sales.id')
+                    ->whereIn('dte_emit.codTransaction', ['01', '05', '06'])
+                    ->where('dte_emit.codEstado', '02')
+                    ->whereRaw('dte_emit.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte_emit.sale_id AND d2.codTransaction IN (\'01\',\'05\',\'06\'))');
+            })
             ->groupBy('products.id', 'products.name')
             ->orderByDesc(DB::raw('SUM(salesdetails.amountp)'))
             ->limit(5)
@@ -321,12 +359,15 @@ class DashboardController extends Controller
         // Top clientes por ventas a terceros
         $vTerCli = $this->sqlEsVentaATercerosLinea('p');
         $subCli = $this->sqlSubtotalLinea('sd');
-        $ventasPorCliente = DB::table('salesdetails as sd')
+        $qCli = DB::table('salesdetails as sd')
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
             ->where('s.state', '<>', 0)
-            ->whereNotNull('s.client_id')
+            ->whereNotNull('s.client_id');
+        $this->aplicarFiltroVentaConDteEmitido($qCli, 's');
+
+        $ventasPorCliente = $qCli
             ->groupBy('s.client_id')
             ->selectRaw('s.client_id, SUM(CASE WHEN (' . $vTerCli . ') THEN ' . $subCli . ' ELSE 0 END) as total')
             ->orderByDesc('total')
@@ -529,8 +570,10 @@ class DashboardController extends Controller
             ->join('sales as s', 's.id', '=', 'sd.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'sd.product_id')
             ->whereBetween('s.date', [$startDate, $endDate])
-            ->where('s.state', '<>', 0)
-            ->selectRaw($keyExpr . ' as ' . $keyAlias)
+            ->where('s.state', '<>', 0);
+        $this->aplicarFiltroVentaConDteEmitido($porLinea, 's');
+
+        $porLinea->selectRaw($keyExpr . ' as ' . $keyAlias)
             ->selectRaw($lineAmountExpr . ' as line_amount');
 
         $aggregated = DB::query()
@@ -672,11 +715,14 @@ class DashboardController extends Controller
         $vTer = $this->sqlEsVentaATercerosLinea('p');
         $sub = '(salesdetails.pricesale + salesdetails.nosujeta + salesdetails.exempt)';
 
-        $rows = DB::table('salesdetails')
+        $qDet = DB::table('salesdetails')
             ->join('sales', 'sales.id', '=', 'salesdetails.sale_id')
             ->leftJoin('products as p', 'p.id', '=', 'salesdetails.product_id')
             ->whereBetween('sales.date', [$startDate, $endDate])
-            ->where('sales.state', '<>', 0)
+            ->where('sales.state', '<>', 0);
+        $this->aplicarFiltroVentaConDteEmitido($qDet, 'sales');
+
+        $rows = $qDet
             ->selectRaw($groupColumn . ' as grp_key')
             ->selectRaw('SUM(CASE WHEN (' . $vTer . ') THEN ' . $sub . ' ELSE 0 END) as total')
             ->groupBy(DB::raw($groupColumn))
