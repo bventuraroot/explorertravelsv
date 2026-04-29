@@ -4654,6 +4654,12 @@ class SaleController extends Controller
     {
         try {
             $amount = substr($amount, 1);
+            $originalParentState = [
+                'is_parent' => $parentSale->is_parent,
+                'totalamount' => $parentSale->totalamount,
+                'typesale' => $parentSale->typesale,
+                'provider_id' => $parentSale->provider_id,
+            ];
 
             // 1) Persistir venta padre e hijos primero (sin emisión DTE), para no perder registros si falla Hacienda.
             DB::beginTransaction();
@@ -4698,8 +4704,10 @@ class SaleController extends Controller
             $parentSale->save();
 
             $childrenToEmit = [];
+            $createdChildIds = [];
             $childResults = [];
             $allSuccess = true;
+            $successCount = 0;
 
             foreach ($groups as $key => $group) {
                 try {
@@ -4711,6 +4719,7 @@ class SaleController extends Controller
                         'amount' => $childAmount,
                         'group' => $group
                     ];
+                    $createdChildIds[] = $childSale->id;
                 } catch (\Exception $e) {
                     $allSuccess = false;
                     $childResults[] = [
@@ -4735,6 +4744,7 @@ class SaleController extends Controller
                 $dteResponse = $this->emitDTEForChild($childSale, $childAmount);
 
                 if ($dteResponse['success']) {
+                    $successCount++;
                     $childResults[] = [
                         'sale_id' => $childSale->id,
                         'success' => true,
@@ -4757,6 +4767,29 @@ class SaleController extends Controller
                 }
             }
 
+            // Si NO se emitió ningún DTE, restaurar venta original (sin padre/hijos) para análisis.
+            if ($successCount === 0) {
+                DB::beginTransaction();
+                try {
+                    if (!empty($createdChildIds)) {
+                        DB::table('dte')->whereIn('sale_id', $createdChildIds)->delete();
+                        DB::table('salesdetails')->whereIn('sale_id', $createdChildIds)->delete();
+                        DB::table('sales')->whereIn('id', $createdChildIds)->delete();
+                    }
+
+                    $parentSale->is_parent = $originalParentState['is_parent'];
+                    $parentSale->totalamount = $originalParentState['totalamount'];
+                    $parentSale->typesale = $originalParentState['typesale'];
+                    $parentSale->provider_id = $originalParentState['provider_id'];
+                    $parentSale->save();
+
+                    DB::commit();
+                } catch (\Exception $revertException) {
+                    DB::rollBack();
+                    throw $revertException;
+                }
+            }
+
             // Si todos los DTEs se emitieron bien, enviar un solo correo consolidado al cliente
             if ($allSuccess) {
                 $this->sendConsolidatedEmail($parentSale);
@@ -4767,10 +4800,14 @@ class SaleController extends Controller
                 'type' => 'multi_provider',
                 'parent_sale_id' => $parentSale->id,
                 'all_success' => $allSuccess,
+                'any_success' => $successCount > 0,
+                'reverted_to_original' => $successCount === 0,
                 'children' => $childResults,
-                'message' => $allSuccess
+                'message' => $successCount === 0
+                    ? 'No se emitió ningún DTE. La venta se dejó tal cual para análisis.'
+                    : ($allSuccess
                     ? 'Todos los DTEs se emitieron correctamente. Revisa tu correo.'
-                    : 'Algunos DTEs fallaron. Puedes reemitirlos desde el listado de ventas.'
+                    : 'Algunos DTEs fallaron. Puedes reemitirlos desde el listado de ventas.')
             ]);
 
         } catch (\Exception $e) {

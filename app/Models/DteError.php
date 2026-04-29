@@ -304,12 +304,15 @@ class DteError extends Model
         array $stackTrace = [],
         string $jsonCompleto = null
     ): self {
+        $dte = Dte::with(['sale', 'company'])->find($dteId);
+        $detallesNormalizados = self::normalizarDetallesError($dte, $tipo, $codigo, $descripcion, $detalles);
+
         $data = [
             'dte_id' => $dteId,
             'tipo_error' => $tipo,
             'codigo_error' => $codigo,
             'descripcion' => $descripcion,
-            'detalles' => $detalles,
+            'detalles' => $detallesNormalizados,
             'trace' => $stackTrace,
             'intentos_realizados' => 0,
             'max_intentos' => self::getMaxIntentosPorTipo($tipo),
@@ -317,6 +320,70 @@ class DteError extends Model
         ];
 
         return self::create($data);
+    }
+
+    private static function normalizarDetallesError(
+        ?Dte $dte,
+        string $tipo,
+        string $codigo,
+        string $descripcion,
+        array $detalles
+    ): array {
+        $numeroControl = $detalles['numeroControl']
+            ?? $detalles['identificacion']['numeroControl']
+            ?? ($dte->id_doc ?? null);
+
+        $codigoGeneracion = $detalles['codigoGeneracion']
+            ?? $detalles['identificacion']['codigoGeneracion']
+            ?? ($dte->codigoGeneracion ?? null);
+
+        $codEstado = $detalles['codEstado'] ?? ($dte->codEstado ?? null);
+        $saleId = $detalles['sale_id'] ?? ($dte->sale_id ?? null);
+        $companyId = $detalles['company_id'] ?? ($dte->company_id ?? null);
+        $tipoDte = $detalles['tipoDte'] ?? ($dte->tipoDte ?? null);
+
+        $identificacion = [
+            'dte_id' => $dte?->id,
+            'sale_id' => $saleId,
+            'company_id' => $companyId,
+            'tipo_dte' => $tipoDte,
+            'numero_control' => $numeroControl,
+            'codigo_generacion' => $codigoGeneracion,
+            'cod_estado' => $codEstado,
+            'tipo_error' => $tipo,
+            'codigo_error' => $codigo,
+        ];
+
+        $resumen = [
+            'titulo' => $descripcion,
+            'identificador' => self::construirIdentificador($numeroControl, $codigoGeneracion, $dte?->id),
+            'codigo_principal' => $detalles['codigoMsg'] ?? $codigo,
+            'mensaje_principal' => $detalles['descripcionMsg'] ?? $descripcion,
+            'observaciones' => $detalles['observacionesMsg'] ?? null,
+        ];
+
+        return array_merge($detalles, [
+            'resumen' => $resumen,
+            'identificacion' => $identificacion,
+            'metadata' => [
+                'fecha_error' => now()->toDateTimeString(),
+                'intento' => $dte?->nSends,
+                'ambiente' => $dte?->ambiente_id,
+            ],
+        ]);
+    }
+
+    private static function construirIdentificador(?string $numeroControl, ?string $codigoGeneracion, ?int $dteId): string
+    {
+        if (!empty($numeroControl)) {
+            return 'NC: ' . $numeroControl;
+        }
+
+        if (!empty($codigoGeneracion)) {
+            return 'CG: ' . $codigoGeneracion;
+        }
+
+        return 'DTE ID: ' . ($dteId ?? 'N/A');
     }
 
     /**

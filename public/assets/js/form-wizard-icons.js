@@ -2147,7 +2147,11 @@ function creardocuments() {
                             } else if (response.res == 1) {
                                 resolve(response); // Resuelve la promesa si la solicitud es exitosa
                             } else if (response.res == 0) {
-                                reject("Algo salió mal"); // Rechaza la promesa si hay un problema
+                                reject({
+                                    type: 'server_error',
+                                    message: response.message || response.error || 'Algo salió mal al emitir el DTE',
+                                    response: response
+                                }); // Rechaza la promesa con detalle del backend
                             } else if (typeof response === 'string') {
                                 // Respuesta de error de Hacienda (JSON string)
                                 try {
@@ -2191,10 +2195,36 @@ function creardocuments() {
                         },
                         error: function (xhr, status, error) {
                             console.error('Error AJAX:', xhr, status, error);
+                            var parsedMessage = '';
+                            var parsedCode = null;
+
+                            try {
+                                var responseJson = xhr.responseJSON;
+                                if (!responseJson && xhr.responseText) {
+                                    responseJson = JSON.parse(xhr.responseText);
+                                }
+
+                                if (responseJson) {
+                                    parsedMessage = responseJson.message || responseJson.error || responseJson.descripcionMsg || '';
+                                    parsedCode = responseJson.codigoMsg || responseJson.codEstado || null;
+                                }
+                            } catch (e) {
+                                // Ignorar error de parseo y usar fallback
+                            }
+
+                            // status = 0 suele ser problema de red/CORS/timeout del navegador.
+                            var isConnectionIssue = xhr.status === 0;
+                            var fallbackMessage = isConnectionIssue
+                                ? 'No se pudo conectar con el servidor. Verifica red/VPN y vuelve a intentar.'
+                                : 'El servidor devolvió un error al emitir el DTE.';
+
                             reject({
                                 type: 'ajax_error',
-                                message: 'Error de conexión: ' + error,
+                                message: parsedMessage || error || fallbackMessage,
                                 status: xhr.status,
+                                statusText: xhr.statusText || status,
+                                code: parsedCode,
+                                isConnectionIssue: isConnectionIssue,
                                 response: xhr.responseText
                             });
                         }
@@ -2274,13 +2304,18 @@ function creardocuments() {
                         break;
 
                     case 'ajax_error':
-                        title = "Error de Conexión";
+                        title = error.isConnectionIssue ? "Error de Conexión" : "Error al Emitir DTE";
                         message = `
                             <div class="text-left">
                                 <p><strong>Error:</strong> ${error.message}</p>
                                 <p><strong>Estado:</strong> ${error.status}</p>
+                                ${error.code ? `<p><strong>Código:</strong> ${error.code}</p>` : ''}
                                 <hr>
-                                <p class="text-muted small">Verifica tu conexión a internet e intenta nuevamente.</p>
+                                <p class="text-muted small">${
+                                    error.isConnectionIssue
+                                        ? 'Revisa tu conexión a internet e intenta nuevamente.'
+                                        : 'No es un problema de internet. Revisa el mensaje del servidor para corregir el documento.'
+                                }</p>
                             </div>
                         `;
                         icon = "error";
