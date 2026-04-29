@@ -365,6 +365,7 @@ Route::middleware('auth')->group(function () {
         // Gestión de errores
         Route::get('errores', [DteAdminController::class, 'errores'])->name('errores');
         Route::post('errores/{errorId}/resolver', [DteAdminController::class, 'resolverError'])->name('resolver-error');
+        Route::post('errores/resolver-masivo', [DteAdminController::class, 'resolverErroresMasivo'])->name('resolver-error-masivo');
         Route::get('error-show/{id}', [DteAdminController::class, 'showError'])->name('error-show');
         Route::get('dte-show/{id}', [DteAdminController::class, 'showDte'])->name('show');
 

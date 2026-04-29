@@ -26,7 +26,7 @@ class DteAdminController extends Controller
         // Middleware de permisos
         $this->middleware('permission:dte.dashboard')->only(['dashboard', 'estadisticas']);
         $this->middleware('permission:dte.procesar')->only(['procesarCola', 'procesarReintentos']);
-        $this->middleware('permission:dte.errores')->only(['errores', 'resolverError']);
+        $this->middleware('permission:dte.errores')->only(['errores', 'resolverError', 'resolverErroresMasivo']);
         $this->middleware('permission:dte.contingencias')->only(['contingencias', 'crearContingencia']);
         $this->middleware('permission:dte.reintentar')->only(['reintentarDte']);
     }
@@ -249,6 +249,57 @@ class DteAdminController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error resolviendo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Resolver múltiples errores manualmente
+     */
+    public function resolverErroresMasivo(Request $request): JsonResponse
+    {
+        $request->validate([
+            'solucion' => 'required|string|max:500',
+            'error_ids' => 'required|array|min:1',
+            'error_ids.*' => 'integer|exists:dte_errors,id'
+        ]);
+
+        try {
+            $ids = collect($request->error_ids)
+                ->map(fn($id) => (int) $id)
+                ->unique()
+                ->values();
+
+            $errores = DteError::whereIn('id', $ids)
+                ->where('resuelto', false)
+                ->get();
+
+            if ($errores->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay errores pendientes para resolver en la selección.'
+                ], 400);
+            }
+
+            $resueltos = 0;
+            foreach ($errores as $error) {
+                if ($error->marcarResuelto($request->solucion, auth()->id())) {
+                    $resueltos++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Se resolvieron {$resueltos} error(es) correctamente.",
+                'data' => [
+                    'seleccionados' => $ids->count(),
+                    'resueltos' => $resueltos
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error resolviendo en lote: ' . $e->getMessage()
             ], 500);
         }
     }

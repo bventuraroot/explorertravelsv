@@ -109,6 +109,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 card-title">Filtros y Acciones</h5>
                 <div class="gap-2 d-flex">
+                    <button type="button" class="btn btn-label-success" onclick="resolverSeleccionados()">
+                        <i class="fas fa-check-double me-1"></i> Resolver Seleccionados
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="exportarErrores()">
                         <i class="fas fa-download me-1"></i> Exportar
                     </button>
@@ -177,6 +180,9 @@
                     <table class="table table-striped table-hover" id="erroresTable">
                         <thead>
                             <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllErrores" title="Seleccionar todos">
+                                </th>
                                 <th>ID</th>
                                 <th>DTE ID</th>
                                 <th>Tipo</th>
@@ -192,7 +198,7 @@
                             {{-- Debug: Mostrar información de errores --}}
                             @if($errores->count() == 0)
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted">
+                                    <td colspan="10" class="text-center text-muted">
                                         <i class="fas fa-info-circle me-2"></i>
                                         No se encontraron errores con los filtros aplicados
                                         <br>
@@ -202,6 +208,14 @@
                             @endif
                             @foreach($errores as $error)
                             <tr class="{{ $error->resuelto ? 'table-success' : '' }}">
+                                <td>
+                                    @if(!$error->resuelto && $error->id)
+                                        <input type="checkbox"
+                                               class="error-checkbox"
+                                               value="{{ $error->id }}"
+                                               title="Seleccionar error #{{ $error->id }}">
+                                    @endif
+                                </td>
                                 <td>{{ $error->id ?? 'N/A' }}</td>
                                 <td>
                                     <a href="{{ route('dte.show', $error->dte_id) }}" class="text-primary">
@@ -324,12 +338,24 @@ $(document).ready(function() {
         language: {
             url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
         },
-        order: [[7, 'desc']] // Ordenar por fecha descendente
+        order: [[8, 'desc']] // Ordenar por fecha descendente (columna fecha)
     });
 
     // Aplicar filtros automáticamente
     $('#filtrosForm select').change(function() {
         $('#filtrosForm').submit();
+    });
+
+    // Seleccionar / deseleccionar todos
+    $('#selectAllErrores').on('change', function() {
+        $('.error-checkbox').prop('checked', $(this).is(':checked'));
+    });
+
+    // Sincronizar estado del checkbox general
+    $(document).on('change', '.error-checkbox', function() {
+        const total = $('.error-checkbox').length;
+        const checked = $('.error-checkbox:checked').length;
+        $('#selectAllErrores').prop('checked', total > 0 && total === checked);
     });
 });
 
@@ -383,6 +409,90 @@ function confirmarResolucion() {
                 text: 'Error al resolver: ' + xhr.responseText
             });
         }
+    });
+}
+
+function resolverSeleccionados() {
+    const ids = $('.error-checkbox:checked').map(function() {
+        return parseInt($(this).val(), 10);
+    }).get();
+
+    if (!ids.length) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin selección',
+            text: 'Selecciona al menos un error pendiente para resolver.'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Resolver errores seleccionados',
+        input: 'textarea',
+        inputLabel: `Se resolverán ${ids.length} error(es)`,
+        inputPlaceholder: 'Escribe una sola solución para todos los errores seleccionados...',
+        inputAttributes: {
+            'aria-label': 'Solución aplicada'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Resolver en lote',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+            if (!value || !value.trim()) {
+                return 'Ingresa la solución aplicada';
+            }
+            return null;
+        }
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        $.ajax({
+            url: '/dte-admin/errores/resolver-masivo',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            data: JSON.stringify({
+                error_ids: ids,
+                solucion: result.value.trim()
+            }),
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Resolución masiva completada',
+                        text: response.message,
+                        timer: 2200
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'No se pudo resolver en lote',
+                        text: response.message || 'Ocurrió un error al resolver los seleccionados.'
+                    });
+                }
+            },
+            error: function(xhr) {
+                let msg = 'Error al resolver errores seleccionados.';
+                try {
+                    const response = xhr.responseJSON || JSON.parse(xhr.responseText);
+                    if (response && response.message) {
+                        msg = response.message;
+                    }
+                } catch (e) {}
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: msg
+                });
+            }
+        });
     });
 }
 
