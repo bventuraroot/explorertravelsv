@@ -560,24 +560,30 @@ class SaleController extends Controller
         DB::beginTransaction();
 
         try {
-            // Obtener la última venta sin detalles y no usada recientemente
+            // Obtener la última venta sin detalles y no usada recientemente.
+            // Validación nueva: no reutilizar si ya tiene DTE relacionado.
             $lastSale = DB::table('sales')
                 ->whereNotExists(function ($query) {
                     $query->select(DB::raw(1))
                         ->from('salesdetails')
                         ->whereRaw('sales.id = salesdetails.sale_id');
                 })
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('dte')
+                        ->whereRaw('sales.id = dte.sale_id');
+                })
                 ->where('created_at', '<', now()->subMinutes(5)) // Solo ventas inactivas por más de 5 min
                 ->lockForUpdate() // Bloquea para evitar que otro usuario lo use al mismo tiempo
                 ->orderByDesc('id')
                 ->first();
-            //dd($lastSale);
+
             if ($lastSale) {
-                // Si la última venta no tiene detalles y está inactiva, la reutilizamos
+                // Si la última venta no tiene detalles, no tiene DTE y está inactiva, la reutilizamos
                 $newId = $lastSale->id;
                 DB::table('sales')->where('id', $lastSale->id)->delete();
             } else {
-                // Si la última venta tiene detalles o está en uso, crear una nueva con auto-incremento
+                // Si no hay venta reutilizable, crear una nueva con auto-incremento
                 $newId = null;
             }
 
@@ -4642,9 +4648,11 @@ class SaleController extends Controller
      */
     private function processMultiProviderSale($parentSale, $amount)
     {
-        DB::beginTransaction();
         try {
             $amount = substr($amount, 1);
+
+            // 1) Persistir venta padre e hijos primero (sin emisión DTE), para no perder registros si falla Hacienda.
+            DB::beginTransaction();
 
             // Agrupar detalles por proveedor ANTES de guardar para determinar provider_id
             $groups = $this->groupDetailsByProvider($parentSale);
@@ -4685,6 +4693,7 @@ class SaleController extends Controller
 
             $parentSale->save();
 
+            $childrenToEmit = [];
             $childResults = [];
             $allSuccess = true;
 
@@ -4692,40 +4701,18 @@ class SaleController extends Controller
                 try {
                     // Crear venta hija
                     $childSale = $this->createChildSale($parentSale, $group);
-
-                    // Calcular monto del hijo
                     $childAmount = $this->calculateChildAmount($group['details']);
-
-                    // Emitir DTE para el hijo (usar la función actual createdocument)
-                    $dteResponse = $this->emitDTEForChild($childSale, $childAmount);
-
-                    if ($dteResponse['success']) {
-                        $childResults[] = [
-                            'sale_id' => $childSale->id,
-                            'success' => true,
-                            'provider' => $group['provider_name'] ?? 'Servicio Propio',
-                            'provider_id' => $group['provider_id'] ?? null,
-                            'amount' => str_replace('$', '', $childAmount),
-                            'dte_id' => $dteResponse['dte_id'] ?? null,
-                            'codigo_generacion' => $dteResponse['codigo_generacion'] ?? null
-                        ];
-                    } else {
-                        $allSuccess = false;
-                        $childResults[] = [
-                            'sale_id' => $childSale->id,
-                            'success' => false,
-                            'error' => $dteResponse['error'] ?? 'Error desconocido',
-                            'provider' => $group['provider_name'] ?? 'Servicio Propio',
-                            'provider_id' => $group['provider_id'] ?? null,
-                            'amount' => str_replace('$', '', $childAmount)
-                        ];
-                    }
+                    $childrenToEmit[] = [
+                        'sale' => $childSale,
+                        'amount' => $childAmount,
+                        'group' => $group
+                    ];
                 } catch (\Exception $e) {
                     $allSuccess = false;
                     $childResults[] = [
                         'sale_id' => null,
                         'success' => false,
-                        'error' => $e->getMessage(),
+                        'error' => 'Error creando registro de venta hija: ' . $e->getMessage(),
                         'provider' => $group['provider_name'] ?? 'Desconocido',
                         'provider_id' => $group['provider_id'] ?? null
                     ];
@@ -4734,6 +4721,37 @@ class SaleController extends Controller
             }
 
             DB::commit();
+
+            // 2) Emitir DTE después de persistir. Si falla emisión, los sales/salesdetails quedan listos para reemitir.
+            foreach ($childrenToEmit as $childData) {
+                $childSale = $childData['sale'];
+                $childAmount = $childData['amount'];
+                $group = $childData['group'];
+
+                $dteResponse = $this->emitDTEForChild($childSale, $childAmount);
+
+                if ($dteResponse['success']) {
+                    $childResults[] = [
+                        'sale_id' => $childSale->id,
+                        'success' => true,
+                        'provider' => $group['provider_name'] ?? 'Servicio Propio',
+                        'provider_id' => $group['provider_id'] ?? null,
+                        'amount' => str_replace('$', '', $childAmount),
+                        'dte_id' => $dteResponse['dte_id'] ?? null,
+                        'codigo_generacion' => $dteResponse['codigo_generacion'] ?? null
+                    ];
+                } else {
+                    $allSuccess = false;
+                    $childResults[] = [
+                        'sale_id' => $childSale->id,
+                        'success' => false,
+                        'error' => $dteResponse['error'] ?? 'Error desconocido',
+                        'provider' => $group['provider_name'] ?? 'Servicio Propio',
+                        'provider_id' => $group['provider_id'] ?? null,
+                        'amount' => str_replace('$', '', $childAmount)
+                    ];
+                }
+            }
 
             // Si todos los DTEs se emitieron bien, enviar un solo correo consolidado al cliente
             if ($allSuccess) {
@@ -4752,7 +4770,7 @@ class SaleController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             Log::error('Error en processMultiProviderSale: ' . $e->getMessage());
             return response()->json([
                 'res' => 0,

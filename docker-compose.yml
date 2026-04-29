@@ -7,7 +7,7 @@ services:
     container_name: explorertravelsv-web
     restart: unless-stopped
     ports:
-      - "8001:80"
+      - "8006:80"
     volumes:
       - ./:/var/www
     networks:
@@ -29,7 +29,7 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
     ports:
-      - "3307:3306"
+      - "3311:3306"
     networks:
       - explorertravelsv
     command: --default-authentication-plugin=mysql_native_password --default-time-zone='-06:00'
