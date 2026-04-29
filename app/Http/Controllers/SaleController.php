@@ -573,6 +573,10 @@ class SaleController extends Controller
                         ->from('dte')
                         ->whereRaw('sales.id = dte.sale_id');
                 })
+                ->where(function ($query) {
+                    $query->whereNull('sales.is_parent')
+                        ->orWhere('sales.is_parent', '!=', 1);
+                })
                 ->where('created_at', '<', now()->subMinutes(5)) // Solo ventas inactivas por más de 5 min
                 ->lockForUpdate() // Bloquea para evitar que otro usuario lo use al mismo tiempo
                 ->orderByDesc('id')
