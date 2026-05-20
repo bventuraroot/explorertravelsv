@@ -270,8 +270,18 @@ class FacturacionElectronicaController extends Controller
                         echo  $objEnviado->descripcionMsg .'</span><br><br>';
                     }
                 }else{
-                    return var_dump($objEnviado);
-                    break;
+                    Log::error('Respuesta inválida de Hacienda en cola de DTEs', [
+                        'dte_id' => $e->id,
+                        'response' => $response_enviado
+                    ]);
+                    $e->codEstado = "03";
+                    $e->estado = "Rechazado";
+                    $e->descripcionMsg = is_string($response_enviado) ? $response_enviado : "Respuesta de Hacienda inválida";
+                    $e->observacionesMsg = "No se pudo decodificar la respuesta del servicio de Hacienda.";
+                    $e->nuEnvios = $e->nuEnvios + 1;
+                    $e->save();
+                    echo '<span style="color:red;">Error procesando DTE ID '. $e->id . ': respuesta inválida o timeout</span><br><br>';
+                    continue;
                 }
                     //dd($objEnviado);
 

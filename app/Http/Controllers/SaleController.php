@@ -2832,7 +2832,14 @@ class SaleController extends Controller
                 ];
             }
         } else {
-            return var_dump($objEnviado);
+            Log::error('Respuesta inválida de Hacienda o error de token', ['response' => $response_enviado]);
+            return [
+                "codEstado" => "03",
+                "estado" => "Rechazado",
+                "descripcionMsg" => is_string($response_enviado) ? $response_enviado : "Respuesta inválida de Hacienda",
+                "observacionesMsg" => "No se pudo decodificar la respuesta del servicio de Hacienda.",
+                "nuEnvios" => 1
+            ];
         }
 
         return $respuesta;
@@ -4614,10 +4621,14 @@ class SaleController extends Controller
                     'data' => $responseData
                 ]);
             } else {
+                $details = $responseData['descripcionMsg'] ?? ($responseData['message'] ?? 'Error desconocido');
+                if (isset($responseData['observacionesMsg']) && !empty($responseData['observacionesMsg']) && $responseData['observacionesMsg'] !== $details) {
+                    $details .= ' (Detalles: ' . $responseData['observacionesMsg'] . ')';
+                }
                 return response()->json([
                     'success' => false,
                     'message' => 'Error al reemitir DTE',
-                    'details' => $responseData['message'] ?? 'Error desconocido',
+                    'details' => $details,
                     'data' => $responseData
                 ]);
             }
