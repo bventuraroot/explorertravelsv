@@ -12,6 +12,7 @@ use Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class ContingenciasController extends Controller
 {
@@ -303,11 +304,17 @@ class ContingenciasController extends Controller
                 $urlFirmador = rtrim($urlFirmador, "/") . "/firmardocumento/";
             }
             try {
-                $response = Http::accept('application/json')->post($urlFirmador, $firma_electronica);
+                $response = Http::accept('application/json')->connectTimeout(10)->timeout(20)->post($urlFirmador, $firma_electronica);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $error = [
+                    "mensaje" => "Error en Firma de Documento (Timeout)",
+                    "error" => $e->getMessage()
+                ];
+                return json_encode($error);
             } catch (\Throwable $th) {
                 $error = [
                     "mensaje" => "Error en Firma de Documento",
-                    "error" => $th
+                    "error" => $th->getMessage()
                 ];
                 return  json_encode($error);
             }
@@ -334,7 +341,11 @@ class ContingenciasController extends Controller
                     "documento"     => $comprobante_encriptado
                 ];
                 try {
-                    $response_enviado = Http::withToken($token)->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
+                    $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
+                } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                    \Log::error('Error con Servicios de Hacienda (Timeout)', ['error' => $e->getMessage()]);
+                    return redirect()->route('dte.contingencias')
+                        ->with('danger', 'Error con Servicios de Hacienda (Timeout): '.$e->getMessage());
                 } catch (\Throwable $th) {
                     \Log::error('Error con Servicios de Hacienda', ['error' => $th->getMessage()]);
                     return redirect()->route('dte.contingencias')
@@ -390,52 +401,38 @@ class ContingenciasController extends Controller
 
     public function getTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
-        //dd('entra a gettoken');
-        if (!Session::has($id_empresa)) {
-
-            //dd('No encuentra la variable');
-            //return ["mensaje" => "llama  getnewtokemh"];
-            $respuesta =  $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
+        $cacheKey = 'mh_token_' . $id_empresa;
+        if (!Cache::has($cacheKey)) {
+            $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
         } else {
-            $now = new DateTime('now');
-            $expira = DateTime::createFromFormat('Y-m-d H:i:s', Session::get($id_empresa . '_fecha'));
             $respuesta = 'OK';
-            if ($now > $expira) {
-                // dd($expira);
-                $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
-            }
         }
-        //dd(Session::get($id_empresa));
-        // return ["mensaje" => "pasa la autorizacion OK estoy en get"];
-        if ($respuesta == 'OK') {
-            return 'OK';
-        } else {
-            return $respuesta;
-        }
+
+        return $respuesta;
     }
 
     public function getNewTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
+        try {
+            $response_usuario = Http::connectTimeout(10)->timeout(20)->asForm()->post($url_seguridad, $credenciales);
 
+            $objValidacion = json_decode($response_usuario, true);
 
-        $response_usuario = Http::asForm()->post($url_seguridad, $credenciales);
+            if (isset($objValidacion["status"]) && $objValidacion["status"] != 'OK') {
+                return $objValidacion["status"];
+            } else if (isset($objValidacion["body"]) && isset($objValidacion["body"]["token"])) {
+                $token_bearer = $objValidacion["body"]["token"];
+                $token_limpio = str_replace("Bearer ", "", $token_bearer);
 
+                $cacheKey = 'mh_token_' . $id_empresa;
+                Cache::put($cacheKey, $token_limpio, now()->addHours(23));
 
-        //return ["mensaje" => $response_usuario, 'credenciales' => $credenciales];
-        $objValidacion = json_decode($response_usuario, true);
-
-        //dd($objValidacion);
-        //return ["mensaje" => "pasa la autorizacion"];
-        if ($objValidacion["status"] != 'OK') {
-            // return ["mensaje" => "no pasa la autorizacion OK"];
-            return $objValidacion["status"];
-        } else {
-            //dd($objValidacion);
-            //return ["mensaje" => "pasa la autorizacion OK"];
-            Session::put($id_empresa, str_replace('Bearer ', '', $objValidacion["body"]["token"]));
-            $fecha_expira = date("Y-m-d H:i:S", strtotime('+24 hours'));
-            Session::put($id_empresa . '_fecha', $fecha_expira);
-            return 'OK';
+                return "OK";
+            } else {
+                return "Error en Autenticacion: Token no encontrado en la respuesta.";
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return "Error en Autenticacion: Timeout conectando con Hacienda.";
         }
     }
 

@@ -124,11 +124,17 @@ class FacturacionElectronicaController extends Controller
             ];
             //return  json_encode($firma_electronica);
 	    try {
-                $response = Http::accept('application/json')->post($url_firmador, $firma_electronica);
+                $response = Http::accept('application/json')->connectTimeout(10)->timeout(20)->post($url_firmador, $firma_electronica);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $error = [
+                    "mensaje" => "Error en Firma de Documento (Timeout)",
+                    "error" => $e->getMessage()
+                ];
+                return json_encode($error);
             } catch (\Throwable $th) {
                 $error = [
                     "mensaje" => "Error en Firma de Documento",
-                    "error" => $th
+                    "error" => $th->getMessage()
                 ];
                 return  json_encode($error);
             }
@@ -177,13 +183,17 @@ class FacturacionElectronicaController extends Controller
                     //return $comprobante_enviar;
                     //dd($url_envio);
                     try {
-
-                        $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
+                        $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($url_envio, $comprobante_enviar);
+                    } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                        $error  = [
+                            "mensaje" => "Error con Servicios de Hacienda (Timeout)",
+                            "erro" => $e->getMessage()
+                        ];
+                        return json_encode($error);
                     } catch (\Throwable $th) {
-                        //return 'entro aqui';
                         $error  = [
                             "mensaje" => "Error con Servicios de Hacienda",
-                            "erro" => $th
+                            "erro" => $th->getMessage()
                         ];
                         return json_encode($error);
                     }

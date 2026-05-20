@@ -38,6 +38,27 @@
 @section('page-script')
     <script src="{{ asset('assets/js/app-sale-list.js') }}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: '{!! session('success') !!}',
+                    customClass: { confirmButton: 'btn btn-success' }
+                });
+            @endif
+
+            @if(session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: '{!! session('error') !!}',
+                    customClass: { confirmButton: 'btn btn-danger' }
+                });
+            @endif
+        });
+    </script>
+    <script>
     /**
      * Expande/colapsa las ventas hijas de una venta padre
      */

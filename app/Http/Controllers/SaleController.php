@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Mail\EnviarCorreo;
 use App\Models\Correlativo;
@@ -2646,11 +2647,17 @@ class SaleController extends Controller
         //dd(json_encode($firma_electronica));
         //dd($url_firmador);
         try {
-            $response = Http::accept('application/json')->post($url_firmador, $firma_electronica);
+            $response = Http::accept('application/json')->connectTimeout(10)->timeout(20)->post($url_firmador, $firma_electronica);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $error = [
+                "mensaje" => "Error en Firma de Documento (Timeout)",
+                "error" => $e->getMessage()
+            ];
+            return json_encode($error);
         } catch (\Throwable $th) {
             $error = [
                 "mensaje" => "Error en Firma de Documento",
-                "error" => $th
+                "error" => $th->getMessage()
             ];
             return  json_encode($error);
         }
@@ -2705,88 +2712,50 @@ class SaleController extends Controller
 
             //dd($comprobante_enviar);
             //dd($url_envio);
-            try {
-                $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
+            $max_retries = 3;
+            $retry_count = 0;
+            $response_enviado = null;
+            $exito_envio = false;
 
-                // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
-                if ($response_enviado->status() == 401) {
-                    Log::warning('Token no autorizado (401), esperando 2 segundos antes del segundo intento...');
-
-                    // Esperar 2 segundos antes del segundo intento
-                    sleep(3);
-
-                    Log::warning('Regenerando token y reintentando envío 2 vez...');
-
-                    // Limpiar sesión para forzar nueva autenticación
-                    Session::forget($id_empresa);
-                    Session::forget($id_empresa . '_fecha');
-
-                    // Regenerar token
-                    $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
-                    //dd("Token Result",$tokenResult, Session::get($id_empresa), Session::get($id_empresa . '_fecha'));
-
-                    if ($tokenResult == 'OK') {
-                        $token = Session::get($id_empresa);
-                        Log::info('Nuevo token generado, reintentando envío 2 vez...');
-
-                        // Intentar de nuevo con el nuevo token
-                        $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-
-                        // Si el segundo intento también falla con 401, intentar una tercera vez
-                        if($response_enviado->status() == 401){
-                            Log::warning('Token no autorizado (401), esperando 3 segundos antes del tercer intento...');
-
-                            // Esperar 3 segundos antes del tercer intento
-                            sleep(3);
-
-                            Log::warning('Regenerando token y reintentando envío 3 vez...');
-
-                            // Limpiar sesión nuevamente
-                            Session::forget($id_empresa);
-                            Session::forget($id_empresa . '_fecha');
-
-                            // Regenerar token por tercera vez
-                            $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
-
-                            if($tokenResult == 'OK'){
-                                $token = Session::get($id_empresa);
-                                Log::info('Tercer token generado, reintentando envío 3 vez...');
-
-                                // Tercer intento
-                                $response_enviado = Http::withToken($token)->post($url_envio, $comprobante_enviar);
-
-                                Log::info('Tercer intento - Respuesta del envío a MH', [
-                                    'status_code' => $response_enviado->status(),
-                                    'response_body' => $response_enviado->body()
-                                ]);
-                            } else {
-                                Log::error('Error al regenerar token 3 vez: ' . $tokenResult);
-                            }
-                        } else {
-                            Log::info('Segundo intento exitoso - Respuesta del envío a MH', [
-                                'status_code' => $response_enviado->status(),
-                                'response_body' => $response_enviado->body()
-                            ]);
+            while ($retry_count < $max_retries && !$exito_envio) {
+                try {
+                    $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($url_envio, $comprobante_enviar);
+                    
+                    // Si recibe 401 Unauthorized, regenerar token e intentar de nuevo
+                    if ($response_enviado->status() == 401) {
+                        Log::warning('Token no autorizado (401), regenerando token y reintentando...');
+                        Cache::forget('mh_token_' . $id_empresa);
+                        $tokenResult = $this->getNewTokenMH($id_empresa, $validacion_usuario, $url_credencial);
+                        if ($tokenResult == 'OK') {
+                            $token = Cache::get('mh_token_' . $id_empresa);
+                            $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($url_envio, $comprobante_enviar);
                         }
-                    } else {
-                        Log::error('Error al regenerar token 1 vez: ' . $tokenResult);
                     }
-                } else {
-                    // Debugging después del envío exitoso
-                    Log::info('Primer intento exitoso - Respuesta del envío a MH', [
+
+                    $exito_envio = true;
+                    Log::info('Intento exitoso - Respuesta del envío a MH', [
                         'status_code' => $response_enviado->status(),
                         'response_body' => $response_enviado->body()
                     ]);
-                }
 
-                //dd($response_enviado);
-            } catch (\Throwable $th) {
-                //return 'entro aqui';
-                $error  = [
-                    "mensaje" => "Error con Servicios de Hacienda",
-                    "erro" => $th
-                ];
-                return json_encode($error);
+                } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                    $retry_count++;
+                    Log::warning("Intento $retry_count fallido por timeout o error de red: " . $e->getMessage());
+                    if ($retry_count >= $max_retries) {
+                        $error  = [
+                            "mensaje" => "Error con Servicios de Hacienda (Timeout)",
+                            "erro" => $e->getMessage()
+                        ];
+                        return json_encode($error);
+                    }
+                    sleep(2);
+                } catch (\Throwable $th) {
+                    $error  = [
+                        "mensaje" => "Error con Servicios de Hacienda",
+                        "erro" => $th->getMessage()
+                    ];
+                    return json_encode($error);
+                }
             }
         } else {
             $response_enviado = $this->getTokenMH($id_empresa, $url_credencial, $url_credencial);
@@ -2853,59 +2822,55 @@ class SaleController extends Controller
 
     public function getTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
-        //dd('entra a gettoken');
-        if (!Session::has($id_empresa)) {
-
-            //dd('No encuentra la variable');
-            //return ["mensaje" => "llama  getnewtokemh"];
-            $respuesta =  $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
+        $cacheKey = 'mh_token_' . $id_empresa;
+        if (!Cache::has($cacheKey)) {
+            $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
         } else {
-            $now = new Datetime('now');
-            $expira = DateTime::createFromFormat('Y-m-d H:i:s', Session::get($id_empresa . '_fecha'));
             $respuesta = 'OK';
-            if ($now > $expira) {
-                // dd($expira);
-                $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
-            }
         }
-        //dd(Session::get($id_empresa));
-        // return ["mensaje" => "pasa la autorizacion OK estoy en get"];
-        if ($respuesta == 'OK') {
-            return 'OK';
-        } else {
-            return $respuesta;
-        }
+
+        return $respuesta;
     }
 
     public function getNewTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
+        try {
+            $response_usuario = Http::connectTimeout(10)->timeout(20)->asForm()->post($url_seguridad, $credenciales);
 
+            // Debugging para la autenticación
+            Log::info('Respuesta de autenticación MH', [
+                'status_code' => $response_usuario->status(),
+                'response_body' => $response_usuario->body(),
+                'url_seguridad' => $url_seguridad,
+                'credenciales_user' => $credenciales['user'] ?? 'NO_DEFINIDO'
+            ]);
 
-        $response_usuario = Http::asForm()->post($url_seguridad, $credenciales);
+            if ($response_usuario->successful()) {
+                $authData = $response_usuario->json();
+                
+                // Verificar si el JSON tiene la propiedad 'body'
+                if (isset($authData['body']) && isset($authData['body']['token'])) {
+                    $token_bearer = $authData['body']['token'];
+                    $token_limpio = str_replace("Bearer ", "", $token_bearer);
 
-        // Debugging para la autenticación
-        Log::info('Respuesta de autenticación MH', [
-            'status_code' => $response_usuario->status(),
-            'response_body' => $response_usuario->body(),
-            'url_seguridad' => $url_seguridad,
-            'credenciales_user' => $credenciales['user'] ?? 'NO_DEFINIDO'
-        ]);
+                    $cacheKey = 'mh_token_' . $id_empresa;
+                    Cache::put($cacheKey, $token_limpio, now()->addHours(23));
 
-        //dd(["mensaje" => $response_usuario, 'credenciales' => $credenciales]);
-        $objValidacion = json_decode($response_usuario, true);
-
-        //dd($objValidacion);
-        //return ["mensaje" => "pasa la autorizacion"];
-        if ($objValidacion["status"] != 'OK') {
-            // return ["mensaje" => "no pasa la autorizacion OK"];
-            return $objValidacion["status"];
-        } else {
-            //dd($objValidacion);
-            //return ["mensaje" => "pasa la autorizacion OK"];
-            Session::put($id_empresa, str_replace('Bearer ', '', $objValidacion["body"]["token"]));
-            $fecha_expira = date("Y-m-d H:i:S", strtotime('+24 hours'));
-            Session::put($id_empresa . '_fecha', $fecha_expira);
-            return 'OK';
+                    return "OK";
+                } else {
+                    Log::error('Fallo en la autenticación con MH - Token no encontrado', ['response' => $authData]);
+                    return "Error en Autenticacion: Token no encontrado en la respuesta.";
+                }
+            } else {
+                Log::error('Fallo en la autenticación con MH - HTTP Error', [
+                    'status' => $response_usuario->status(),
+                    'response' => $response_usuario->body()
+                ]);
+                return "Error en Autenticacion: Credenciales invalidas o servicio de Hacienda inactivo.";
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Hacienda API Connection Exception (Token): ' . $e->getMessage());
+            return "Error en Autenticacion: Timeout conectando con Hacienda.";
         }
     }
 
