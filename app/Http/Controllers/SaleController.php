@@ -4577,16 +4577,26 @@ class SaleController extends Controller
             $responseData = json_decode($response->getContent(), true);
 
             if (isset($responseData['res']) && $responseData['res'] == 1) {
-                return redirect()->route('sale.index')
-                    ->with('success', 'DTE reemitido correctamente');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'DTE reemitido correctamente',
+                    'data' => $responseData
+                ]);
             } else {
-                return redirect()->route('sale.index')
-                    ->with('error', 'Error al reemitir DTE: ' . ($responseData['message'] ?? 'Error desconocido'));
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al reemitir DTE',
+                    'details' => $responseData['message'] ?? 'Error desconocido',
+                    'data' => $responseData
+                ]);
             }
         } catch (\Exception $e) {
             Log::error('Error reemitiendo DTE hijo: ' . $e->getMessage());
-            return redirect()->route('sale.index')
-                ->with('error', 'Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
 

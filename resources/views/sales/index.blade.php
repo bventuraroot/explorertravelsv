@@ -35,6 +35,29 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
 
+<!-- Modal de Detalles de Reemisión -->
+<div class="modal fade" id="reemitDetailsModal" tabindex="-1" aria-labelledby="reemitDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reemitDetailsModalLabel">Detalles de Reemisión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info d-none" id="reemitModalStatus"></div>
+                <h6>Mensaje:</h6>
+                <p id="reemitModalMessage"></p>
+                <hr>
+                <h6>Detalles de Hacienda:</h6>
+                <p id="reemitModalErrorDetails" class="text-danger fw-bold"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section('page-script')
     <script src="{{ asset('assets/js/app-sale-list.js') }}"></script>
     <script>
@@ -131,12 +154,12 @@
                         const rowStyle = isInvalidated ? 'opacity: 0.7; text-decoration: line-through;' : '';
 
                         const reemitBtn = child.can_reemit
-                            ? `<a href="${baseUrl}/sale/reemit-child/${child.id}"
+                            ? `<button type="button" 
+                                  onclick="reemitirDte(${child.id}, ${parentId})"
                                   class="btn btn-icon btn-sm btn-warning me-1"
-                                  title="Reemitir DTE"
-                                  onclick="return confirm('¿Deseas reemitir este DTE?')">
+                                  title="Reemitir DTE">
                                   <i class="ti ti-refresh"></i>
-                               </a>`
+                               </button>`
                             : '';
 
                         const printBtn = child.has_dte
@@ -233,6 +256,68 @@
                 }
             });
         }
+    }
+
+    /**
+     * Reemite un DTE via AJAX y muestra el error o exito en un modal
+     */
+    function reemitirDte(childId, parentId) {
+        Swal.fire({
+            title: '¿Deseas reemitir este DTE?',
+            text: "Se intentará conectar con Hacienda nuevamente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, reemitir',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading en el modal
+                $('#reemitModalStatus').removeClass('d-none alert-success alert-danger').addClass('alert-info').text('Procesando solicitud con Hacienda...');
+                $('#reemitModalMessage').text('Por favor espera...');
+                $('#reemitModalErrorDetails').text('');
+                const reemitModal = new bootstrap.Modal(document.getElementById('reemitDetailsModal'));
+                reemitModal.show();
+
+                $.ajax({
+                    url: `/sale/reemit-child/${childId}`,
+                    method: 'GET',
+                    success: function(response) {
+                        $('#reemitModalStatus').removeClass('alert-info alert-danger').addClass('alert-success').text(response.success ? '¡Éxito!' : 'Aviso');
+                        $('#reemitModalMessage').text(response.message);
+                        
+                        if (!response.success && response.details) {
+                            $('#reemitModalStatus').removeClass('alert-success').addClass('alert-danger').text('Error');
+                            $('#reemitModalErrorDetails').text(response.details);
+                        } else if(response.data && response.data.observacionesMsg) {
+                             $('#reemitModalErrorDetails').text(response.data.observacionesMsg);
+                        } else {
+                            $('#reemitModalErrorDetails').text('Ninguno');
+                        }
+
+                        // Recargar tabla de hijos
+                        if (response.success) {
+                            setTimeout(() => {
+                                toggleChildren(parentId); // Colapsar
+                                toggleChildren(parentId); // Expandir de nuevo para refrescar
+                            }, 1500);
+                        }
+                    },
+                    error: function(xhr) {
+                        $('#reemitModalStatus').removeClass('alert-info alert-success').addClass('alert-danger').text('Error del Servidor');
+                        
+                        let errorMsg = 'Error interno del sistema';
+                        if(xhr.responseJSON) {
+                            errorMsg = xhr.responseJSON.message || xhr.responseJSON.details || errorMsg;
+                        }
+
+                        $('#reemitModalMessage').text('Ocurrió un problema al intentar reemitir.');
+                        $('#reemitModalErrorDetails').text(errorMsg);
+                    }
+                });
+            }
+        });
     }
     </script>
 @endsection
