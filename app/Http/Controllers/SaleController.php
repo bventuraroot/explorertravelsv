@@ -968,8 +968,27 @@ class SaleController extends Controller
                     $contingencia = 1;
                     if ($contingencia) {
                         $respuesta_hacienda = $this->Enviar_Hacienda($comprobante, "01");
-                        //dd($respuesta_hacienda);
-                        if ($respuesta_hacienda["codEstado"] == "03") {
+                        
+                        if (is_string($respuesta_hacienda)) {
+                            $respuesta_hacienda = json_decode($respuesta_hacienda, true);
+                        }
+
+                        // Si es un error de conexión, de firma o rechazado por Hacienda
+                        if (!is_array($respuesta_hacienda) || isset($respuesta_hacienda["mensaje"]) || isset($respuesta_hacienda["error"]) || (isset($respuesta_hacienda["codEstado"]) && $respuesta_hacienda["codEstado"] == "03")) {
+                            if (!is_array($respuesta_hacienda)) {
+                                $respuesta_hacienda = [
+                                    "codEstado" => "03",
+                                    "estado" => "Rechazado",
+                                    "descripcionMsg" => "Error de respuesta del firmador o de Hacienda",
+                                    "observacionesMsg" => "Respuesta inválida o vacía."
+                                ];
+                            } else if (!isset($respuesta_hacienda["codEstado"])) {
+                                $respuesta_hacienda["codEstado"] = "03";
+                                $respuesta_hacienda["estado"] = "Rechazado";
+                                $respuesta_hacienda["descripcionMsg"] = $respuesta_hacienda["mensaje"] ?? ($respuesta_hacienda["error"] ?? 'Error al procesar con Hacienda');
+                                $respuesta_hacienda["observacionesMsg"] = $respuesta_hacienda["erro"] ?? ($respuesta_hacienda["error"] ?? 'Error de conexión o de firma');
+                            }
+
                             // CREAR DTE CON ESTADO RECHAZADO Y REGISTRAR ERROR
                             $dtecreate = $this->crearDteConError($documento, $emisor, $respuesta_hacienda, $comprobante, $salesave, $createdby);
                             // REGISTRAR ERROR EN LA TABLA dte_errors
@@ -979,7 +998,7 @@ class SaleController extends Controller
                                 'sale_id' => base64_decode($corr)
                             ]);
 
-                            return json_encode($respuesta_hacienda);
+                            return response()->json($respuesta_hacienda);
                         }
                         $comprobante["json"] = $respuesta_hacienda;
                     }
@@ -2673,9 +2692,8 @@ class SaleController extends Controller
             "pwd"   => $emisor[0]->claveApiMH
         ];
 
-        //dd($validacion_usuario);
-        //dd($this->getTokenMH($id_empresa, $validacion_usuario, $url_credencial, $url_credencial));
-        if ($this->getTokenMH($id_empresa, $validacion_usuario, $url_credencial, $url_credencial) == "OK") {
+        $tokenResponse = $this->getTokenMH($id_empresa, $validacion_usuario, $url_credencial);
+        if ($tokenResponse == "OK") {
             // return 'paso validacion';
             $token = Session::get($id_empresa);
 
@@ -2758,7 +2776,7 @@ class SaleController extends Controller
                 }
             }
         } else {
-            $response_enviado = $this->getTokenMH($id_empresa, $url_credencial, $url_credencial);
+            $response_enviado = $tokenResponse;
         }
 
         //dd($comprobante);
@@ -2826,6 +2844,9 @@ class SaleController extends Controller
         if (!Cache::has($cacheKey)) {
             $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
         } else {
+            // Asegurar que el token en caché esté disponible en la sesión para compatibilidad heredada
+            $token = Cache::get($cacheKey);
+            Session::put($id_empresa, $token);
             $respuesta = 'OK';
         }
 
@@ -2855,6 +2876,7 @@ class SaleController extends Controller
 
                     $cacheKey = 'mh_token_' . $id_empresa;
                     Cache::put($cacheKey, $token_limpio, now()->addHours(23));
+                    Session::put($id_empresa, $token_limpio);
 
                     return "OK";
                 } else {
@@ -4577,7 +4599,13 @@ class SaleController extends Controller
 
             // Intentar emitir nuevamente
             $response = $this->createdocument($corrEncoded, $amount);
-            $responseData = json_decode($response->getContent(), true);
+            
+            // Manejar tanto Response como string robustamente
+            if ($response instanceof \Illuminate\Http\JsonResponse || $response instanceof \Illuminate\Http\Response) {
+                $responseData = json_decode($response->getContent(), true);
+            } else {
+                $responseData = is_string($response) ? json_decode($response, true) : $response;
+            }
 
             if (isset($responseData['res']) && $responseData['res'] == 1) {
                 return response()->json([

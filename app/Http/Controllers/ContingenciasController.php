@@ -405,6 +405,9 @@ class ContingenciasController extends Controller
         if (!Cache::has($cacheKey)) {
             $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
         } else {
+            // Asegurar que el token en caché esté disponible en la sesión para compatibilidad heredada
+            $token = Cache::get($cacheKey);
+            Session::put($id_empresa, $token);
             $respuesta = 'OK';
         }
 
@@ -426,6 +429,7 @@ class ContingenciasController extends Controller
 
                 $cacheKey = 'mh_token_' . $id_empresa;
                 Cache::put($cacheKey, $token_limpio, now()->addHours(23));
+                Session::put($id_empresa, $token_limpio);
 
                 return "OK";
             } else {

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Cache;
 
 class FacturacionElectronicaController extends Controller
 {
@@ -504,6 +505,63 @@ class FacturacionElectronicaController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return false;
+        }
+    }
+
+    public function getTokenMH($id_empresa, $credenciales, $url_seguridad)
+    {
+        $cacheKey = 'mh_token_' . $id_empresa;
+        if (!Cache::has($cacheKey)) {
+            $respuesta = $this->getNewTokenMH($id_empresa, $credenciales, $url_seguridad);
+        } else {
+            // Asegurar que el token en caché esté disponible en la sesión para compatibilidad heredada
+            $token = Cache::get($cacheKey);
+            Session::put($id_empresa, $token);
+            $respuesta = 'OK';
+        }
+
+        return $respuesta;
+    }
+
+    public function getNewTokenMH($id_empresa, $credenciales, $url_seguridad)
+    {
+        try {
+            $response_usuario = Http::connectTimeout(10)->timeout(20)->asForm()->post($url_seguridad, $credenciales);
+
+            // Debugging para la autenticación en cola
+            Log::info('Respuesta de autenticación MH (Cola)', [
+                'status_code' => $response_usuario->status(),
+                'response_body' => $response_usuario->body(),
+                'url_seguridad' => $url_seguridad
+            ]);
+
+            if ($response_usuario->successful()) {
+                $authData = $response_usuario->json();
+                
+                // Verificar si el JSON tiene la propiedad 'body'
+                if (isset($authData['body']) && isset($authData['body']['token'])) {
+                    $token_bearer = $authData['body']['token'];
+                    $token_limpio = str_replace("Bearer ", "", $token_bearer);
+
+                    $cacheKey = 'mh_token_' . $id_empresa;
+                    Cache::put($cacheKey, $token_limpio, now()->addHours(23));
+                    Session::put($id_empresa, $token_limpio);
+
+                    return "OK";
+                } else {
+                    Log::error('Fallo en la autenticación con MH (Cola) - Token no encontrado', ['response' => $authData]);
+                    return "Error en Autenticacion: Token no encontrado en la respuesta.";
+                }
+            } else {
+                Log::error('Fallo en la autenticación con MH (Cola) - HTTP Error', [
+                    'status' => $response_usuario->status(),
+                    'response' => $response_usuario->body()
+                ]);
+                return "Error en Autenticacion: Credenciales invalidas o servicio de Hacienda inactivo.";
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Hacienda API Connection Exception (Token Cola): ' . $e->getMessage());
+            return "Error en Autenticacion: Timeout conectando con Hacienda.";
         }
     }
 }
