@@ -283,6 +283,9 @@
                 $.ajax({
                     url: `/sale/reemit-child/${childId}`,
                     method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                     success: function(response) {
                         $('#reemitModalStatus').removeClass('alert-info alert-danger').addClass('alert-success').text(response.success ? '¡Éxito!' : 'Aviso');
                         $('#reemitModalMessage').text(response.message);
@@ -308,8 +311,11 @@
                         $('#reemitModalStatus').removeClass('alert-info alert-success').addClass('alert-danger').text('Error del Servidor');
                         
                         let errorMsg = 'Error interno del sistema';
-                        if(xhr.responseJSON) {
-                            errorMsg = xhr.responseJSON.message || xhr.responseJSON.details || errorMsg;
+                        
+                        if (xhr.status === 401) {
+                            errorMsg = "Tu sesión ha expirado. Por favor, recarga la página e inicia sesión nuevamente.";
+                        } else if(xhr.responseJSON) {
+                            errorMsg = xhr.responseJSON.details || xhr.responseJSON.message || errorMsg;
                         }
 
                         $('#reemitModalMessage').text('Ocurrió un problema al intentar reemitir.');

@@ -4559,8 +4559,11 @@ class SaleController extends Controller
 
             // Verificar si es hijo: si parent_sale_id es null, NO es hijo
             if (!$childSale || is_null($childSale->parent_sale_id)) {
-                return redirect()->route('sale.index')
-                    ->with('error', 'Venta no encontrada o no es una venta hija');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al reemitir',
+                    'details' => 'Venta no encontrada o no es una venta hija'
+                ], 404);
             }
 
             // Calcular monto
@@ -4590,11 +4593,11 @@ class SaleController extends Controller
                     'data' => $responseData
                 ]);
             }
-        } catch (\Exception $e) {
-            Log::error('Error reemitiendo DTE hijo: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error reemitiendo DTE hijo: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'message' => 'Error',
+                'message' => 'Excepción del sistema',
                 'details' => $e->getMessage()
             ], 500);
         }
