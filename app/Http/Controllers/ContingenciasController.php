@@ -340,8 +340,23 @@ class ContingenciasController extends Controller
                     "version"       => intval($cola->version ?? $encabezado[0]->versionJson),
                     "documento"     => $comprobante_encriptado
                 ];
+                // Configuración de opciones cURL y Proxy para Hacienda
+                $options = [
+                    'curl' => [
+                        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                    ]
+                ];
+                $proxy = env('HACIENDA_PROXY');
+                if ($proxy) {
+                    $options['proxy'] = $proxy;
+                }
+
                 try {
-                    $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
+                    $response_enviado = Http::withToken($token)
+                        ->connectTimeout(35)
+                        ->timeout(55)
+                        ->withOptions($options)
+                        ->post($empresaconti[0]->url_contingencia, $comprobante_enviar);
                 } catch (\Illuminate\Http\Client\ConnectionException $e) {
                     \Log::error('Error con Servicios de Hacienda (Timeout)', ['error' => $e->getMessage()]);
                     return redirect()->route('dte.contingencias')
@@ -416,8 +431,22 @@ class ContingenciasController extends Controller
 
     public function getNewTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
+        $options = [
+            'curl' => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+            ]
+        ];
+        $proxy = env('HACIENDA_PROXY');
+        if ($proxy) {
+            $options['proxy'] = $proxy;
+        }
+
         try {
-            $response_usuario = Http::connectTimeout(10)->timeout(20)->asForm()->post($url_seguridad, $credenciales);
+            $response_usuario = Http::connectTimeout(15)
+                ->timeout(30)
+                ->asForm()
+                ->withOptions($options)
+                ->post($url_seguridad, $credenciales);
 
             $objValidacion = json_decode($response_usuario, true);
 

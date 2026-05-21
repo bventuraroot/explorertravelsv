@@ -183,8 +183,24 @@ class FacturacionElectronicaController extends Controller
 
                     //return $comprobante_enviar;
                     //dd($url_envio);
+
+                    // Configuración de opciones cURL y Proxy para Hacienda
+                    $options = [
+                        'curl' => [
+                            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                        ]
+                    ];
+                    $proxy = env('HACIENDA_PROXY');
+                    if ($proxy) {
+                        $options['proxy'] = $proxy;
+                    }
+
                     try {
-                        $response_enviado = Http::withToken($token)->connectTimeout(10)->timeout(20)->post($url_envio, $comprobante_enviar);
+                        $response_enviado = Http::withToken($token)
+                            ->connectTimeout(35)
+                            ->timeout(55)
+                            ->withOptions($options)
+                            ->post($url_envio, $comprobante_enviar);
                     } catch (\Illuminate\Http\Client\ConnectionException $e) {
                         $error  = [
                             "mensaje" => "Error con Servicios de Hacienda (Timeout)",
@@ -535,8 +551,22 @@ class FacturacionElectronicaController extends Controller
 
     public function getNewTokenMH($id_empresa, $credenciales, $url_seguridad)
     {
+        $options = [
+            'curl' => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+            ]
+        ];
+        $proxy = env('HACIENDA_PROXY');
+        if ($proxy) {
+            $options['proxy'] = $proxy;
+        }
+
         try {
-            $response_usuario = Http::connectTimeout(10)->timeout(20)->asForm()->post($url_seguridad, $credenciales);
+            $response_usuario = Http::connectTimeout(15)
+                ->timeout(30)
+                ->asForm()
+                ->withOptions($options)
+                ->post($url_seguridad, $credenciales);
 
             // Debugging para la autenticación en cola
             Log::info('Respuesta de autenticación MH (Cola)', [

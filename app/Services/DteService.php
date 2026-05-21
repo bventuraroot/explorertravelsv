@@ -252,7 +252,22 @@ class DteService
             if (!$haciendaUrl) {
                 return ['exitoso' => false, 'datos' => [], 'error' => 'URL de Hacienda no configurada'];
             }
-            $response = Http::timeout(60)->post($haciendaUrl, $datosEnvio);
+
+            // Configuración de opciones cURL y Proxy para Hacienda
+            $options = [
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ]
+            ];
+            $proxy = env('HACIENDA_PROXY');
+            if ($proxy) {
+                $options['proxy'] = $proxy;
+            }
+
+            $response = Http::connectTimeout(35)
+                ->timeout(55)
+                ->withOptions($options)
+                ->post($haciendaUrl, $datosEnvio);
             if ($response->successful()) {
                 $respuesta = $response->json();
                 if (($respuesta['codEstado'] ?? null) === '02') {
