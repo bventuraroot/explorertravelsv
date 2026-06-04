@@ -124,6 +124,11 @@
                     "slug": "report.sales"
                 },
                 {
+                    "url": "/agro-report/sales-by-client",
+                    "name": "Ventas por Clientes",
+                    "slug": "agro-report.sales-by-client"
+                },
+                {
                     "url": "/report/contribuyentes",
                     "name": "Ventas Contribuyentes",
                     "slug": "report.contribuyentes"
