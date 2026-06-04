@@ -59,7 +59,7 @@ $configData = Helper::appClasses();
         <table class="table datatables-client border-top nowrap">
             <thead>
                 <tr>
-                    <th>Ver</th>
+                    <th>Acciones</th>
                     <th>Nombre</th>
                     <th>Tipo</th>
                     <th>Contribuyente</th>
@@ -73,14 +73,33 @@ $configData = Helper::appClasses();
                     <th>Email</th>
                     <th>Direccion</th>
                     <th>Fecha Nacimiento</th>
-                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @isset($clients)
                 @forelse($clients as $client)
                 <tr>
-                    <td></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2"
+                                    onclick="showClientDetails({{ $client->id }})"
+                                    title="Ver Detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="javascript: editClient({{ $client->id }});" class="dropdown-item"><i
+                                    class="ti ti-edit ti-sm me-2"></i>Editar</a>
+                            <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
+                                data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
+                            <div class="m-0 dropdown-menu dropdown-menu-end">
+                                <a href="javascript:viewClientMovements({{ $client->id }});" class="dropdown-item"><i
+                                        class="ti ti-receipt ti-sm me-2"></i>Ver Movimientos</a>
+                                <a href="javascript:deleteClient({{ $client->id }});" class="dropdown-item"><i
+                                        class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
+
+                            </div>
+
+                        </div>
+                    </td>
                     @switch( Str::lower($client->tpersona) )
                     @case('j')
                     <td>{{ $client->name_contribuyente }} ( {{ $client->comercial_name }} )</td>
@@ -178,27 +197,6 @@ $configData = Helper::appClasses();
                     <td>{{ Str::upper($client->pais . ', ' . $client->departamento . ', ' . $client->municipioname . ',
                         ' . $client->address)}}</td>
                     <td>{{ $client->birthday }}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <button type="button" class="btn btn-sm btn-outline-primary me-2"
-                                    onclick="showClientDetails({{ $client->id }})"
-                                    title="Ver Detalles">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <a href="javascript: editClient({{ $client->id }});" class="dropdown-item"><i
-                                    class="ti ti-edit ti-sm me-2"></i>Editar</a>
-                            <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
-                                data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
-                            <div class="m-0 dropdown-menu dropdown-menu-end">
-                                <a href="javascript:viewClientMovements({{ $client->id }});" class="dropdown-item"><i
-                                        class="ti ti-receipt ti-sm me-2"></i>Ver Movimientos</a>
-                                <a href="javascript:deleteClient({{ $client->id }});" class="dropdown-item"><i
-                                        class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
-
-                            </div>
-
-                        </div>
-                    </td>
                 </tr>
                 @empty
                 <tr>

@@ -131,17 +131,11 @@ $(function () {
     var dt_user = dt_user_table.DataTable({
       columnDefs: [
         {
-          // For Responsive
-          className: 'control',
           searchable: false,
           orderable: false,
           responsivePriority: 1,
-          targets: 0,
-          render: function (data, type, full, meta) {
-            return '';
-          }
-        },
-        { responsivePriority: 1, targets: 14 }
+          targets: 0
+        }
       ],
       order: [[2, 'desc']],
       dom:
@@ -326,7 +320,7 @@ $(function () {
           display: $.fn.dataTable.Responsive.display.modal({
             header: function (row) {
               var data = row.data();
-              return 'Detalles cliente ' + data[0] + ' ' + data[1];
+              return 'Detalles cliente ' + data[1];
             }
           }),
           type: 'column',
