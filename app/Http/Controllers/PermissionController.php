@@ -153,6 +153,11 @@ class PermissionController extends Controller
                         "slug" => "report.sales"
                     ],
                     [
+                        "url" => "/agro-report/sales-by-client",
+                        "name" => "Ventas por Clientes",
+                        "slug" => "report.sales"
+                    ],
+                    [
                         "url" => "/report/contribuyentes",
                         "name" => "Ventas Contribuyentes",
                         "slug" => "report.contribuyentes"
