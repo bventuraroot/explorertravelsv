@@ -323,7 +323,8 @@ $(function () {
               return 'Detalles cliente ' + data[1];
             }
           }),
-          type: 'column',
+          type: 'row',
+          target: 'td:not(:first-child)',
           renderer: function (api, rowIdx, columns) {
             var data = $.map(columns, function (col, i) {
               return col.title !== '' // ? Do not show row in modal popup if title is blank (for check box)
