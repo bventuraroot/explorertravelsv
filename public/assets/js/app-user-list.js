@@ -34,9 +34,9 @@ $(function () {
     select2 = $('.select2'),
     userView = baseUrl,
     statusObj = {
-      1: { title: 'Pending', class: 'bg-label-warning' },
-      2: { title: 'Active', class: 'bg-label-success' },
-      3: { title: 'Inactive', class: 'bg-label-secondary' }
+      1: { title: 'Pendiente', class: 'bg-label-warning' },
+      2: { title: 'Activo', class: 'bg-label-success' },
+      3: { title: 'Inactivo', class: 'bg-label-secondary' }
     };
 
   if (select2.length) {
@@ -159,17 +159,19 @@ $(function () {
             targets: 4,
             render: function (data, type, full, meta) {
               var $company = full['Empresa'];
-              if($company==null) $company='No Asignado(0)';
-                var companies = $company.split(',');
-                var salida='';
-                companies.forEach(function(company, index) {
-                    salida += '<span class="badge badge-center rounded-pill bg-label-primary w-px-30 h-px-30 me-2"><i class="ti ti-home ti-sm"></i></span>'+
-                    company   +' &nbsp;&nbsp;</br>';
-                });
+              if($company==null) {
+                return '<span class="badge bg-label-secondary">No Asignado</span>';
+              }
+              var companies = $company.split(',');
+              var salida='';
+              companies.forEach(function(company, index) {
+                  var cleanName = company.replace(/\(\d+\)/, '').trim();
+                  salida += '<span class="badge bg-label-info me-1 my-1">' + cleanName + '</span>';
+              });
               return (
-                "<span class='text-truncate d-flex align-items-center'>" +
+                "<div class='d-flex flex-wrap'>" +
                 salida +
-                '</span>'
+                '</div>'
               );
             }
           },
@@ -589,7 +591,7 @@ function editUsers(id){
             //llamarselected(response[0]['country'],response[0]['departament'],response[0]['municipio'], response[0]['acteconomica']);
             $.each(response[0], function(index, value) {
                 if(index=='image'){
-                    $('#avatarview').html("<img src='http://inetv4.test/assets/img/avatars/"+value+"' alt='logo' width='150px'><input type='hidden' name='logoeditoriginal' id='logoeditoriginal'/>");
+                    $('#avatarview').html("<img src='/assets/img/avatars/"+value+"' alt='logo' width='150px'><input type='hidden' name='logoeditoriginal' id='logoeditoriginal'/>");
                     $('#logoeditoriginal').val(value);
                 }else if(index=='CompaniesName'){
                     $('#permissioncompanyedit').val(value);

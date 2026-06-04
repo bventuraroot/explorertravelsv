@@ -18,6 +18,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\EmailPurchaseController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SaleController;
@@ -219,6 +220,17 @@ Route::group(['prefix' => 'purchase', 'as' => 'purchase.'], function(){
         Route::get('destroy/{id}', [PurchaseController::class, 'destroy'])->name('destroy');
     });
 
+    // Rutas de Importación de Compras DTE desde Email
+    Route::group(['prefix' => 'email-purchases', 'as' => 'email-purchases.'], function() {
+        Route::get('/', [EmailPurchaseController::class, 'index'])->name('index');
+        Route::post('/run', [EmailPurchaseController::class, 'run'])->name('run');
+        Route::get('/logs', [EmailPurchaseController::class, 'getLogs'])->name('logs');
+        Route::get('/{id}', [EmailPurchaseController::class, 'show'])->name('show');
+        Route::post('/{id}/confirm', [EmailPurchaseController::class, 'confirm'])->name('confirm');
+        Route::get('/{id}/details', [EmailPurchaseController::class, 'getDetails'])->name('details');
+        Route::get('/{id}/pdf', [EmailPurchaseController::class, 'showPdf'])->name('pdf');
+    });
+
 
     Route::group(['prefix' => 'credit', 'as' => 'credit.'], function(){
         Route::get('index', [CreditController::class, 'index'])->name('index');
@@ -401,6 +413,16 @@ Route::middleware('auth')->group(function () {
         Route::post('clean', [BackupController::class, 'cleanOld'])->name('clean')->middleware('permission:backups.clean');
         Route::get('refresh', [BackupController::class, 'refresh'])->name('refresh')->middleware('permission:backups.refresh');
     });
+
+    // Rutas del Reporte de Clientes (migrado de RomaCopies)
+    Route::group(['prefix' => 'agro-report', 'as' => 'agro-report.'], function(){
+        Route::get('sales-by-client', [App\Http\Controllers\AgroReportsController::class, 'salesByClient'])->name('sales-by-client');
+        Route::post('sales-by-client-search', [App\Http\Controllers\AgroReportsController::class, 'salesByClientSearch'])->name('sales-by-client-search');
+        Route::get('sales-by-client-pdf', [App\Http\Controllers\AgroReportsController::class, 'salesByClientPdf'])->name('sales-by-client-pdf');
+        Route::get('sales-by-client-details-pdf', [App\Http\Controllers\AgroReportsController::class, 'salesByClientDetailsPdf'])->name('sales-by-client-details-pdf');
+    });
+
+    Route::get('client/movements/{client}', [App\Http\Controllers\ClientController::class, 'getMovements'])->name('client.movements');
 });
 });
 });

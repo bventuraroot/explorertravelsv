@@ -81,16 +81,31 @@ class ClientController extends Controller
     public function getclientbycompany($idcompany)
     {
         $query = "SELECT
-        a.*,
-       (CASE a.tpersona WHEN 'N' THEN CONCAT(a.firstname , ' ', a.firstlastname) WHEN 'J' THEN a.comercial_name END) AS name_format_label
-       FROM clients a WHERE a.company_id=" .  base64_decode($idcompany) . "";
-        //$clients = Client::join('companies', 'clients.company_id', '=', 'companies.id')
-        //->select('clients.id',
-        //        'clients.firstname',
-        //        'clients.secondname')
-        //->where('companies.id', '=', base64_decode($idcompany))
-        //->get();
-        $result = DB::select(DB::raw($query));
+            a.id,
+            a.tpersona,
+            a.firstname,
+            a.secondname,
+            a.firstlastname,
+            a.secondlastname,
+            a.comercial_name,
+            a.name_contribuyente,
+            a.nit,
+            a.ncr,
+            a.email,
+            (CASE a.tpersona
+                WHEN 'J' THEN COALESCE(NULLIF(a.name_contribuyente,''), a.comercial_name)
+                ELSE TRIM(CONCAT_WS(' ',
+                    NULLIF(a.firstname,''),
+                    NULLIF(a.secondname,''),
+                    NULLIF(a.firstlastname,''),
+                    NULLIF(a.secondlastname,'')
+                ))
+            END) AS name_format_label
+        FROM clients a
+        WHERE a.company_id = ?
+        ORDER BY name_format_label ASC";
+
+        $result = DB::select($query, [base64_decode($idcompany)]);
         return response()->json($result);
     }
 
@@ -429,5 +444,94 @@ class ClientController extends Controller
         return response()->json(array(
             "res" => "1"
         ));
+    }
+
+    public function getMovements($id)
+    {
+        $clientId = base64_decode($id);
+
+        $movements = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
+            ->leftJoin('dte', 'dte.sale_id', '=', 'sales.id')
+            ->select(
+                'sales.id',
+                'sales.date',
+                'sales.nu_doc',
+                'sales.totalamount',
+                'sales.state',
+                'sales.typesale',
+                'typedocuments.description as document_name',
+                'dte.id_doc as dte_number',
+                'dte.estadoHacienda'
+            )
+            ->where('sales.client_id', $clientId)
+            ->orderBy('sales.date', 'desc')
+            ->get();
+
+        // ─── KPIs del cliente ─────────────────────────────────────────────────
+        $completedSales = $movements->where('state', 1);
+        $lastSale = $completedSales->first(); // Ya viene ordenado desc
+        $oldestSale = $completedSales->last();
+
+        $daysSinceLast = null;
+        $purchaseFrequency = null;
+
+        if ($lastSale) {
+            $daysSinceLast = now()->diffInDays(\Carbon\Carbon::parse($lastSale->date));
+        }
+
+        if ($completedSales->count() > 1 && $lastSale && $oldestSale) {
+            $totalDays = \Carbon\Carbon::parse($oldestSale->date)
+                ->diffInDays(\Carbon\Carbon::parse($lastSale->date));
+            $purchaseFrequency = $totalDays > 0
+                ? round($totalDays / ($completedSales->count() - 1))
+                : 0;
+        }
+
+        $avgTicket = $completedSales->count() > 0
+            ? $completedSales->avg('totalamount')
+            : 0;
+
+        // ─── Productos por venta (para el desglose en el modal) ───────────────
+        $saleIds = $movements->pluck('id');
+        $productsBySale = DB::table('salesdetails')
+            ->join('products', 'salesdetails.product_id', '=', 'products.id')
+            ->select('salesdetails.sale_id', 'products.name as product_name', 'salesdetails.amountp as qty', 'salesdetails.pricesale')
+            ->whereIn('salesdetails.sale_id', $saleIds)
+            ->get()
+            ->groupBy('sale_id');
+
+        // ─── Tendencia mensual (últimos 12 meses) ─────────────────────────────
+        $monthlyTrend = $completedSales
+            ->groupBy(fn($s) => \Carbon\Carbon::parse($s->date)->format('Y-m'))
+            ->map(fn($group) => [
+                'month'  => \Carbon\Carbon::parse($group->first()->date)->translatedFormat('M Y'),
+                'count'  => $group->count(),
+                'amount' => round($group->sum('totalamount'), 2),
+            ])
+            ->values()
+            ->sortBy(fn($v, $k) => $k)
+            ->values()
+            ->take(-12); // últimos 12 meses
+
+        // ─── Adjuntar productos a cada movimiento ─────────────────────────────
+        $movements = $movements->map(function ($mov) use ($productsBySale) {
+            $mov->products = $productsBySale->get($mov->id, collect())->values();
+            return $mov;
+        });
+
+        return response()->json([
+            'movements'         => $movements,
+            'kpis'              => [
+                'total_movements'    => $movements->count(),
+                'completed_sales'    => $completedSales->count(),
+                'cancelled_sales'    => $movements->where('state', 0)->count(),
+                'total_amount'       => round($completedSales->sum('totalamount'), 2),
+                'avg_ticket'         => round($avgTicket, 2),
+                'days_since_last'    => $daysSinceLast,
+                'purchase_frequency' => $purchaseFrequency,
+                'last_purchase_date' => $lastSale ? \Carbon\Carbon::parse($lastSale->date)->format('d/m/Y') : null,
+            ],
+            'monthly_trend'     => $monthlyTrend->values(),
+        ]);
     }
 }

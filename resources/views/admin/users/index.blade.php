@@ -34,6 +34,94 @@
 @endsection
 
 @section('content')
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Users -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="content-left">
+                            <span class="fw-semibold d-block mb-1">Total de Usuarios</span>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0 me-2">{{ $totalUsers }}</h3>
+                            </div>
+                            <small class="text-muted">Usuarios registrados</small>
+                        </div>
+                        <div class="avatar rounded">
+                            <span class="avatar-initial rounded bg-label-primary">
+                                <i class="ti ti-users ti-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Active Users -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="content-left">
+                            <span class="fw-semibold d-block mb-1">Usuarios Activos</span>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0 me-2">{{ $activeUsers }}</h3>
+                            </div>
+                            <small class="text-muted">Cuenta activa</small>
+                        </div>
+                        <div class="avatar rounded">
+                            <span class="avatar-initial rounded bg-label-success">
+                                <i class="ti ti-user-check ti-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Inactive Users -->
+        <div class="col-sm-6 col-xl-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="content-left">
+                            <span class="fw-semibold d-block mb-1">Usuarios Inactivos</span>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0 me-2">{{ $inactiveUsers }}</h3>
+                            </div>
+                            <small class="text-muted">Deshabilitados / Suspendidos</small>
+                        </div>
+                        <div class="avatar rounded">
+                            <span class="avatar-initial rounded bg-label-danger">
+                                <i class="ti ti-user-x ti-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Admin Users -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div class="content-left">
+                            <span class="fw-semibold d-block mb-1">Administradores</span>
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0 me-2">{{ $adminUsers }}</h3>
+                            </div>
+                            <small class="text-muted">Acceso total</small>
+                        </div>
+                        <div class="avatar rounded">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="ti ti-shield ti-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Users List Table -->
     <div class="card">
         <div class="card-datatable table-responsive">

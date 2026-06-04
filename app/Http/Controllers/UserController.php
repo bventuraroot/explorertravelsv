@@ -19,7 +19,17 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('admin.users.index');
+        $totalUsers = User::count();
+        $activeUsers = User::where('state', 'Active')->count();
+        $inactiveUsers = User::where('state', 'Inactive')->count();
+        
+        $adminUsers = DB::table('users')
+            ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+            ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->where('roles.name', 'Admin')
+            ->count();
+
+        return view('admin.users.index', compact('totalUsers', 'activeUsers', 'inactiveUsers', 'adminUsers'));
     }
 
      /**

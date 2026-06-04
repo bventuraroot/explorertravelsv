@@ -102,7 +102,11 @@ function sumaedit(){
             console.log(response);
             $.each(response, function(index, value) {
                     if(value==null) {
-                        value = "0.00";
+                        if (['payment_type', 'payment_due_date', 'credit_days', 'codigo_generacion', 'sello_recepcion'].includes(index)) {
+                            value = '';
+                        } else {
+                            value = "0.00";
+                        }
                     }
                     $('#'+index+'edit').val(value);
                     if(index=='provider_id'){
@@ -207,3 +211,63 @@ function sumaedit(){
       }
   })();
 
+
+// ========================================
+// FUNCIONES NOTA DE CRÉDITO / DÉBITO DE PROVEEDOR
+// ========================================
+
+/**
+ * Muestra/oculta el campo "Compra Relacionada" según el tipo de documento seleccionado.
+ */
+function toggleRelatedPurchaseField(selectedValue, containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var selectEl = document.querySelector('select[onchange*="' + containerId + '"]');
+    var codemh = '';
+    if (selectEl) {
+        var opt = selectEl.options[selectEl.selectedIndex];
+        codemh = opt ? (opt.dataset.codemh || '') : '';
+    }
+    var isNcNd = ['05', '06'].indexOf(codemh) !== -1;
+    if (isNcNd) {
+        container.style.display = '';
+        var input = container.querySelector('input[type="number"]');
+        if (input) input.required = true;
+    } else {
+        container.style.display = 'none';
+        var input = container.querySelector('input[type="number"]');
+        if (input) { input.required = false; input.value = ''; }
+        var feedback = container.querySelector('.form-text');
+        if (feedback) feedback.innerHTML = '';
+    }
+}
+
+/**
+ * Valida si el ID de compra relacionada existe en el sistema.
+ */
+function validateRelatedPurchase(purchaseId, feedbackId) {
+    var feedbackEl = document.getElementById(feedbackId);
+    if (!feedbackEl) return;
+    if (!purchaseId || isNaN(parseInt(purchaseId)) || parseInt(purchaseId) <= 0) {
+        feedbackEl.innerHTML = '<span class="text-warning"><i class="ti ti-alert-circle me-1"></i>Ingresa un ID de compra válido.</span>';
+        return;
+    }
+    feedbackEl.innerHTML = '<span class="text-muted"><i class="ti ti-loader me-1"></i>Verificando...</span>';
+    $.ajax({
+        url: '/purchase/getpurchaseid/' + btoa(purchaseId),
+        method: 'GET',
+        success: function(response) {
+            if (response && response.id) {
+                var date  = response.date  ? ' | Fecha: ' + response.date.substring(0, 10) : '';
+                var total = response.total ? ' | Total: $' + parseFloat(response.total).toFixed(2) : '';
+                var num   = response.number ? ' N°: ' + response.number : '';
+                feedbackEl.innerHTML = '<span class="text-success"><i class="ti ti-circle-check me-1"></i><strong>Compra #' + response.id + '</strong>' + num + date + total + '</span>';
+            } else {
+                feedbackEl.innerHTML = '<span class="text-danger"><i class="ti ti-alert-triangle me-1"></i>No se encontró ninguna compra con ese ID.</span>';
+            }
+        },
+        error: function() {
+            feedbackEl.innerHTML = '<span class="text-danger"><i class="ti ti-alert-triangle me-1"></i>No se encontró ninguna compra con ese ID.</span>';
+        }
+    });
+}

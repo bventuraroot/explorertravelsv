@@ -45,7 +45,12 @@
 @section('content')
     <div class="card">
         <div class="card-header border-bottom">
-            <h5 class="mb-3 card-title">Compras</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0 card-title">Compras</h5>
+                <button type="button" class="btn btn-primary btn-sm" onclick="window.location.href='{{ route('email-purchases.index') }}'">
+                    <i class="ti ti-mail me-1"></i> Importar DTE
+                </button>
+            </div>
             <div class="gap-3 pb-2 d-flex justify-content-between align-items-center row gap-md-0">
                 <div class="col-md-4 companies"></div>
             </div>
@@ -72,7 +77,14 @@
                         @forelse($purchases as $purchase)
                             <tr>
                                 <td></td>
-                                <td>{{ $purchase->number }}</td>
+                                <td>
+                                    {{ $purchase->number }}
+                                    @if(!empty($purchase->pdf_path))
+                                        <a href="javascript:void(0);" onclick="previewPdf('{{ route('email-purchases.pdf', $purchase->import_id) }}')" class="ms-1 text-danger" title="Ver Factura PDF" data-bs-toggle="tooltip">
+                                            <i class="fa-solid fa-file-pdf fs-5"></i>
+                                        </a>
+                                    @endif
+                                </td>
                                 <td>{{ $purchase->namedoc }}</td>
                                 <td>{{ date('d-M-Y', strtotime($purchase->date)) }}</td>
                                 <td>{{ ($purchase->exenta=="" ? "0.00" : $purchase->exenta) }}</td>
@@ -82,15 +94,18 @@
                                 <td>{{ ($purchase->total=="" ? "0.00" : $purchase->total)  }}</td>
                                 <td>{{ $purchase->name_provider }}</td>
                                 <td>
-                                        <div class="d-flex align-items-center">
-                                            <a href="javascript: editpurchase({{ $purchase->idpurchase }});" class="dropdown-item"><i
-                                                class="ti ti-edit ti-sm me-2"></i>Editar</a>
-                                            <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
-                                                data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
-                                            <div class="m-0 dropdown-menu dropdown-menu-end">
-                                                <a href="javascript:deletepurchase({{ $purchase->idpurchase }});" class="dropdown-item"><i
-                                                        class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
-                                            </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <a href="javascript: editpurchase({{ $purchase->idpurchase }});" class="btn btn-sm btn-icon btn-outline-primary" title="Editar" data-bs-toggle="tooltip">
+                                                <i class="ti ti-edit"></i>
+                                            </a>
+                                            @if(isset($purchase->import_id) && $purchase->import_id)
+                                                <a href="javascript:viewDteModal({{ $purchase->import_id }});" class="btn btn-sm btn-icon btn-outline-info" title="Ver DTE original" data-bs-toggle="tooltip">
+                                                    <i class="ti ti-file-analytics"></i>
+                                                </a>
+                                            @endif
+                                            <a href="javascript:deletepurchase({{ $purchase->idpurchase }});" class="btn btn-sm btn-icon btn-outline-danger" title="Eliminar" data-bs-toggle="tooltip">
+                                                <i class="ti ti-trash"></i>
+                                            </a>
                                         </div>
                                 </td>
                             </tr>
@@ -161,12 +176,32 @@
                     <option selected>Elije una opcion</option>
                     <option value="6">FACTURA</option>
                     <option value="3">COMPROBANTE DE CREDITO FISCAL</option>
-                    <option value="9">NOTA DE CREDITO</option>
+                    <option value="9" data-codemh="05">NOTA DE CREDITO PROVEEDOR</option>
+                    <option value="10" data-codemh="06">NOTA DE DEBITO PROVEEDOR</option>
                 </select>
+            </div>
+            <!-- Campo: Compra Relacionada (solo para NC/ND) -->
+            <div class="mb-3 col-4" id="related_purchase_container" style="display:none;">
+                <label for="related_purchase_id" class="form-label">
+                    <i class="ti ti-link me-1 text-warning"></i>ID Compra Relacionada <span class="text-danger">*</span>
+                </label>
+                <input type="number" min="1" id="related_purchase_id" name="related_purchase_id"
+                    class="form-control" placeholder="Ej: 123"
+                    onblur="validateRelatedPurchase(this.value, 'related_purchase_feedback')" />
+                <div id="related_purchase_feedback" class="form-text"></div>
+                <small class="text-muted">Ingresa el ID de la compra original que esta NC/ND está ajustando.</small>
             </div>
             <div class="mb-3 col-4">
                 <label for="date" class="form-label">Fecha de Comprobante</label>
                 <input type="text" class="form-control" placeholder="DD-MM-YYYY" id="date" name="date" />
+            </div>
+            <div class="mb-3 col-4">
+                <label class="form-label" for="codigo_generacion">Código de Generación DTE</label>
+                <input type="text" id="codigo_generacion" name="codigo_generacion" class="form-control" placeholder="Código de generación DTE" />
+            </div>
+            <div class="mb-3 col-4">
+                <label class="form-label" for="sello_recepcion">Sello de Recepción DTE</label>
+                <input type="text" id="sello_recepcion" name="sello_recepcion" class="form-control" placeholder="Sello de recepción DTE" />
             </div>
             <div class="mb-3 col-4">
                 <label for="provider" class="form-label">Proveedor</label>
@@ -269,12 +304,31 @@
                                 <option selected>Elije una opcion</option>
                                 <option value="6">FACTURA</option>
                                 <option value="3">COMPROBANTE DE CREDITO FISCAL</option>
-                                <option value="9">NOTA DE CREDITO</option>
+                                <option value="9" data-codemh="05">NOTA DE CREDITO PROVEEDOR</option>
+                                <option value="10" data-codemh="06">NOTA DE DEBITO PROVEEDOR</option>
                             </select>
+                        </div>
+                        <!-- Campo: Compra Relacionada (solo para NC/ND) — Edición -->
+                        <div class="mb-3 col-4" id="related_purchase_container_edit" style="display:none;">
+                            <label for="related_purchase_idedit" class="form-label">
+                                <i class="ti ti-link me-1 text-warning"></i>ID Compra Relacionada <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" min="1" id="related_purchase_idedit" name="related_purchase_idedit"
+                                class="form-control" placeholder="Ej: 123"
+                                onblur="validateRelatedPurchase(this.value, 'related_purchase_feedback_edit')" />
+                            <div id="related_purchase_feedback_edit" class="form-text"></div>
                         </div>
                         <div class="mb-3 col-4">
                             <label for="dateedit" class="form-label">Fecha de Comprobante</label>
                             <input type="text" class="form-control" placeholder="DD-MM-YYYY" id="dateedit" name="dateedit" />
+                        </div>
+                        <div class="mb-3 col-4">
+                            <label class="form-label" for="codigo_generacionedit">Código de Generación DTE</label>
+                            <input type="text" id="codigo_generacionedit" name="codigo_generacionedit" class="form-control" placeholder="Código de generación DTE" />
+                        </div>
+                        <div class="mb-3 col-4">
+                            <label class="form-label" for="sello_recepcionedit">Sello de Recepción DTE</label>
+                            <input type="text" id="sello_recepcionedit" name="sello_recepcionedit" class="form-control" placeholder="Sello de recepción DTE" />
                         </div>
                         <div class="mb-3 col-4">
                             <label for="provideredit" class="form-label">Proveedor</label>
@@ -327,4 +381,126 @@
                   </div>
                 </div>
               </div>
+
+    <!-- Modal para ver DTE original -->
+    <div class="modal fade" id="viewDteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom bg-label-primary py-3">
+                    <h5 class="modal-title d-flex align-items-center text-primary fw-bold">
+                        <i class="ti ti-mail-opened me-2 fs-4"></i>
+                        <span>Visualización de Comprobante DTE Importado</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 position-relative" style="background-color: #f8f9fa;">
+                    {{-- Spinner de Carga --}}
+                    <div id="dteLoadingSpinner" class="position-absolute top-50 start-50 translate-middle d-flex flex-column align-items-center" style="z-index: 10;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <span class="text-muted small mt-2">Cargando detalles de importación DTE...</span>
+                    </div>
+                    {{-- Iframe del DTE --}}
+                    <iframe id="dtePreviewIframe" src="" class="w-100 border-0 d-none" style="height: 750px; max-height: 85vh;"></iframe>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal de Previsualización de PDF --}}
+    <div class="modal fade" id="previewPdfModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom bg-label-danger py-3">
+                    <h5 class="modal-title d-flex align-items-center text-danger fw-bold">
+                        <i class="fa-solid fa-file-pdf text-danger me-2 fs-4"></i>
+                        <span>Previsualización de Factura PDF</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0 position-relative" style="background-color: #f8f9fa;">
+                    {{-- Spinner de Carga --}}
+                    <div id="pdfLoadingSpinner" class="position-absolute top-50 start-50 translate-middle d-flex flex-column align-items-center" style="z-index: 10;">
+                        <div class="spinner-border text-danger" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <span class="text-muted small mt-2">Cargando documento PDF...</span>
+                    </div>
+                    {{-- Embed del PDF --}}
+                    <embed id="pdfPreviewIframe" src="" type="application/pdf" class="w-100 border-0 d-none" style="height: 700px; max-height: 80vh;"></embed>
+                </div>
+                <div class="modal-footer border-top bg-light d-flex justify-content-between">
+                    <a id="btnPdfDownload" href="" target="_blank" class="btn btn-outline-secondary">
+                        <i class="ti ti-download me-1"></i>Descargar / Abrir en pestaña
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function viewDteModal(importId) {
+            const modalElement = document.getElementById('viewDteModal');
+            const modal = new bootstrap.Modal(modalElement);
+            const iframe = document.getElementById('dtePreviewIframe');
+            const spinner = document.getElementById('dteLoadingSpinner');
+
+            // Resetear vistas
+            iframe.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            iframe.src = '';
+
+            // Mostrar modal
+            modal.show();
+
+            // Establecer la URL del iframe
+            iframe.src = `/email-purchases/${importId}?embed=1`;
+
+            // Quitar el spinner al cargar o tras un breve retraso
+            iframe.onload = function() {
+                spinner.classList.add('d-none');
+                iframe.classList.remove('d-none');
+            };
+            setTimeout(function() {
+                spinner.classList.add('d-none');
+                iframe.classList.remove('d-none');
+            }, 500);
+        }
+
+        // Función para previsualizar PDF
+        function previewPdf(url) {
+            const modalElement = document.getElementById('previewPdfModal');
+            const modal = new bootstrap.Modal(modalElement);
+            const iframe = document.getElementById('pdfPreviewIframe');
+            const spinner = document.getElementById('pdfLoadingSpinner');
+            const downloadBtn = document.getElementById('btnPdfDownload');
+
+            // Resetear vistas
+            iframe.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            iframe.src = '';
+            downloadBtn.href = url;
+
+            // Mostrar modal
+            modal.show();
+
+            // Establecer la URL del iframe
+            iframe.src = url;
+
+            // Quitar el spinner al cargar o tras un breve retraso
+            iframe.onload = function() {
+                spinner.classList.add('d-none');
+                iframe.classList.remove('d-none');
+            };
+            setTimeout(function() {
+                spinner.classList.add('d-none');
+                iframe.classList.remove('d-none');
+            }, 500);
+        }
+    </script>
     @endsection

@@ -190,6 +190,8 @@ $configData = Helper::appClasses();
                             <a href="javascript:;" class="text-body dropdown-toggle hide-arrow"
                                 data-bs-toggle="dropdown"><i class="mx-1 ti ti-dots-vertical ti-sm"></i></a>
                             <div class="m-0 dropdown-menu dropdown-menu-end">
+                                <a href="javascript:viewClientMovements({{ $client->id }});" class="dropdown-item"><i
+                                        class="ti ti-receipt ti-sm me-2"></i>Ver Movimientos</a>
                                 <a href="javascript:deleteClient({{ $client->id }});" class="dropdown-item"><i
                                         class="ti ti-eraser ti-sm me-2"></i>Eliminar</a>
 

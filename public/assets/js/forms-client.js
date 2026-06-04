@@ -1265,3 +1265,42 @@ $(document).ready(function() {
         });
     });
 });
+
+function viewClientMovements(id) {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/agro-report/sales-by-client-search';
+    
+    // CSRF Token
+    var tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = '_token';
+    tokenInput.value = $('input[name="_token"]').first().val() || '';
+    form.appendChild(tokenInput);
+    
+    // Company
+    var companyInput = document.createElement('input');
+    companyInput.type = 'hidden';
+    companyInput.name = 'company';
+    companyInput.value = $('#companyselected').val() || $('#companyselectededit').val() || '1';
+    form.appendChild(companyInput);
+    
+    // Client ID
+    var clientInput = document.createElement('input');
+    clientInput.type = 'hidden';
+    clientInput.name = 'client_id';
+    clientInput.value = id;
+    form.appendChild(clientInput);
+    
+    // Show Details
+    var detailsInput = document.createElement('input');
+    detailsInput.type = 'hidden';
+    detailsInput.name = 'show_details';
+    detailsInput.value = '1';
+    form.appendChild(detailsInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+

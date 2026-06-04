@@ -17,6 +17,7 @@ class PurchaseController extends Controller
         $purchase = Purchase::join("typedocuments", "typedocuments.id", "=", "purchases.document_id")
         ->join("providers", "providers.id", "=", "purchases.provider_id")
         ->join("companies", "companies.id", "=", "purchases.company_id")
+        ->leftJoin("email_purchase_imports", "email_purchase_imports.id", "=", "purchases.import_id")
         ->select("purchases.id AS idpurchase",
             "typedocuments.description AS namedoc",
             "purchases.number",
@@ -26,6 +27,8 @@ class PurchaseController extends Controller
             "purchases.iva",
             "purchases.otros",
             "purchases.total",
+            "purchases.import_id",
+            "email_purchase_imports.pdf_path AS pdf_path",
             "providers.razonsocial AS name_provider")
         ->get();
         return view('purchases.index', array(
@@ -51,8 +54,19 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
+        $tipoDte = \DB::table('typedocuments')->where('id', $request->document)->value('codemh');
+        
+        // Validar que NC/ND tengan compra relacionada
+        if (in_array($tipoDte, ['05', '06']) && !$request->related_purchase_id) {
+            return redirect()->back()
+                ->with('error', 'Las Notas de Crédito y Débito de Proveedor deben indicar la Compra Original que afectan (campo ID Compra Relacionada).')
+                ->withInput();
+        }
+
         $purchase = new Purchase();
         $purchase->document_id = $request->document;
+        $purchase->document_tipo_dte   = $tipoDte;
+        $purchase->related_purchase_id = $request->related_purchase_id ?: null;
         $purchase->provider_id = $request->provider;
         $purchase->company_id = $request->company;
         $purchase->number = $request->number;
@@ -70,6 +84,8 @@ class PurchaseController extends Controller
         $purchase->fingreso = date('Y-m-d');
         $purchase->periodo = $request->period;
         $purchase->user_id = $request->iduser;
+        $purchase->codigo_generacion = $request->codigo_generacion ?: null;
+        $purchase->sello_recepcion = $request->sello_recepcion ?: null;
         $purchase->save();
         return redirect()->route('purchase.index');
     }
@@ -110,8 +126,19 @@ class PurchaseController extends Controller
      */
     public function update(Request $request, Purchase $purchase)
     {
+        $tipoDteEdit = \DB::table('typedocuments')->where('id', $request->documentedit)->value('codemh');
+        
+        // Validar que NC/ND tengan compra relacionada
+        if (in_array($tipoDteEdit, ['05', '06']) && !$request->related_purchase_idedit) {
+            return redirect()->back()
+                ->with('error', 'Las Notas de Crédito y Débito de Proveedor deben indicar la Compra Original que afectan (campo ID Compra Relacionada).')
+                ->withInput();
+        }
+
         $purchase = Purchase::findOrFail($request->idedit);
         $purchase->document_id = $request->documentedit;
+        $purchase->document_tipo_dte   = $tipoDteEdit;
+        $purchase->related_purchase_id = $request->related_purchase_idedit ?: null;
         $purchase->provider_id = $request->provideredit;
         $purchase->company_id = $request->companyedit;
         $purchase->number = $request->numberedit;
@@ -127,6 +154,8 @@ class PurchaseController extends Controller
         $purchase->otros = $request->othersedit;
         $purchase->total = $request->totaledit;
         $purchase->periodo = $request->periodedit;
+        $purchase->codigo_generacion = $request->codigo_generacionedit ?: null;
+        $purchase->sello_recepcion = $request->sello_recepcionedit ?: null;
         $purchase->save();
         return redirect()->route('purchase.index');
     }
@@ -141,7 +170,18 @@ class PurchaseController extends Controller
     {
          //dd($id);
          $purchase = Purchase::find(base64_decode($id));
-         $purchase->delete();
+         if ($purchase) {
+             if ($purchase->import_id) {
+                 $import = \App\Models\EmailPurchaseImport::find($purchase->import_id);
+                 if ($import) {
+                     $import->update([
+                         'purchase_id' => null,
+                         'status'      => 'pending'
+                     ]);
+                 }
+             }
+             $purchase->delete();
+         }
          return response()->json(array(
              "res" => "1"
          ));
