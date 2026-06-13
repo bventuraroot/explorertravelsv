@@ -1845,7 +1845,10 @@ class ReportsController extends Controller
             ->leftJoinSub($dteFacSub, 'dte', 'dte.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
             // Subconsulta: un único CLQ activo por factura (resuelve duplicados al anular y recrear CLQ)
-            ->leftJoinSub($sdClqActivoSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+            ->leftJoinSub($sdClqActivoSub, 'sd_clq', function ($join) {
+                $join->on('sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+                     ->orOn('sd_clq.clq_numero_documento', '=', DB::raw('CAST(sales.id AS CHAR)'));
+            })
             ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
             ->leftJoinSub($dteClqFacSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
@@ -1972,7 +1975,10 @@ class ReportsController extends Controller
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
             ->leftJoinSub($dteFacExcelSub, 'dte', 'dte.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            ->leftJoinSub($sdClqActivoExcelSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+            ->leftJoinSub($sdClqActivoExcelSub, 'sd_clq', function ($join) {
+                $join->on('sd_clq.clq_numero_documento', '=', 'dte.codigoGeneracion')
+                     ->orOn('sd_clq.clq_numero_documento', '=', DB::raw('CAST(sales.id AS CHAR)'));
+            })
             ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
             ->leftJoinSub($dteClqExcelSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
@@ -2195,7 +2201,10 @@ class ReportsController extends Controller
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
             ->leftJoinSub($dteFacturaSub, 'dte_fact', 'dte_fact.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            ->leftJoinSub($sdClqSub, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+            ->leftJoinSub($sdClqSub, 'sd_clq', function ($join) {
+                $join->on('sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+                     ->orOn('sd_clq.clq_numero_documento', '=', DB::raw('CAST(sales.id AS CHAR)'));
+            })
             ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
             ->leftJoinSub($dteCLQSub, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
@@ -2279,7 +2288,10 @@ class ReportsController extends Controller
             ->leftJoin('providers', 'sales.provider_id', '=', 'providers.id')
             ->leftJoinSub($dteFacturaSubExc, 'dte_fact', 'dte_fact.sale_id', '=', 'sales.id')
             ->leftJoin('typedocuments', 'sales.typedocument_id', '=', 'typedocuments.id')
-            ->leftJoinSub($sdClqSubExc, 'sd_clq', 'sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+            ->leftJoinSub($sdClqSubExc, 'sd_clq', function ($join) {
+                $join->on('sd_clq.clq_numero_documento', '=', 'dte_fact.codigoGeneracion')
+                     ->orOn('sd_clq.clq_numero_documento', '=', DB::raw('CAST(sales.id AS CHAR)'));
+            })
             ->leftJoin('sales as clq', 'clq.id', '=', 'sd_clq.clq_sale_id')
             ->leftJoinSub($dteCLQSubExc, 'dte_clq', 'dte_clq.sale_id', '=', 'clq.id')
             ->select(
@@ -2726,5 +2738,263 @@ class ReportsController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
+    }
+
+    /**
+     * Verifica el estado de la liquidación de una factura original.
+     * Si el Comprobante de Liquidación (CLQ) asociado está confirmado en Hacienda,
+     * sincroniza el estado local del DTE del CLQ.
+     */
+    public function verificarEstadoLiquidacion(Request $request, $saleId)
+    {
+        try {
+            // 1. Obtener la factura de venta original
+            $sale = Sale::find($saleId);
+            if (!$sale) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La factura no existe.'
+                ]);
+            }
+
+            // Obtener el codigoGeneracion de la factura
+            $dteFactura = DB::table('dte')
+                ->where('sale_id', $saleId)
+                ->whereIn('codTransaction', ['01', '05', '06'])
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $codigoGeneracionFactura = $dteFactura->codigoGeneracion ?? null;
+
+            // 2. Buscar si hay algún Comprobante de Liquidación (CLQ - typedocument_id = 2) que contenga esta factura en sus detalles
+            $queryClq = DB::table('salesdetails as sd')
+                ->join('sales as s', 's.id', '=', 'sd.sale_id')
+                ->where('s.typedocument_id', '=', 2) // Solo CLQ
+                ->where('s.state', '!=', 0); // Excluir CLQs anulados
+
+            if ($codigoGeneracionFactura) {
+                $queryClq->where(function($q) use ($codigoGeneracionFactura, $saleId) {
+                    $q->where('sd.clq_numero_documento', '=', $codigoGeneracionFactura)
+                      ->orWhere('sd.clq_numero_documento', '=', (string)$saleId);
+                });
+            } else {
+                $queryClq->where('sd.clq_numero_documento', '=', (string)$saleId);
+            }
+
+            $clqDetail = $queryClq->select('s.id as clq_sale_id', 's.company_id')->first();
+
+            if (!$clqDetail) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta factura no se encuentra dentro de ningún Comprobante de Liquidación (CLQ) registrado.'
+                ]);
+            }
+
+            $clqSaleId = $clqDetail->clq_sale_id;
+
+            // 3. Buscar si el CLQ tiene un registro en la tabla DTE
+            $dteClq = DB::table('dte')
+                ->where('sale_id', $clqSaleId)
+                ->whereIn('codTransaction', ['01', '05', '06'])
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($dteClq && $dteClq->codEstado === '02') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'La factura ya se encuentra en el Comprobante de Liquidación #' . $clqSaleId . ', el cual está confirmado localmente.'
+                ]);
+            }
+
+            // 4. Si el DTE del CLQ no está confirmado localmente, intentamos verificarlo en Hacienda
+            $clqSale = Sale::find($clqSaleId);
+            $codigoGeneracionClq = $dteClq->codigoGeneracion ?? $clqSale->codigoGeneracion ?? null;
+
+            if (!$codigoGeneracionClq) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se encontró el Comprobante de Liquidación #' . $clqSaleId . ' en la base de datos, pero no tiene un Código de Generación DTE asignado. Debe enviarse a Hacienda primero.'
+                ]);
+            }
+
+            // Consultar a Hacienda usando la API de Hacienda
+            $Company = Company::find($clqDetail->company_id);
+            if (!$Company) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Empresa emisora no encontrada.'
+                ]);
+            }
+
+            // Obtener credenciales de la empresa
+            $config = DB::table('config')->where('company_id', $Company->id)->first();
+            $ambiente = DB::table('ambientes')->where('id', $config->ambiente ?? null)->first();
+
+            if (!$config || !$ambiente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Configuración de facturación electrónica o ambiente no configurados.'
+                ]);
+            }
+
+            // Validar credenciales de Hacienda
+            $nitLimpio = str_replace('-', '', $Company->nit);
+            $validacion_usuario = [
+                "user"  => $nitLimpio,
+                "pwd"   => $config->passMH
+            ];
+
+            // Obtener el token de Hacienda usando SaleController
+            $saleController = app(SaleController::class);
+            $tokenResponse = $saleController->getTokenMH($Company->id, $validacion_usuario, $ambiente->url_credencial);
+
+            if ($tokenResponse !== 'OK') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de autenticación con Hacienda: ' . $tokenResponse
+                ]);
+            }
+
+            $token = session($Company->id) ?? \Session::get($Company->id);
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo obtener el token de sesión para Hacienda.'
+                ]);
+            }
+
+            // Generar la URL de consulta reemplazando la parte final del url_envio
+            $urlEnvio = $ambiente->url_envio;
+            $urlConsulta = preg_replace('/\/dte\/?$/', '/consultas/' . $codigoGeneracionClq, $urlEnvio);
+
+            if ($urlConsulta === $urlEnvio) {
+                $urlParts = parse_url($urlEnvio);
+                $scheme = isset($urlParts['scheme']) ? $urlParts['scheme'] . '://' : '';
+                $host = $urlParts['host'] ?? '';
+                $urlConsulta = $scheme . $host . '/sri/recepcion/consultas/' . $codigoGeneracionClq;
+            }
+
+            // Configuración de cURL / Proxy
+            $options = [
+                'curl' => [
+                    CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+                ]
+            ];
+            $proxy = env('HACIENDA_PROXY');
+            if ($proxy) {
+                $options['proxy'] = $proxy;
+            }
+
+            // Realizar la consulta GET a Hacienda
+            \Illuminate\Support\Facades\Log::info("Consultando estado de DTE CLQ a Hacienda", [
+                'url' => $urlConsulta,
+                'codigoGeneracion' => $codigoGeneracionClq
+            ]);
+
+            $response = \Illuminate\Support\Facades\Http::withToken($token)
+                ->connectTimeout(15)
+                ->timeout(30)
+                ->withOptions($options)
+                ->get($urlConsulta);
+
+            if ($response->successful()) {
+                $resData = $response->json();
+                \Illuminate\Support\Facades\Log::info("Respuesta de consulta Hacienda", ['data' => $resData]);
+
+                $estadoHacienda = $resData['status'] ?? ($resData['estado'] ?? null);
+
+                if ($estadoHacienda === 'PROCESADO' || $estadoHacienda === 'RECIBIDO' || ($resData['codEstado'] ?? null) === '02') {
+                    $sello = $resData['selloRecibido'] ?? ($resData['sello'] ?? 'VERIFICADO_HACIENDA');
+                    $fhRecibido = $resData['fhProcesamiento'] ?? ($resData['fechaProcesamiento'] ?? now()->format('Y-m-d H:i:s'));
+
+                    if (preg_match('/^\d{2}\/\d{2}\/\d{4}/', $fhRecibido)) {
+                        try {
+                            $dateTime = \DateTime::createFromFormat('d/m/Y H:i:s', $fhRecibido);
+                            if ($dateTime) {
+                                $fhRecibido = $dateTime->format('Y-m-d H:i:s');
+                            }
+                        } catch (\Exception $eNormalizar) {
+                            // Ignorar error de formateo
+                        }
+                    }
+
+                    // Actualizar o crear registro DTE
+                    if ($dteClq) {
+                        DB::table('dte')->where('id', $dteClq->id)->update([
+                            'codEstado' => '02',
+                            'Estado' => 'Enviado',
+                            'estadoHacienda' => $estadoHacienda,
+                            'selloRecibido' => $sello,
+                            'fhRecibido' => $fhRecibido,
+                            'descriptionMessage' => 'Verificado exitosamente con Hacienda'
+                        ]);
+                    } else {
+                        DB::table('dte')->insert([
+                            'versionJson' => $ambiente->cod == '02' ? '3' : '1',
+                            'ambiente_id' => $ambiente->id,
+                            'tipoDte' => '08',
+                            'tipoModelo' => 1,
+                            'tipoTransmision' => 1,
+                            'tipoContingencia' => 'null',
+                            'idContingencia' => 'null',
+                            'nameTable' => 'Sales',
+                            'company_id' => $Company->id,
+                            'company_name' => $Company->name,
+                            'id_doc' => $clqSale->nu_doc ?? 'CLQ-' . $clqSaleId,
+                            'codTransaction' => '01',
+                            'desTransaction' => 'Emision',
+                            'type_document' => '08',
+                            'id_doc_Ref1' => 'null',
+                            'id_doc_Ref2' => 'null',
+                            'type_invalidacion' => 'null',
+                            'codEstado' => '02',
+                            'Estado' => 'Enviado',
+                            'codigoGeneracion' => $codigoGeneracionClq,
+                            'selloRecibido' => $sello,
+                            'fhRecibido' => $fhRecibido,
+                            'estadoHacienda' => $estadoHacienda,
+                            'nSends' => 1,
+                            'codeMessage' => '200',
+                            'descriptionMessage' => 'Verificado exitosamente con Hacienda',
+                            'sale_id' => $clqSaleId,
+                            'created_by' => auth()->user()->name ?? 'System',
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
+
+                    // Asegurar que la venta CLQ esté marcada como finalizada (typesale = 1)
+                    $clqSale->typesale = 1;
+                    $clqSale->save();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'El Comprobante de Liquidación #' . $clqSaleId . ' ha sido verificado con Hacienda y se encuentra confirmado. ¡La factura ahora está liquidada!'
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Hacienda devolvió estado: ' . ($estadoHacienda ?? 'No procesado/desconocido') . '. Por favor, revisa el estado del DTE del Comprobante de Liquidación #' . $clqSaleId . ' en el módulo de DTE.'
+                    ]);
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::error("Error consultando Hacienda", [
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hacienda no reconoció el DTE o devolvió un error (Código HTTP ' . $response->status() . ').'
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Excepción en verificarEstadoLiquidacion: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error inesperado al procesar la verificación: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

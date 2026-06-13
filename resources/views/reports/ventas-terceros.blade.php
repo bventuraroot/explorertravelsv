@@ -190,7 +190,8 @@ $(document).ready(function() {
 
             var acciones = '';
             if (venta.estado_liquidacion === 'Pendiente') {
-                acciones = '<a href="/sale/create?typedocument=2&client_id=' + venta.proveedor_nit + '&from_sale=' + venta.sale_id + '" class="btn btn-sm btn-primary" title="Crear CLQ"><i class="ti ti-file-plus"></i></a>';
+                acciones = '<a href="/sale/create?typedocument=2&client_id=' + venta.proveedor_nit + '&from_sale=' + venta.sale_id + '" class="btn btn-sm btn-primary me-1" title="Crear CLQ"><i class="ti ti-file-plus"></i></a>' +
+                           '<button type="button" class="btn btn-sm btn-warning btn-verificar-liq" data-sale-id="' + venta.sale_id + '" title="Verificar Liquidación"><i class="ti ti-refresh"></i></button>';
                 totalPendiente += parseFloat(venta.totalamount || 0);
                 countPendiente++;
             } else {
@@ -326,6 +327,58 @@ $(document).ready(function() {
         $('#tabla-resultados').hide();
         $('#btn-export-excel').hide();
         $('#excel-hint').show();
+    });
+
+    // Evento para verificar liquidación y sincronizar con Hacienda
+    $(document).on('click', '.btn-verificar-liq', function() {
+        var saleId = $(this).data('sale-id');
+        var company = $('#company').val();
+        
+        Swal.fire({
+            title: 'Verificando...',
+            text: 'Verificando si la factura ya está en un comprobante de liquidación (CLQ) confirmado',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        $.ajax({
+            url: "/report/ventas-terceros/verificar/" + saleId,
+            method: "POST",
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            data: { company: company },
+            success: function(response) {
+                Swal.close();
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Actualizado!',
+                        text: response.message,
+                        timer: 4000
+                    }).then(() => {
+                        // Recargar la búsqueda actual
+                        $('#form-buscar-terceros').submit();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Información',
+                        text: response.message
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.close();
+                console.error(xhr);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al verificar: ' + (xhr.responseJSON?.message || error || 'Error desconocido')
+                });
+            }
+        });
     });
 });
 </script>

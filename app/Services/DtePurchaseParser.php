@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\Provider;
+use App\Models\Purchase;
 use App\Models\Typedocument;
 
 class DtePurchaseParser

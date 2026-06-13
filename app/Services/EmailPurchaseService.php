@@ -158,37 +158,65 @@ class EmailPurchaseService
                         $tempFile = tempnam(sys_get_temp_dir(), 'dte_zip_');
                         file_put_contents($tempFile, $zipContent);
 
-                        $zip = new \ZipArchive();
-                        if ($zip->open($tempFile) === true) {
-                            Log::info("[EmailPurchase] ZIP abierto con éxito. Archivos contenidos: " . $zip->numFiles);
-                            for ($i = 0; $i < $zip->numFiles; $i++) {
-                                $zipFilename = $zip->getNameIndex($i);
-                                $zipExtension = strtolower(pathinfo($zipFilename, PATHINFO_EXTENSION));
-                                $zipContentDecoded = $zip->getFromIndex($i);
-
-                                if ($zipExtension === 'json' || str_contains(strtolower($zipFilename), '.json')) {
-                                    Log::info("[EmailPurchase] Encontrado JSON dentro del ZIP: '{$zipFilename}'");
-                                    $jsonAttachments[] = new class($zipFilename, $zipContentDecoded) {
-                                        public function __construct(private $name, private $content) {}
-                                        public function getName() { return $this->name; }
-                                        public function getContent() { return $this->content; }
-                                        public function getContentType() { return 'application/json'; }
-                                    };
+                        $extractedFiles = [];
+                        if (class_exists(\ZipArchive::class)) {
+                            $zip = new \ZipArchive();
+                            if ($zip->open($tempFile) === true) {
+                                Log::info("[EmailPurchase] ZIP abierto con éxito (ZipArchive). Archivos contenidos: " . $zip->numFiles);
+                                for ($i = 0; $i < $zip->numFiles; $i++) {
+                                    $extractedFiles[] = [
+                                        'name'    => $zip->getNameIndex($i),
+                                        'content' => $zip->getFromIndex($i)
+                                    ];
                                 }
-
-                                if (!$pdfAttachment && ($zipExtension === 'pdf' || str_contains(strtolower($zipFilename), '.pdf'))) {
-                                    Log::info("[EmailPurchase] Encontrado PDF dentro del ZIP: '{$zipFilename}'");
-                                    $pdfAttachment = new class($zipFilename, $zipContentDecoded) {
-                                        public function __construct(private $name, private $content) {}
-                                        public function getName() { return $this->name; }
-                                        public function getContent() { return $this->content; }
-                                        public function getContentType() { return 'application/pdf'; }
-                                    };
-                                }
+                                $zip->close();
+                            } else {
+                                Log::error("[EmailPurchase] No se pudo abrir el archivo ZIP con ZipArchive.");
                             }
-                            $zip->close();
                         } else {
-                            Log::error("[EmailPurchase] No se pudo abrir el archivo ZIP.");
+                            Log::info("[EmailPurchase] ZipArchive no disponible. Usando fallback comando 'unzip'...");
+                            $output = [];
+                            $returnVar = 0;
+                            @exec("unzip -Z -1 " . escapeshellarg($tempFile) . " 2>&1", $output, $returnVar);
+                            if ($returnVar === 0 && !empty($output)) {
+                                foreach ($output as $line) {
+                                    $filenameInZip = trim($line);
+                                    if (empty($filenameInZip)) continue;
+                                    $fileContent = shell_exec("unzip -p " . escapeshellarg($tempFile) . " " . escapeshellarg($filenameInZip));
+                                    $extractedFiles[] = [
+                                        'name'    => $filenameInZip,
+                                        'content' => $fileContent
+                                    ];
+                                }
+                            } else {
+                                Log::error("[EmailPurchase] Fallback 'unzip' falló o no retornó archivos.");
+                            }
+                        }
+
+                        foreach ($extractedFiles as $file) {
+                            $zipFilename = $file['name'];
+                            $zipExtension = strtolower(pathinfo($zipFilename, PATHINFO_EXTENSION));
+                            $zipContentDecoded = $file['content'];
+
+                            if ($zipExtension === 'json' || str_contains(strtolower($zipFilename), '.json')) {
+                                Log::info("[EmailPurchase] Encontrado JSON dentro del ZIP: '{$zipFilename}'");
+                                $jsonAttachments[] = new class($zipFilename, $zipContentDecoded) {
+                                    public function __construct(private $name, private $content) {}
+                                    public function getName() { return $this->name; }
+                                    public function getContent() { return $this->content; }
+                                    public function getContentType() { return 'application/json'; }
+                                };
+                            }
+
+                            if (!$pdfAttachment && ($zipExtension === 'pdf' || str_contains(strtolower($zipFilename), '.pdf'))) {
+                                Log::info("[EmailPurchase] Encontrado PDF dentro del ZIP: '{$zipFilename}'");
+                                $pdfAttachment = new class($zipFilename, $zipContentDecoded) {
+                                    public function __construct(private $name, private $content) {}
+                                    public function getName() { return $this->name; }
+                                    public function getContent() { return $this->content; }
+                                    public function getContentType() { return 'application/pdf'; }
+                                };
+                            }
                         }
                         unlink($tempFile);
                     }
