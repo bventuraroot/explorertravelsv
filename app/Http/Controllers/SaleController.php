@@ -54,7 +54,7 @@ class SaleController extends Controller
                 'dte.fhRecibido'
             )
             ->whereIn('dte.codTransaction', ['01','05','06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         $sales = Sale::join('typedocuments', 'typedocuments.id', '=', 'sales.typedocument_id')
             ->join('clients', 'clients.id', '=', 'sales.client_id')
@@ -1877,7 +1877,7 @@ class SaleController extends Controller
                     'dte.fhRecibido'
                 )
                 ->whereIn('dte.codTransaction', ['01','05','06'])
-                ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+                ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
             // Subconsulta para verificar si existe un DTE de invalidación
             $dteInvalidacionSub = DB::table('dte')

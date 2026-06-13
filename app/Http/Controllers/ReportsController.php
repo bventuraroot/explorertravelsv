@@ -82,7 +82,7 @@ class ReportsController extends Controller
         $dteEmisionSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -255,7 +255,7 @@ class ReportsController extends Controller
         $dteEmisionSubCons = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSubCons, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -486,7 +486,7 @@ class ReportsController extends Controller
         $dteEmisionSubExc = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSubExc, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -791,7 +791,7 @@ class ReportsController extends Controller
         $dteEmisionSubExcCons = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSubExcCons, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -1378,7 +1378,7 @@ class ReportsController extends Controller
         $dteEmisionSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -1480,7 +1480,7 @@ class ReportsController extends Controller
         $dteEmisionSubExcel = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.fhRecibido', 'dte.json', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSubExcel, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo',
@@ -1724,7 +1724,7 @@ class ReportsController extends Controller
         $dteEmisionSubMerge = DB::table('dte')
             ->select('dte.sale_id', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
         $sales = Sale::leftjoin('clients', 'sales.client_id', '=', 'clients.id')
         ->leftJoinSub($dteEmisionSubMerge, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
         ->select('*','sales.id AS correlativo')
@@ -1820,13 +1820,13 @@ class ReportsController extends Controller
         $dteFacSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.estadoHacienda', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta DTE del CLQ (evita duplicados)
         $dteClqFacSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: por cada factura, obtener el CLQ ACTIVO (no anulado) más reciente que la liquida
         // Esto evita duplicados cuando un CLQ se anula y se crea uno nuevo para las mismas facturas
@@ -1952,13 +1952,13 @@ class ReportsController extends Controller
         $dteFacExcelSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.estadoHacienda', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta DTE del CLQ (evita duplicados)
         $dteClqExcelSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
         $sdClqActivoExcelSub = DB::table('salesdetails as sd_inner')
@@ -2179,13 +2179,13 @@ class ReportsController extends Controller
         $dteFacturaSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
         $dteCLQSub = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
         $sdClqSub = DB::table('salesdetails as sd_inner')
@@ -2266,13 +2266,13 @@ class ReportsController extends Controller
         $dteFacturaSubExc = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: un único DTE de emisión por CLQ (evita duplicados)
         $dteCLQSubExc = DB::table('dte')
             ->select('dte.sale_id', 'dte.id_doc', 'dte.codigoGeneracion', 'dte.selloRecibido', 'dte.codEstado')
             ->whereIn('dte.codTransaction', ['01', '05', '06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         // Subconsulta: CLQ ACTIVO más reciente por factura (resuelve duplicados al anular y recrear CLQ)
         $sdClqSubExc = DB::table('salesdetails as sd_inner')
@@ -2454,7 +2454,7 @@ class ReportsController extends Controller
         $dteEmisionSub = DB::table('dte')
             ->select('dte.sale_id','dte.id_doc','dte.codigoGeneracion','dte.selloRecibido','dte.fhRecibido','dte.json','dte.codEstado')
             ->whereIn('dte.codTransaction', ['01','05','06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
@@ -2538,7 +2538,7 @@ class ReportsController extends Controller
         $dteEmisionSub = DB::table('dte')
             ->select('dte.sale_id','dte.id_doc','dte.codigoGeneracion','dte.selloRecibido','dte.fhRecibido','dte.json','dte.codEstado')
             ->whereIn('dte.codTransaction', ['01','05','06'])
-            ->whereRaw('dte.id = (SELECT MAX(d2.id) FROM dte d2 WHERE d2.sale_id = dte.sale_id AND d2.codTransaction IN ("01","05","06"))');
+            ->whereRaw('dte.id = COALESCE((SELECT MAX(d3.id) FROM dte d3 WHERE d3.sale_id = dte.sale_id AND d3.codTransaction IN ("01","05","06") AND d3.codEstado = "02"), (SELECT MAX(d4.id) FROM dte d4 WHERE d4.sale_id = dte.sale_id AND d4.codTransaction IN ("01","05","06")))');
 
         $sales = Sale::leftJoin('clients', 'sales.client_id', '=', 'clients.id')
             ->leftJoinSub($dteEmisionSub, 'dte_emis', 'dte_emis.sale_id', '=', 'sales.id')
